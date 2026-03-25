@@ -197,21 +197,29 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Center(
-                    child: Container(
-                      width: 88,
-                      height: 88,
-                      margin: const EdgeInsets.only(bottom: 24),
-                      decoration: BoxDecoration(
-                        color: primaryColor.withOpacity(isDark ? 0.18 : 0.12),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.mark_email_read_outlined,
-                        size: 42,
-                        color: primaryColor,
-                      ),
+                    child: Image.asset(
+                      'assets/images/email-verify.png',
+                      height: 120,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          width: 88,
+                          height: 88,
+                          margin: const EdgeInsets.only(bottom: 24),
+                          decoration: BoxDecoration(
+                            color: primaryColor.withOpacity(isDark ? 0.18 : 0.12),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.mark_email_read_outlined,
+                            size: 42,
+                            color: primaryColor,
+                          ),
+                        );
+                      },
                     ),
                   ),
+                  const SizedBox(height: 24),
                   Text(
                     'Verify Your Email',
                     textAlign: TextAlign.center,
