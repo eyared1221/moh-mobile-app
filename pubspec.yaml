@@ -1,0 +1,52 @@
+name: yegna_health
+description: A professional health application for the Ministry of Health showcase.
+
+publish_to: "none"
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.10.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # 🌍 Localization
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.20.2
+
+  # 💾 Storage
+  shared_preferences: ^2.2.2
+
+  # 🎨 UI & Media
+  cupertino_icons: ^1.0.6
+  google_fonts: ^8.0.2
+  image_picker: ^1.0.7
+  http: ^1.6.0
+  geolocator: ^9.0.2
+  url_launcher: ^6.1.10
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  # Package to generate your App Icon automatically
+  flutter_launcher_icons: ^0.14.3
+
+# 🚀 App Icon Configuration
+flutter_launcher_icons:
+  android: "ic_launcher"
+  ios: true
+  image_path: "assets/images/logo.png" # Ensure your logo is exactly here
+  adaptive_icon_background: "#FFFFFF" # Background color for the icon
+
+flutter:
+  generate: true
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/icons/
+    - assets/avatars/
