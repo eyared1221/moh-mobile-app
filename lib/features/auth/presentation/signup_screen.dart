@@ -22,12 +22,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _passwordCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
 
-  int? _selectedAge;
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
   bool _isLoading = false;
-
-  final List<int> _ages = List<int>.generate(15, (i) => i + 10); // 10-24
 
   @override
   void dispose() {
@@ -72,47 +69,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     if (age <= 14) return '10-14';
     if (age <= 19) return '15-19';
     return '20-24';
-  }
-
-  void _showAgePicker() {
-    final current = _selectedAge ?? 15;
-    final index = _ages.indexOf(current);
-    final controller = ScrollController(
-      initialScrollOffset: (index >= 0 ? index : 0) * 48.0,
-    );
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      builder: (context) {
-        return SafeArea(
-          child: ListView.builder(
-            controller: controller,
-            itemCount: _ages.length,
-            itemBuilder: (context, i) {
-              final age = _ages[i];
-              final selected = age == _selectedAge;
-              return ListTile(
-                title: Text(
-                  age.toString(),
-                  style: TextStyle(
-                    fontWeight: selected ? FontWeight.bold : FontWeight.w500,
-                  ),
-                ),
-                trailing: selected ? const Icon(Icons.check_rounded) : null,
-                onTap: () {
-                  setState(() {
-                    _selectedAge = age;
-                    _ageCtrl.text = age.toString();
-                  });
-                  Navigator.pop(context);
-                },
-              );
-            },
-          ),
-        );
-      },
-    );
   }
 
   Future<void> _handleSignUp() async {
@@ -200,20 +156,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Center(
-                    child: Hero(
-                      tag: 'app_logo',
-                      child: Image.asset(
-                        'assets/images/logo.png',
-                        height: 72,
-                        errorBuilder: (context, error, stackTrace) => Icon(Icons.health_and_safety, size: 60, color: primaryColor),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
                   Text(
                     'Create Account',
+                    textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 26,
                       fontWeight: FontWeight.w900,
@@ -223,7 +168,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Enter your details to create your account.',
+                    'Enter your details to create an account.',
+                    textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14.5,
                       color: isDark ? Colors.grey[400] : Colors.grey[600],
@@ -236,7 +182,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
                     style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-                    decoration: _buildInputDecoration('Email or Phone Number', Icons.alternate_email, context),
+                    decoration: _buildInputDecoration('Enter your email or phone number', Icons.contact_mail_outlined, context),
                     validator: _validateContact,
                   ),
                   const SizedBox(height: 16),
@@ -246,48 +192,27 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     textCapitalization: TextCapitalization.none,
                     textInputAction: TextInputAction.next,
                     style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-                    decoration: _buildInputDecoration('Username', Icons.person_outline, context),
+                    decoration: _buildInputDecoration('Choose a username', Icons.person_outline_rounded, context),
                     validator: (v) => v != null && v.trim().isNotEmpty ? null : 'Username is required',
                   ),
                   const SizedBox(height: 16),
 
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SizedBox(
-                          width: 110,
-                          child: TextFormField(
-                            controller: _ageCtrl,
-                            keyboardType: TextInputType.number,
-                            textInputAction: TextInputAction.next,
-                            inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(2)],
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-                            decoration: _buildInputDecoration('Age', Icons.calendar_today_outlined, context),
-                            validator: _validateAge,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        SizedBox(
-                          width: 52,
-                          height: 52,
-                          child: OutlinedButton(
-                            onPressed: _showAgePicker,
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(color: isDark ? Colors.white12 : Colors.grey.shade300),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                              backgroundColor: isDark ? const Color(0xFF161D2C) : const Color(0xFFF8FAFC),
-                            ),
-                            child: Icon(
-                              Icons.expand_more,
-                              color: isDark ? Colors.grey[300] : Colors.grey[700],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                  TextFormField(
+                    controller: _ageCtrl,
+                    keyboardType: TextInputType.number,
+                    textInputAction: TextInputAction.next,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(2),
+                      TextInputFormatter.withFunction((oldValue, newValue) {
+                        final text = newValue.text;
+                        if (text.isEmpty || !text.startsWith('0')) return newValue;
+                        return oldValue;
+                      }),
+                    ],
+                    style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+                    decoration: _buildInputDecoration('Enter your age', Icons.cake_outlined, context),
+                    validator: _validateAge,
                   ),
                   const SizedBox(height: 16),
 
@@ -296,10 +221,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     obscureText: _obscurePassword,
                     textInputAction: TextInputAction.next,
                     style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-                    decoration: _buildInputDecoration('Password', Icons.lock_outline, context).copyWith(
+                    decoration: _buildInputDecoration('Enter your password', Icons.lock_outline_rounded, context).copyWith(
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                          _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
                           color: isDark ? Colors.grey[400] : Colors.grey[400],
                         ),
                         onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
@@ -314,10 +239,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     obscureText: _obscureConfirm,
                     textInputAction: TextInputAction.done,
                     style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-                    decoration: _buildInputDecoration('Confirm Password', Icons.lock_reset_outlined, context).copyWith(
+                    decoration: _buildInputDecoration('Re-enter your password', Icons.verified_user_outlined, context).copyWith(
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscureConfirm ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                          _obscureConfirm ? Icons.visibility_off_outlined : Icons.visibility_outlined,
                           color: isDark ? Colors.grey[400] : Colors.grey[400],
                         ),
                         onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
@@ -330,6 +255,27 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     },
                   ),
                   const SizedBox(height: 32),
+
+                  Text.rich(
+                    TextSpan(
+                      text: 'By continuing, you agree to our ',
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      ),
+                      children: [
+                        TextSpan(
+                          text: 'Terms and conditions',
+                          style: TextStyle(
+                            color: primaryColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
 
                   SizedBox(
                     width: double.infinity,

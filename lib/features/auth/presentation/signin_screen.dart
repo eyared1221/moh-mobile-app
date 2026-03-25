@@ -187,7 +187,7 @@ class _SignInScreenState extends State<SignInScreen> {
                       decoration: _modernInput('Password', Icons.lock_outline, context).copyWith(
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined, 
+                            _obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined, 
                             color: isDark ? Colors.grey[400] : Colors.grey[400]
                           ),
                           onPressed: () => setState(() => _obscure = !_obscure),
