@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'signin_screen.dart';
 import 'verify_email_screen.dart';
+import 'auth_success_dialog.dart';
 
 class SignUpScreen extends StatefulWidget {
   final String? language;
@@ -73,6 +74,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
     if (!mounted) return;
     setState(() => _isLoading = false);
 
+    showAuthSuccessDialog(
+      context,
+      message: 'Your account has been created successfully.',
+    );
     Navigator.push(
       context,
       MaterialPageRoute(

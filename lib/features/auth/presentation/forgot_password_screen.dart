@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'reset_password_screen.dart';
+import 'auth_success_dialog.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   final String? language;
@@ -64,12 +65,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     setState(() => _isLoading = false);
 
     final email = _emailCtrl.text.trim();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Password reset instructions were sent to $email.'),
-      ),
+    showAuthSuccessDialog(
+      context,
+      message: 'Password reset instructions were sent to $email successfully.',
     );
-
     Navigator.push(
       context,
       MaterialPageRoute(

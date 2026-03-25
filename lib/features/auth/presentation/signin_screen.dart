@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'signup_screen.dart';
 import 'forgot_password_screen.dart';
+import 'auth_success_dialog.dart';
 import 'package:yegna_health/features/home/presentation/home_page.dart';
 
 class SignInScreen extends StatefulWidget {
@@ -68,6 +69,10 @@ class _SignInScreenState extends State<SignInScreen> {
     await prefs.setString('userName', 'User');
     await prefs.setString('userAge', '15-19');
 
+    showAuthSuccessDialog(
+      context,
+      message: 'You have logged in successfully.',
+    );
     Navigator.pushReplacement(
       context, 
       MaterialPageRoute(builder: (_) => const HomePage(ageRange: '15-19', userName: 'User'))
@@ -199,12 +204,15 @@ class _SignInScreenState extends State<SignInScreen> {
 
                     Align(
                       alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: () => Navigator.push(
+                      child: GestureDetector(
+                        onTap: () => Navigator.push(
                           context,
                           MaterialPageRoute(builder: (_) => ForgotPasswordScreen(language: widget.language)),
                         ),
-                        child: const Text('Forgot Password?', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF005C8F))),
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8),
+                          child: Text('Forgot Password?', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF005C8F))),
+                        ),
                       ),
                     ),
                     

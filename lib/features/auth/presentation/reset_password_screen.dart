@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'signin_screen.dart';
+import 'auth_success_dialog.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   final String? language;
@@ -68,6 +69,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     if (!mounted) return;
     setState(() => _isLoading = false);
 
+    showAuthSuccessDialog(
+      context,
+      message: 'Your password has been updated successfully.',
+    );
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (_) => SignInScreen(language: widget.language)),

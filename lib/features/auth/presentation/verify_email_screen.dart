@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:yegna_health/features/home/presentation/home_page.dart';
+import 'signin_screen.dart';
+import 'auth_success_dialog.dart';
 
 class VerifyEmailScreen extends StatefulWidget {
   final String? language;
@@ -37,12 +37,6 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
       focusNode.dispose();
     }
     super.dispose();
-  }
-
-  String _ageToRange(int age) {
-    if (age <= 14) return '10-14';
-    if (age <= 19) return '15-19';
-    return '20-24';
   }
 
   InputDecoration _buildInputDecoration(String label, IconData icon, BuildContext context) {
@@ -155,33 +149,24 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
 
     await Future.delayed(const Duration(seconds: 1));
 
-    final prefs = await SharedPreferences.getInstance();
-    final ageRange = _ageToRange(widget.age);
-    await prefs.setString('userName', widget.userName);
-    await prefs.setString('userAge', ageRange);
-    await prefs.setString('userContact', widget.contact);
-    await prefs.setBool('isLoggedIn', true);
-
     if (!mounted) return;
     setState(() => _isLoading = false);
 
+    showAuthSuccessDialog(
+      context,
+      message: 'Your email has been verified successfully.',
+    );
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(
-        builder: (_) => HomePage(
-          ageRange: ageRange,
-          userName: widget.userName,
-        ),
-      ),
+      MaterialPageRoute(builder: (_) => SignInScreen(language: widget.language)),
       (route) => false,
     );
   }
 
   void _handleResend() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('A new verification code was sent to ${widget.contact}.'),
-      ),
+    showAuthSuccessDialog(
+      context,
+      message: 'A new verification code was sent to ${widget.contact}.',
     );
   }
 
