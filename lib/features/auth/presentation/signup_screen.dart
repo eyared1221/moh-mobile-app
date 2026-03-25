@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'signin_screen.dart';
-import 'package:yegna_health/features/home/presentation/home_page.dart';
+import 'verify_email_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
   final String? language;
@@ -65,40 +64,25 @@ class _SignUpScreenState extends State<SignUpScreen> {
     return null;
   }
 
-  String _ageToRange(int age) {
-    if (age <= 14) return '10-14';
-    if (age <= 19) return '15-19';
-    return '20-24';
-  }
-
   Future<void> _handleSignUp() async {
     if (!_formKey.currentState!.validate()) return;
 
     FocusScope.of(context).unfocus();
     setState(() => _isLoading = true);
 
-    // Simulate saving account
-    await Future.delayed(const Duration(seconds: 2));
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('userName', _usernameCtrl.text.trim());
-    final ageValue = int.parse(_ageCtrl.text.trim());
-    final ageRange = _ageToRange(ageValue);
-    await prefs.setString('userAge', ageRange);
-    await prefs.setString('userContact', _contactCtrl.text.trim());
-    await prefs.setBool('isLoggedIn', true);
-
     if (!mounted) return;
     setState(() => _isLoading = false);
-    
-    Navigator.pushAndRemoveUntil(
+
+    Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => HomePage(
-          ageRange: ageRange,
+        builder: (_) => VerifyEmailScreen(
+          language: widget.language,
+          contact: _contactCtrl.text.trim(),
           userName: _usernameCtrl.text.trim(),
+          age: int.parse(_ageCtrl.text.trim()),
         ),
       ),
-      (route) => false,
     );
   }
 
