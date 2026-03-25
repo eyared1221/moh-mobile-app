@@ -199,7 +199,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                   Center(
                     child: Image.asset(
                       'assets/images/email-verify.png',
-                      height: 120,
+                      height: 168,
                       fit: BoxFit.contain,
                       errorBuilder: (context, error, stackTrace) {
                         return Container(

@@ -109,7 +109,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   Center(
                     child: Image.asset(
                       'assets/images/forgot-password.png',
-                      height: 120,
+                      height: 168,
                       fit: BoxFit.contain,
                       errorBuilder: (context, error, stackTrace) {
                         return Container(

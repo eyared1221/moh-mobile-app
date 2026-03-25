@@ -109,7 +109,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   Center(
                     child: Image.asset(
                       'assets/images/reset-password.png',
-                      height: 120,
+                      height: 168,
                       fit: BoxFit.contain,
                       errorBuilder: (context, error, stackTrace) {
                         return Container(
