@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'signin_screen.dart';
 import 'auth_success_dialog.dart';
+import '../data/auth_models.dart';
+import '../data/auth_service.dart';
 
 class VerifyEmailScreen extends StatefulWidget {
   final String? language;
@@ -27,6 +29,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   final _digitFocusNodes = List.generate(6, (_) => FocusNode());
   bool _isLoading = false;
   bool _showCodeError = false;
+  final AuthService _authService = AuthService.instance;
 
   @override
   void dispose() {
@@ -147,27 +150,54 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     FocusScope.of(context).unfocus();
     setState(() => _isLoading = true);
 
-    await Future.delayed(const Duration(seconds: 1));
+    try {
+      await _authService.verifyOtp(
+        email: widget.contact,
+        otp: _verificationCode,
+      );
 
-    if (!mounted) return;
-    setState(() => _isLoading = false);
+      if (!mounted) return;
+      setState(() => _isLoading = false);
 
-    showAuthSuccessDialog(
-      context,
-      message: 'Your email has been verified successfully.',
-    );
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => SignInScreen(language: widget.language)),
-      (route) => false,
-    );
+      showAuthSuccessDialog(
+        context,
+        message: 'Your email has been verified successfully.',
+      );
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => SignInScreen(language: widget.language)),
+        (route) => false,
+      );
+    } on AuthApiException catch (error) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to verify email. Please try again.')),
+      );
+    }
   }
 
-  void _handleResend() {
-    showAuthSuccessDialog(
-      context,
-      message: 'A new verification code was sent to ${widget.contact}.',
-    );
+  void _handleResend() async {
+    try {
+      await _authService.resendOtp(email: widget.contact);
+      if (!mounted) return;
+      showAuthSuccessDialog(
+        context,
+        message: 'A new verification code was sent to ${widget.contact}.',
+      );
+    } on AuthApiException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to resend code. Please try again.')),
+      );
+    }
   }
 
   @override
@@ -232,7 +262,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'We sent a 6-digit code to ${widget.contact}. Enter it below to complete your sign up.',
+                    'We''ve sent a 6-digit code to ${widget.contact}. Enter it below to complete your sign up.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14.5,

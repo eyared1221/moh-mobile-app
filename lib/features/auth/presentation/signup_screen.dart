@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'signin_screen.dart';
 import 'verify_email_screen.dart';
 import 'auth_success_dialog.dart';
+import '../data/auth_models.dart';
+import '../data/auth_service.dart';
 
 class SignUpScreen extends StatefulWidget {
   final String? language;
@@ -25,6 +27,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
   bool _isLoading = false;
+  final AuthService _authService = AuthService.instance;
 
   @override
   void dispose() {
@@ -71,24 +74,54 @@ class _SignUpScreenState extends State<SignUpScreen> {
     FocusScope.of(context).unfocus();
     setState(() => _isLoading = true);
 
-    if (!mounted) return;
-    setState(() => _isLoading = false);
+    try {
+      final result = await _authService.register(
+        contact: _contactCtrl.text.trim(),
+        username: _usernameCtrl.text.trim(),
+        age: int.parse(_ageCtrl.text.trim()),
+        password: _passwordCtrl.text,
+      );
 
-    showAuthSuccessDialog(
-      context,
-      message: 'Your account has been created successfully.',
-    );
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => VerifyEmailScreen(
-          language: widget.language,
-          contact: _contactCtrl.text.trim(),
-          userName: _usernameCtrl.text.trim(),
-          age: int.parse(_ageCtrl.text.trim()),
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
+      showAuthSuccessDialog(
+        context,
+        message: 'Your account has been created successfully.',
+      );
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => VerifyEmailScreen(
+            language: widget.language,
+            contact: result.user.email,
+            userName: result.user.username,
+            age: result.user.age,
+          ),
         ),
-      ),
-    );
+      );
+    } on AuthApiException catch (error) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to create account. Please try again.')),
+      );
+    }
+  }
+
+  void _changeAge(int delta) {
+    final current = int.tryParse(_ageCtrl.text.trim()) ?? 10;
+    final next = (current + delta).clamp(10, 24);
+    setState(() {
+      _ageCtrl.text = next.toString();
+      _ageCtrl.selection = TextSelection.fromPosition(
+        TextPosition(offset: _ageCtrl.text.length),
+      );
+    });
   }
 
   InputDecoration _buildInputDecoration(String label, IconData icon, BuildContext context) {
@@ -181,7 +214,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     textCapitalization: TextCapitalization.none,
                     textInputAction: TextInputAction.next,
                     style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-                    decoration: _buildInputDecoration('Choose a username', Icons.person_outline_rounded, context),
+                    decoration: _buildInputDecoration('Enter a username', Icons.person_outline_rounded, context),
                     validator: (v) => v != null && v.trim().isNotEmpty ? null : 'Username is required',
                   ),
                   const SizedBox(height: 16),
@@ -200,7 +233,30 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       }),
                     ],
                     style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-                    decoration: _buildInputDecoration('Enter your age', Icons.cake_outlined, context),
+                    decoration: _buildInputDecoration('Enter your age', Icons.cake_outlined, context).copyWith(
+                      suffixIcon: SizedBox(
+                        width: 44,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            InkWell(
+                              onTap: () => _changeAge(1),
+                              child: const Padding(
+                                padding: EdgeInsets.only(top: 6, bottom: 2),
+                                child: Icon(Icons.keyboard_arrow_up_rounded, size: 20),
+                              ),
+                            ),
+                            InkWell(
+                              onTap: () => _changeAge(-1),
+                              child: const Padding(
+                                padding: EdgeInsets.only(top: 2, bottom: 6),
+                                child: Icon(Icons.keyboard_arrow_down_rounded, size: 20),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                     validator: _validateAge,
                   ),
                   const SizedBox(height: 16),

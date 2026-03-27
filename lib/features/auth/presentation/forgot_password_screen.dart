@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'reset_password_screen.dart';
+import 'verify_reset_code_screen.dart';
 import 'auth_success_dialog.dart';
+import '../data/auth_models.dart';
+import '../data/auth_service.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   final String? language;
@@ -15,6 +17,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailCtrl = TextEditingController();
   bool _isLoading = false;
+  final AuthService _authService = AuthService.instance;
 
   @override
   void dispose() {
@@ -59,25 +62,37 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     FocusScope.of(context).unfocus();
     setState(() => _isLoading = true);
 
-    await Future.delayed(const Duration(seconds: 1));
+    try {
+      final email = _emailCtrl.text.trim();
+      await _authService.forgotPassword(email: email);
 
-    if (!mounted) return;
-    setState(() => _isLoading = false);
+      if (!mounted) return;
+      setState(() => _isLoading = false);
 
-    final email = _emailCtrl.text.trim();
-    showAuthSuccessDialog(
-      context,
-      message: 'Password reset instructions were sent to $email successfully.',
-    );
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ResetPasswordScreen(
-          language: widget.language,
-          email: email,
+      showAuthSuccessDialog(
+        context,
+        message: 'A password reset code was sent to $email.',
+      );
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => VerifyResetCodeScreen(
+            language: widget.language,
+            email: email,
+          ),
         ),
-      ),
-    );
+      );
+    } on AuthApiException catch (error) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to start password reset. Please try again.')),
+      );
+    }
   }
 
   @override
@@ -142,7 +157,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Enter your email address and we will send you a link to reset your password.',
+                    'Enter your email address and we will send you a password reset code.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14.5,
@@ -182,7 +197,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                               height: 24,
                               child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                             )
-                          : const Text('Send Reset Link', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          : const Text('Send Reset Code', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ],

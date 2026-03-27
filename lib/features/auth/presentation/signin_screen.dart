@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'signup_screen.dart';
 import 'forgot_password_screen.dart';
 import 'auth_success_dialog.dart';
+import '../data/auth_models.dart';
+import '../data/auth_service.dart';
 import 'package:yegna_health/features/home/presentation/home_page.dart';
 
 class SignInScreen extends StatefulWidget {
@@ -20,6 +21,7 @@ class _SignInScreenState extends State<SignInScreen> {
   
   bool _obscure = true;
   bool _isLoading = false; // Loading state for professional feel
+  final AuthService _authService = AuthService.instance;
 
   @override
   void dispose() {
@@ -52,31 +54,43 @@ class _SignInScreenState extends State<SignInScreen> {
   // Simulate a network request
   void _handleSignIn() async {
     if (!_formKey.currentState!.validate()) return;
-    
-    // Dismiss keyboard
+
     FocusScope.of(context).unfocus();
-
     setState(() => _isLoading = true);
-    
-    // Fake delay to look like it's checking a server
-    await Future.delayed(const Duration(seconds: 2));
 
-    if (!mounted) return;
-    setState(() => _isLoading = false);
+    try {
+      final result = await _authService.login(
+        identifier: _contactCtrl.text.trim(),
+        password: _passwordCtrl.text,
+      );
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isLoggedIn', true);
-    await prefs.setString('userName', 'User');
-    await prefs.setString('userAge', '15-19');
+      if (!mounted) return;
+      setState(() => _isLoading = false);
 
-    showAuthSuccessDialog(
-      context,
-      message: 'You have logged in successfully.',
-    );
-    Navigator.pushReplacement(
-      context, 
-      MaterialPageRoute(builder: (_) => const HomePage(ageRange: '15-19', userName: 'User'))
-    );
+      showAuthSuccessDialog(
+        context,
+        message: 'You have logged in successfully.',
+      );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => HomePage(
+            ageRange: result.user.ageGroup,
+            userName: result.user.username,
+          ),
+        ),
+      );
+    } on AuthApiException catch (error) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to sign in. Please try again.')),
+      );
+    }
   }
 
   InputDecoration _modernInput(String label, IconData icon, BuildContext context) {

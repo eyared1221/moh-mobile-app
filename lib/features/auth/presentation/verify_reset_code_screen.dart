@@ -1,92 +1,139 @@
 import 'package:flutter/material.dart';
-import 'signin_screen.dart';
-import 'auth_success_dialog.dart';
+import 'package:flutter/services.dart';
+import 'reset_password_screen.dart';
 import '../data/auth_models.dart';
 import '../data/auth_service.dart';
 
-class ResetPasswordScreen extends StatefulWidget {
+class VerifyResetCodeScreen extends StatefulWidget {
   final String? language;
   final String email;
-  final String resetCode;
 
-  const ResetPasswordScreen({
+  const VerifyResetCodeScreen({
     super.key,
     this.language,
     required this.email,
-    required this.resetCode,
   });
 
   @override
-  State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
+  State<VerifyResetCodeScreen> createState() => _VerifyResetCodeScreenState();
 }
 
-class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
+class _VerifyResetCodeScreenState extends State<VerifyResetCodeScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _passwordCtrl = TextEditingController();
-  final _confirmCtrl = TextEditingController();
-  bool _obscurePassword = true;
-  bool _obscureConfirm = true;
+  final _digitControllers = List.generate(6, (_) => TextEditingController());
+  final _digitFocusNodes = List.generate(6, (_) => FocusNode());
   bool _isLoading = false;
+  bool _showCodeError = false;
   final AuthService _authService = AuthService.instance;
 
   @override
   void dispose() {
-    _passwordCtrl.dispose();
-    _confirmCtrl.dispose();
+    for (final controller in _digitControllers) {
+      controller.dispose();
+    }
+    for (final focusNode in _digitFocusNodes) {
+      focusNode.dispose();
+    }
     super.dispose();
   }
 
-  InputDecoration _buildInputDecoration(String label, IconData icon, BuildContext context) {
+  String get _resetCode {
+    return _digitControllers.map((controller) => controller.text).join();
+  }
+
+  void _onCodeChanged(int index, String value) {
+    if (_showCodeError) {
+      setState(() => _showCodeError = false);
+    }
+
+    if (value.isNotEmpty && index < _digitFocusNodes.length - 1) {
+      _digitFocusNodes[index + 1].requestFocus();
+      return;
+    }
+
+    if (value.isEmpty && index > 0) {
+      _digitFocusNodes[index - 1].requestFocus();
+    }
+  }
+
+  Widget _buildCodeBox(BuildContext context, int index) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = const Color(0xFF005C8F);
 
-    return InputDecoration(
-      labelText: label,
-      labelStyle: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 14),
-      prefixIcon: Icon(icon, color: primaryColor, size: 22),
-      filled: true,
-      fillColor: isDark ? const Color(0xFF161D2C) : const Color(0xFFF8FAFC),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: isDark ? Colors.white12 : Colors.grey.shade200),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: primaryColor, width: 2),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Colors.redAccent, width: 1),
+    return SizedBox(
+      width: 48,
+      child: TextField(
+        controller: _digitControllers[index],
+        focusNode: _digitFocusNodes[index],
+        keyboardType: TextInputType.number,
+        textInputAction: index == _digitControllers.length - 1 ? TextInputAction.done : TextInputAction.next,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: isDark ? Colors.white : Colors.black87,
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+        ),
+        inputFormatters: [
+          FilteringTextInputFormatter.digitsOnly,
+          LengthLimitingTextInputFormatter(1),
+        ],
+        decoration: InputDecoration(
+          filled: true,
+          fillColor: isDark ? const Color(0xFF161D2C) : const Color(0xFFF8FAFC),
+          contentPadding: const EdgeInsets.symmetric(vertical: 16),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: isDark ? Colors.white12 : Colors.grey.shade200),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: primaryColor, width: 2),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Colors.redAccent, width: 1),
+          ),
+        ),
+        onChanged: (value) => _onCodeChanged(index, value),
+        onSubmitted: (_) {
+          if (index == _digitControllers.length - 1 && !_isLoading) {
+            _handleVerifyCode();
+          }
+        },
       ),
     );
   }
 
-  Future<void> _handleResetPassword() async {
+  Future<void> _handleVerifyCode() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_resetCode.length != 6) {
+      setState(() => _showCodeError = true);
+      return;
+    }
 
     FocusScope.of(context).unfocus();
     setState(() => _isLoading = true);
 
     try {
-      await _authService.resetPassword(
-        email: widget.email,
-        code: widget.resetCode,
-        password: _passwordCtrl.text,
-      );
+      final code = _resetCode;
+      await _authService.verifyResetCode(email: widget.email, code: code);
 
       if (!mounted) return;
       setState(() => _isLoading = false);
 
-      showAuthSuccessDialog(
+      Navigator.push(
         context,
-        message: 'Your password has been updated successfully.',
-      );
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => SignInScreen(language: widget.language)),
-        (route) => false,
+        MaterialPageRoute(
+          builder: (_) => ResetPasswordScreen(
+            language: widget.language,
+            email: widget.email,
+            resetCode: code,
+          ),
+        ),
       );
     } on AuthApiException catch (error) {
       if (!mounted) return;
@@ -96,7 +143,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       if (!mounted) return;
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to reset password. Please try again.')),
+        const SnackBar(content: Text('Failed to verify reset code. Please try again.')),
       );
     }
   }
@@ -129,7 +176,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 children: [
                   Center(
                     child: Image.asset(
-                      'assets/images/reset-password.png',
+                      'assets/images/email-verify.png',
                       height: 168,
                       fit: BoxFit.contain,
                       errorBuilder: (context, error, stackTrace) {
@@ -142,7 +189,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
-                            Icons.shield_outlined,
+                            Icons.password_outlined,
                             size: 42,
                             color: primaryColor,
                           ),
@@ -152,7 +199,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    'Step 2 of 2',
+                    'Step 1 of 2',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 13,
@@ -163,7 +210,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Set New Password',
+                    'Enter Reset Code',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 26,
@@ -174,7 +221,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Create a new password for ${widget.email}.',
+                    'Enter the 6-digit code sent to ${widget.email}.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14.5,
@@ -182,48 +229,31 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     ),
                   ),
                   const SizedBox(height: 28),
-                  TextFormField(
-                    controller: _passwordCtrl,
-                    obscureText: _obscurePassword,
-                    textInputAction: TextInputAction.next,
-                    style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-                    decoration: _buildInputDecoration('Password', Icons.lock_outline_rounded, context).copyWith(
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                          color: isDark ? Colors.grey[400] : Colors.grey[400],
-                        ),
-                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                      ),
+                  Text(
+                    'Enter 6-digit code',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.grey[300] : Colors.grey[700],
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) return 'Password is required';
-                      if (value.length < 6) return 'Password must be at least 6 characters';
-                      return null;
-                    },
                   ),
                   const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _confirmCtrl,
-                    obscureText: _obscureConfirm,
-                    textInputAction: TextInputAction.done,
-                    style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-                    decoration: _buildInputDecoration('Confirm Password', Icons.verified_user_outlined, context).copyWith(
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscureConfirm ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                          color: isDark ? Colors.grey[400] : Colors.grey[400],
-                        ),
-                        onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: List.generate(6, (index) => _buildCodeBox(context, index)),
+                  ),
+                  if (_showCodeError) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      'Enter the 6-digit code',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: Colors.redAccent.shade200,
                       ),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) return 'Confirm password is required';
-                      if (value != _passwordCtrl.text) return 'Passwords do not match';
-                      return null;
-                    },
-                    onFieldSubmitted: (_) => _isLoading ? null : _handleResetPassword(),
-                  ),
+                  ],
                   const SizedBox(height: 20),
                   SizedBox(
                     width: double.infinity,
@@ -236,14 +266,14 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         shadowColor: primaryColor.withOpacity(0.4),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       ),
-                      onPressed: _isLoading ? null : _handleResetPassword,
+                      onPressed: _isLoading ? null : _handleVerifyCode,
                       child: _isLoading
                           ? const SizedBox(
                               width: 24,
                               height: 24,
                               child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                             )
-                          : const Text('Update Password', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          : const Text('Verify Code', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ],
