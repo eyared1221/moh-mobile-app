@@ -11,19 +11,37 @@ class LearningApiClient {
 
   static const String _configuredBaseUrl = String.fromEnvironment(
     'MOBILE_API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:4000/api/v1/content/mobile',
+    defaultValue: 'http://10.0.2.2:4000',
   );
 
   String get _baseUrl {
+    final configuredBaseUrl = _configuredBaseUrl.replaceAll(RegExp(r'/+$'), '');
+
     if (const bool.hasEnvironment('MOBILE_API_BASE_URL')) {
-      return _configuredBaseUrl;
+      if (configuredBaseUrl.endsWith('/api/v1/content/mobile')) {
+        return configuredBaseUrl;
+      }
+
+      if (configuredBaseUrl.endsWith('/api/v1/content')) {
+        return '$configuredBaseUrl/mobile';
+      }
+
+      if (configuredBaseUrl.endsWith('/api/v1')) {
+        return '$configuredBaseUrl/content/mobile';
+      }
+
+      if (configuredBaseUrl.endsWith('/api')) {
+        return '$configuredBaseUrl/v1/content/mobile';
+      }
+
+      return '$configuredBaseUrl/api/v1/content/mobile';
     }
 
     if (kIsWeb) {
       return 'http://localhost:4000/api/v1/content/mobile';
     }
 
-    return _configuredBaseUrl;
+    return '$configuredBaseUrl/api/v1/content/mobile';
   }
 
   Uri _uri(String path) => Uri.parse('$_baseUrl$path');

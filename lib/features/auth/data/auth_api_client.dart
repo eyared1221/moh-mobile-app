@@ -13,19 +13,29 @@ class AuthApiClient {
 
   static const String _configuredBaseUrl = String.fromEnvironment(
     'MOBILE_API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:4000/api/mobile/auth',
+    defaultValue: 'http://10.0.2.2:4000',
   );
 
   String get _baseUrl {
+    final configuredBaseUrl = _configuredBaseUrl.replaceAll(RegExp(r'/+$'), '');
+
     if (const bool.hasEnvironment('MOBILE_API_BASE_URL')) {
-      return _configuredBaseUrl;
+      if (configuredBaseUrl.endsWith('/api/mobile/auth')) {
+        return configuredBaseUrl;
+      }
+
+      if (configuredBaseUrl.endsWith('/api')) {
+        return '$configuredBaseUrl/mobile/auth';
+      }
+
+      return '$configuredBaseUrl/api/mobile/auth';
     }
 
     if (kIsWeb) {
       return 'http://localhost:4000/api/mobile/auth';
     }
 
-    return _configuredBaseUrl;
+    return '$configuredBaseUrl/api/mobile/auth';
   }
 
   Uri _uri(String path) => Uri.parse('$_baseUrl$path');
