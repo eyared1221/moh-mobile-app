@@ -1,17 +1,104 @@
 import 'package:flutter/material.dart';
-import 'package:yegna_health/features/auth/presentation/signin_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class GuestBottomNav extends StatelessWidget {
+class GuestBottomNav extends StatefulWidget {
   final int currentIndex;
+  final String? ageRange;
+  final String? userName;
+  final bool? isLoggedIn;
 
-  const GuestBottomNav({super.key, this.currentIndex = 2});
+  const GuestBottomNav({
+    super.key,
+    this.currentIndex = 2,
+    this.ageRange,
+    this.userName,
+    this.isLoggedIn,
+  });
+
+  @override
+  State<GuestBottomNav> createState() => _GuestBottomNavState();
+}
+
+class _GuestBottomNavState extends State<GuestBottomNav> {
+  bool _isLoggedIn = false;
+  String _ageRange = '10-14';
+  String _userName = 'Yegna User';
+
+  @override
+  void initState() {
+    super.initState();
+    _isLoggedIn = widget.isLoggedIn ?? false;
+    _ageRange = widget.ageRange ?? _ageRange;
+    _userName = widget.userName ?? _userName;
+    _loadSession();
+  }
+
+  Future<void> _loadSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+
+    setState(() {
+      _isLoggedIn = widget.isLoggedIn ?? (prefs.getBool('isLoggedIn') ?? false);
+      _ageRange = widget.ageRange ?? (prefs.getString('userAge') ?? _ageRange);
+      _userName = widget.userName ?? (prefs.getString('userName') ?? _userName);
+    });
+  }
+
+  void _navigateTo(String route, {Map<String, dynamic>? arguments}) {
+    Navigator.pushReplacementNamed(
+      context,
+      route,
+      arguments: arguments,
+    );
+  }
+
+  void _handleTap(int index) {
+    if (index == widget.currentIndex) return;
+
+    if (index == 2) {
+      _navigateTo('/');
+      return;
+    }
+
+    if (!_isLoggedIn) {
+      _showSignInPrompt(context);
+      return;
+    }
+
+    switch (index) {
+      case 0:
+        _navigateTo(
+          '/home',
+          arguments: {'ageRange': _ageRange, 'userName': _userName},
+        );
+        break;
+      case 1:
+        _navigateTo(
+          '/learning',
+          arguments: {'ageRange': _ageRange, 'userName': _userName},
+        );
+        break;
+      case 3:
+        _navigateTo(
+          '/clinic',
+          arguments: {'ageRange': _ageRange},
+        );
+        break;
+      case 4:
+        _navigateTo(
+          '/profile',
+          arguments: {'ageRange': _ageRange, 'userName': _userName},
+        );
+        break;
+    }
+  }
 
   void _showSignInPrompt(BuildContext context) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
+      builder: (sheetContext) {
+        final isDark = Theme.of(sheetContext).brightness == Brightness.dark;
         const primaryBlue = Color(0xFF005C8F);
 
         return Container(
@@ -61,8 +148,8 @@ class GuestBottomNav extends StatelessWidget {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   onPressed: () {
-                    Navigator.pop(context);
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const SignInScreen()));
+                    Navigator.pop(sheetContext);
+                    Navigator.pushNamed(context, '/signin');
                   },
                   child: const Text("SIGN IN", style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
@@ -99,32 +186,32 @@ class GuestBottomNav extends StatelessWidget {
             _GuestNavItem(
               icon: Icons.home_rounded,
               label: "Home",
-              active: currentIndex == 0,
-              onTap: () => _showSignInPrompt(context),
+              active: widget.currentIndex == 0,
+              onTap: () => _handleTap(0),
             ),
             _GuestNavItem(
               icon: Icons.menu_book_rounded,
               label: "Learn",
-              active: currentIndex == 1,
-              onTap: () => _showSignInPrompt(context),
+              active: widget.currentIndex == 1,
+              onTap: () => _handleTap(1),
             ),
             _GuestCenterItem(
               label: "Guest",
-              active: currentIndex == 2,
-              onTap: () {},
+              active: widget.currentIndex == 2,
+              onTap: () => _handleTap(2),
               color: primaryBlue,
             ),
             _GuestNavItem(
               icon: Icons.location_on_rounded,
               label: "Clinic",
-              active: currentIndex == 3,
-              onTap: () => _showSignInPrompt(context),
+              active: widget.currentIndex == 3,
+              onTap: () => _handleTap(3),
             ),
             _GuestNavItem(
               icon: Icons.person_rounded,
               label: "Profile",
-              active: currentIndex == 4,
-              onTap: () => _showSignInPrompt(context),
+              active: widget.currentIndex == 4,
+              onTap: () => _handleTap(4),
             ),
           ],
         ),

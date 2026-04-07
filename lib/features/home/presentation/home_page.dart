@@ -8,12 +8,12 @@ import '../../../shared/widgets/top_header.dart';
 import '../../../shared/widgets/hero_banner.dart';
 import '../../../shared/widgets/app_bottom_nav.dart';
 
-
 // Screen Imports
 import 'package:yegna_health/features/community/presentation/community_chat_page.dart';
+import 'package:yegna_health/features/learning/presentation/pages/learning_module_page.dart';
 import 'package:yegna_health/features/services/presentation/health_professionals_page.dart';
 import 'package:yegna_health/features/risk_assessment/presentation/pre_assessment_page.dart';
-import 'package:yegna_health/features/learning/presentation/hiv_description_page.dart';
+
 class HomePage extends StatefulWidget {
   final String ageRange;
   final String? userName;
@@ -283,19 +283,21 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
- void _handleModuleTap(int index) {
-  HapticFeedback.mediumImpact();
-  
-  if (index == 0) {
-    // We navigate to the single Unified Page and pass the ageRange
-    Navigator.push(
-      context, 
-      MaterialPageRoute(
-        builder: (context) => HIVDescriptionPage(ageRange: widget.ageRange),
-      ),
-    );
+  void _handleModuleTap(int index) {
+    HapticFeedback.mediumImpact();
+
+    if (index == 0) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => LearningModulesPage(
+            age: widget.ageRange,
+            userName: widget.userName,
+          ),
+        ),
+      );
+    }
   }
-}
 
   void _triggerSOS() {
     HapticFeedback.heavyImpact();

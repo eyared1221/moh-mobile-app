@@ -3,8 +3,10 @@ import 'features/guest/presentation/guest_page.dart';
 import 'features/auth/presentation/signup_screen.dart';
 import 'features/auth/presentation/signin_screen.dart';
 import 'features/home/presentation/home_page.dart';
-import 'features/learning/presentation/hiv_description_page.dart';
+import 'features/learning/presentation/pages/learning_module_page.dart';
+import 'features/profile/presentation/profile_page.dart';
 import 'features/risk_assessment/presentation/hiv_risk_assessment_page.dart';
+import 'features/services/presentation/clinic_page.dart';
 import 'core/theme/theme_notifier.dart';
 
 void main() async {
@@ -90,6 +92,7 @@ class _MyAppState extends State<MyApp> {
           onGenerateRoute: (settings) {
             final args = settings.arguments as Map<String, dynamic>?;
             final ageRange = args?['ageRange'] ?? '10-14';
+            final userName = args?['userName'] ?? 'Yegna User';
 
             switch (settings.name) {
               case '/':
@@ -99,15 +102,23 @@ class _MyAppState extends State<MyApp> {
               case '/signup':
                 return MaterialPageRoute(builder: (_) => const SignUpScreen());
               case '/home':
-                final userName = args?['userName'] ?? 'Yegna User';
                 return MaterialPageRoute(
                   builder: (_) => HomePage(ageRange: ageRange, userName: userName),
                 );
-              
-              // --- UNIFIED ROUTE FOR HIV DESCRIPTION ---
-              case '/hiv-description':
+              case '/clinic':
                 return MaterialPageRoute(
-                  builder: (_) => HIVDescriptionPage(ageRange: ageRange),
+                  builder: (_) => ClinicPage(ageRange: ageRange),
+                );
+              case '/profile':
+                return MaterialPageRoute(
+                  builder: (_) => ProfilePage(ageRange: ageRange, userName: userName),
+                );
+              case '/learning':
+                return MaterialPageRoute(
+                  builder: (_) => LearningModulesPage(
+                    age: ageRange,
+                    userName: userName,
+                  ),
                 );
 
               case '/risk-assessment':
