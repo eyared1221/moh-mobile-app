@@ -51,15 +51,16 @@ class LearningService {
     final sections = sectionsJson
         .map((sectionJson) => _mapToLearningSection(sectionJson as Map<String, dynamic>))
         .toList();
+    final slug = json['slug'] as String;
 
     return LearningModule(
-      id: json['slug'] as String,
+      id: slug,
       title: json['moduleName'] as String,
       shortDescription: json['subtitle'] as String? ?? '',
       introText: json['introSummary'] as String? ?? '',
       note: json['definitionBody'] as String? ?? '',
       imageUrl: json['landingImageUrl'] as String? ?? '',
-      isAssetImage: false, // Backend URLs are network images
+      isAssetImage: false,
       imagePosition: ModuleImagePosition.top,
       displayOrder: json['displayOrder'] is int
           ? json['displayOrder']

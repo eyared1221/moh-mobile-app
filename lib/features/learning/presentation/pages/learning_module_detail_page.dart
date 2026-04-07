@@ -116,11 +116,32 @@ class LearningModuleDetailPage extends StatelessWidget {
               color: colorScheme.surfaceVariant,
               borderRadius: BorderRadius.circular(18),
             ),
-            child: Icon(
-              Icons.favorite_outline,
-              color: colorScheme.primary,
-              size: 28,
-            ),
+            clipBehavior: Clip.antiAlias,
+            child: module.imageUrl.isEmpty
+                ? Icon(
+                    Icons.favorite_outline,
+                    color: colorScheme.primary,
+                    size: 28,
+                  )
+                : module.isAssetImage
+                    ? Image.asset(
+                        module.imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Icon(
+                          Icons.image_not_supported_outlined,
+                          color: colorScheme.primary,
+                          size: 28,
+                        ),
+                      )
+                    : Image.network(
+                        module.imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Icon(
+                          Icons.image_not_supported_outlined,
+                          color: colorScheme.primary,
+                          size: 28,
+                        ),
+                      ),
           ),
           const SizedBox(width: 14),
           Expanded(
