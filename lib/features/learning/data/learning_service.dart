@@ -57,6 +57,7 @@ class LearningService {
       id: slug,
       title: json['moduleName'] as String,
       shortDescription: json['subtitle'] as String? ?? '',
+      ctaLabel: json['ctaLabel'] as String? ?? 'More',
       introText: json['introSummary'] as String? ?? '',
       note: json['definitionBody'] as String? ?? '',
       imageUrl: json['landingImageUrl'] as String? ?? '',

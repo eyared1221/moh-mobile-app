@@ -6,6 +6,7 @@ class LearningModule {
   final String id;
   final String title;
   final String shortDescription;
+  final String ctaLabel;
   final String introText;
   final String note;
   final String imageUrl;
@@ -18,6 +19,7 @@ class LearningModule {
     required this.id,
     required this.title,
     required this.shortDescription,
+    this.ctaLabel = 'More',
     required this.introText,
     required this.note,
     required this.imageUrl,
@@ -34,6 +36,7 @@ class LearningModule {
       id: json['id']?.toString() ?? '',
       title: json['title']?.toString() ?? '',
       shortDescription: json['shortDescription']?.toString() ?? '',
+      ctaLabel: json['ctaLabel']?.toString() ?? 'More',
       introText: json['introText']?.toString() ?? '',
       note: json['note']?.toString() ?? '',
       imageUrl: json['imageUrl']?.toString() ?? '',
@@ -56,6 +59,7 @@ class LearningModule {
       'id': id,
       'title': title,
       'shortDescription': shortDescription,
+      'ctaLabel': ctaLabel,
       'introText': introText,
       'note': note,
       'imageUrl': imageUrl,

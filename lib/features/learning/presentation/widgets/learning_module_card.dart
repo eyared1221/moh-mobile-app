@@ -14,11 +14,9 @@ class LearningModuleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isTopImage = switch (module.displayOrder) {
-      1 || 3 || 5 => false,
-      2 || 4 || 6 => true,
-      _ => module.imagePosition == ModuleImagePosition.top,
-    };
+    final isTopImage = module.displayOrder > 0
+        ? module.displayOrder.isOdd
+        : module.imagePosition == ModuleImagePosition.top;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -86,14 +84,14 @@ class LearningModuleCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(14),
                 ),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Flexible(
                     child: Text(
-                      'More',
+                      module.ctaLabel,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 15,
                       ),
