@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/learning_module.dart';
+import '../widgets/learning_image.dart';
 import '../widgets/learning_section_tile.dart';
 
 class LearningModuleDetailPage extends StatelessWidget {
@@ -123,25 +124,16 @@ class LearningModuleDetailPage extends StatelessWidget {
                     color: colorScheme.primary,
                     size: 28,
                   )
-                : module.isAssetImage
-                    ? Image.asset(
-                        module.imageUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Icon(
-                          Icons.image_not_supported_outlined,
-                          color: colorScheme.primary,
-                          size: 28,
-                        ),
-                      )
-                    : Image.network(
-                        module.imageUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Icon(
-                          Icons.image_not_supported_outlined,
-                          color: colorScheme.primary,
-                          size: 28,
-                        ),
-                      ),
+                : LearningImage(
+                    imageUrl: module.imageUrl,
+                    isAssetImage: module.isAssetImage,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_) => Icon(
+                      Icons.image_not_supported_outlined,
+                      color: colorScheme.primary,
+                      size: 28,
+                    ),
+                  ),
           ),
           const SizedBox(width: 14),
           Expanded(

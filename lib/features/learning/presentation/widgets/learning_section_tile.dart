@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/learning_content_block.dart';
 import '../../models/learning_section.dart';
+import 'learning_image.dart';
 
 class LearningSectionTile extends StatelessWidget {
   final LearningSection section;
@@ -148,33 +149,20 @@ class _SectionBlockView extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 12),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: block.isAssetImage
-                ? Image.asset(
-                    block.imageUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                      height: 140,
-                      color: colorScheme.surfaceVariant,
-                      alignment: Alignment.center,
-                      child: Icon(
-                        Icons.image_not_supported_outlined,
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  )
-                : Image.network(
-                    block.imageUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                      height: 140,
-                      color: colorScheme.surfaceVariant,
-                      alignment: Alignment.center,
-                      child: Icon(
-                        Icons.image_not_supported_outlined,
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
+            child: LearningImage(
+              imageUrl: block.imageUrl,
+              isAssetImage: block.isAssetImage,
+              fit: BoxFit.cover,
+              errorBuilder: (_) => Container(
+                height: 140,
+                color: colorScheme.surfaceVariant,
+                alignment: Alignment.center,
+                child: Icon(
+                  Icons.image_not_supported_outlined,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
           ),
         );
 

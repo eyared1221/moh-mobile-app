@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/learning_module.dart';
+import 'learning_image.dart';
 
 class LearningModuleCard extends StatelessWidget {
   final LearningModule module;
@@ -130,29 +131,18 @@ class _ModuleImage extends StatelessWidget {
       borderRadius: BorderRadius.circular(20),
       child: SizedBox(
         width: double.infinity,
-        child: module.isAssetImage
-            ? Image.asset(
-                module.imageUrl,
-                fit: BoxFit.contain,
-                alignment: Alignment.center,
-                errorBuilder: (_, __, ___) => Center(
-                  child: Icon(
-                    Icons.image_not_supported_outlined,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              )
-            : Image.network(
-                module.imageUrl,
-                fit: BoxFit.contain,
-                alignment: Alignment.center,
-                errorBuilder: (_, __, ___) => Center(
-                  child: Icon(
-                    Icons.image_not_supported_outlined,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
+        child: LearningImage(
+          imageUrl: module.imageUrl,
+          isAssetImage: module.isAssetImage,
+          fit: BoxFit.contain,
+          alignment: Alignment.center,
+          errorBuilder: (context) => Center(
+            child: Icon(
+              Icons.image_not_supported_outlined,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
       ),
     );
   }
