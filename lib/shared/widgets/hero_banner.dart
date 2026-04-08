@@ -15,17 +15,19 @@ class HeroBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isCompactHeight = MediaQuery.sizeOf(context).height < 760;
 
     return Container(
-      // Increased Vertical Padding (60) to push the height from top to bottom
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 60),
+      padding: EdgeInsets.symmetric(
+        horizontal: isCompactHeight ? 20 : 24,
+        vertical: isCompactHeight ? 22 : 28,
+      ),
       width: double.infinity,
-      // Using Center ensures the text stays balanced in the larger box
-      alignment: Alignment.centerLeft, 
+      alignment: Alignment.centerLeft,
       child: Text(
         title,
         style: TextStyle(
-          fontSize: 28, // Slightly larger font for the taller box
+          fontSize: isCompactHeight ? 22 : 26,
           height: 1.2,
           fontWeight: FontWeight.w900,
           letterSpacing: -0.5,
