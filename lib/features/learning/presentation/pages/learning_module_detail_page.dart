@@ -40,7 +40,7 @@ class LearningModuleDetailPage extends StatelessWidget {
               _buildTopSummaryCard(context),
               const SizedBox(height: 20),
               Text(
-                'Note',
+                module.definitionTitle,
                 style: textTheme.bodyMedium?.copyWith(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,

@@ -4,7 +4,7 @@ import 'forgot_password_screen.dart';
 import 'auth_success_dialog.dart';
 import '../data/auth_models.dart';
 import '../data/auth_service.dart';
-import 'package:yegna_health/features/home/presentation/home_page.dart';
+import 'package:yegna_health/features/home/presentation/pages/home_page.dart';
 
 class SignInScreen extends StatefulWidget {
   final String? language;
@@ -75,7 +75,7 @@ class _SignInScreenState extends State<SignInScreen> {
         context,
         MaterialPageRoute(
           builder: (_) => HomePage(
-            ageRange: result.user.ageGroup,
+            age: result.user.ageGroup,
             userName: result.user.username,
           ),
         ),

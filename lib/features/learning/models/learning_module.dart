@@ -8,6 +8,7 @@ class LearningModule {
   final String shortDescription;
   final String ctaLabel;
   final String introText;
+  final String definitionTitle;
   final String note;
   final String imageUrl;
   final bool isAssetImage;
@@ -21,6 +22,7 @@ class LearningModule {
     required this.shortDescription,
     this.ctaLabel = 'More',
     required this.introText,
+    this.definitionTitle = 'Note',
     required this.note,
     required this.imageUrl,
     required this.isAssetImage,
@@ -38,6 +40,7 @@ class LearningModule {
       shortDescription: json['shortDescription']?.toString() ?? '',
       ctaLabel: json['ctaLabel']?.toString() ?? 'More',
       introText: json['introText']?.toString() ?? '',
+      definitionTitle: json['definitionTitle']?.toString() ?? 'Note',
       note: json['note']?.toString() ?? '',
       imageUrl: json['imageUrl']?.toString() ?? '',
       isAssetImage: json['isAssetImage'] == true,
@@ -61,6 +64,7 @@ class LearningModule {
       'shortDescription': shortDescription,
       'ctaLabel': ctaLabel,
       'introText': introText,
+      'definitionTitle': definitionTitle,
       'note': note,
       'imageUrl': imageUrl,
       'isAssetImage': isAssetImage,

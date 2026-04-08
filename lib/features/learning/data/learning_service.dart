@@ -55,10 +55,11 @@ class LearningService {
 
     return LearningModule(
       id: slug,
-      title: json['moduleName'] as String,
+      title: json['title'] as String? ?? json['moduleName'] as String? ?? '',
       shortDescription: json['subtitle'] as String? ?? '',
       ctaLabel: json['ctaLabel'] as String? ?? 'More',
       introText: json['introSummary'] as String? ?? '',
+      definitionTitle: json['definitionTitle'] as String? ?? 'Note',
       note: json['definitionBody'] as String? ?? '',
       imageUrl: json['landingImageUrl'] as String? ?? '',
       isAssetImage: false,

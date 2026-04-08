@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'features/guest/presentation/guest_page.dart';
 import 'features/auth/presentation/signup_screen.dart';
 import 'features/auth/presentation/signin_screen.dart';
-import 'features/home/presentation/home_page.dart';
+import 'features/home/presentation/pages/home_page.dart';
 import 'features/learning/presentation/pages/learning_module_page.dart';
 import 'features/profile/presentation/profile_page.dart';
 import 'features/risk_assessment/presentation/hiv_risk_assessment_page.dart';
@@ -103,7 +103,7 @@ class _MyAppState extends State<MyApp> {
                 return MaterialPageRoute(builder: (_) => const SignUpScreen());
               case '/home':
                 return MaterialPageRoute(
-                  builder: (_) => HomePage(ageRange: ageRange, userName: userName),
+                  builder: (_) => HomePage(age: ageRange, userName: userName),
                 );
               case '/clinic':
                 return MaterialPageRoute(
