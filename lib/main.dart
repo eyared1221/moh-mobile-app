@@ -6,7 +6,7 @@ import 'features/home/presentation/pages/home_page.dart';
 import 'features/learning/presentation/pages/learning_module_page.dart';
 import 'features/profile/presentation/profile_page.dart';
 import 'features/risk_assessment/presentation/hiv_risk_assessment_page.dart';
-import 'features/services/presentation/clinic_page.dart';
+import 'features/services/presentation/pages/clinic_page.dart';
 import 'core/theme/theme_notifier.dart';
 
 void main() async {
@@ -107,7 +107,7 @@ class _MyAppState extends State<MyApp> {
                 );
               case '/clinic':
                 return MaterialPageRoute(
-                  builder: (_) => ClinicPage(ageRange: ageRange),
+                  builder: (_) => ClinicPage(age: ageRange, userName: userName),
                 );
               case '/profile':
                 return MaterialPageRoute(

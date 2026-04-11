@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../shared/widgets/app_bottom_nav.dart';
-import 'package:yegna_health/features/services/presentation/health_professionals_page.dart';
-import 'package:yegna_health/features/services/presentation/clinic_page.dart';
+import 'package:yegna_health/features/services/presentation/pages/health_professionals_page.dart';
+import 'package:yegna_health/features/services/presentation/pages/clinic_page.dart';
 
 class HivRiskResultPage extends StatefulWidget {
   final List<dynamic> questions;
@@ -85,10 +85,10 @@ class _HivRiskResultPageState extends State<HivRiskResultPage> {
                 child: Column(
                   children: [
                     _featTile(0, Icons.location_on_outlined, "Find a Clinic", "Locate nearest health center", primaryBlue, isDark, () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => ClinicPage(ageRange: widget.ageRange)));
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => ClinicPage(age: widget.ageRange)));
                     }),
                     _featTile(1, Icons.medical_services_outlined, "Ask a Professional", "Direct expert health advice", primaryBlue, isDark, () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => HealthProfessionalsPage(ageRange: widget.ageRange)));
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => HealthProfessionalsPage(age: widget.ageRange)));
                     }),
                     _featTile(2, Icons.smart_toy_outlined, "AI Health Chatbot", "Instant answers (Coming soon)", Colors.purple, isDark, () {
                       // Future Chatbot Logic

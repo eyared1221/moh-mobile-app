@@ -7,19 +7,15 @@ import '../../../../shared/widgets/top_header.dart';
 import '../../../../shared/widgets/hero_banner.dart';
 import '../../../../shared/widgets/app_bottom_nav.dart';
 import '../../../learning/presentation/pages/learning_module_page.dart';
-import '../../../services/presentation/clinic_page.dart';
-import 'peer_mentor_page.dart';
+import '../../../mentor/presentation/pages/mentor_page.dart';
+import '../../../services/presentation/pages/clinic_page.dart';
 import 'risk_assessment_page.dart';
 
 class HomePage extends StatefulWidget {
   final String age;
   final String? userName;
 
-  const HomePage({
-    super.key,
-    required this.age,
-    this.userName,
-  });
+  const HomePage({super.key, required this.age, this.userName});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -70,12 +66,7 @@ class _HomePageState extends State<HomePage> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          Expanded(
-            child: TopHeader(
-              onBellTap: () {},
-              showThemeToggle: false,
-            ),
-          ),
+          Expanded(child: TopHeader(onBellTap: () {}, showThemeToggle: false)),
         ],
       ),
     );
@@ -98,9 +89,7 @@ class _HomePageState extends State<HomePage> {
             horizontal: 12,
             vertical: isCompactHeight ? 2 : 4,
           ),
-          constraints: BoxConstraints(
-            minHeight: isCompactHeight ? 78 : 95,
-          ),
+          constraints: BoxConstraints(minHeight: isCompactHeight ? 78 : 95),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(30),
             gradient: LinearGradient(
@@ -111,10 +100,7 @@ class _HomePageState extends State<HomePage> {
                       colorScheme.onSurface.withOpacity(0.12),
                       colorScheme.onSurface.withOpacity(0.01),
                     ]
-                  : [
-                      colorScheme.surface,
-                      colorScheme.surfaceVariant,
-                    ],
+                  : [colorScheme.surface, colorScheme.surfaceVariant],
             ),
             border: Border.all(
               color: isDark ? colorScheme.outlineVariant : colorScheme.surface,
@@ -181,9 +167,8 @@ class _HomePageState extends State<HomePage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => ClinicPage(
-                ageRange: widget.age,
-              ),
+              builder: (_) =>
+                  ClinicPage(age: widget.age, userName: widget.userName),
             ),
           );
         },
@@ -195,7 +180,7 @@ class _HomePageState extends State<HomePage> {
         onTap: (context) {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const PeerMentorPage()),
+            MaterialPageRoute(builder: (_) => const MentorPage()),
           );
         },
       ),
@@ -213,23 +198,23 @@ class _HomePageState extends State<HomePage> {
       physics: const BouncingScrollPhysics(),
       itemCount: cards.length,
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 10,
-          mainAxisSpacing: 10,
-          childAspectRatio: isCompactHeight ? 0.92 : 0.96,
-        ),
+        crossAxisCount: 2,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+        childAspectRatio: isCompactHeight ? 0.92 : 0.96,
+      ),
       itemBuilder: (context, index) {
-        return _buildNavCard(
-          cards[index],
-          isDark,
-          index,
-          colorScheme,
-        );
+        return _buildNavCard(cards[index], isDark, index, colorScheme);
       },
     );
   }
 
-  Widget _buildNavCard(_HomeNavCardData data, bool isDark, int index, ColorScheme colorScheme) {
+  Widget _buildNavCard(
+    _HomeNavCardData data,
+    bool isDark,
+    int index,
+    ColorScheme colorScheme,
+  ) {
     final isPressed = _pressedNavIndex == index;
     final isCompactHeight = MediaQuery.sizeOf(context).height < 760;
     const outerRadius = 22.0;
@@ -245,9 +230,7 @@ class _HomePageState extends State<HomePage> {
         transform: Matrix4.identity()..scale(isPressed ? 0.97 : 1.0),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(outerRadius),
-          border: Border.all(
-            color: colorScheme.outlineVariant,
-          ),
+          border: Border.all(color: colorScheme.outlineVariant),
           color: isDark ? colorScheme.surface : Colors.white,
         ),
         child: ClipRRect(
