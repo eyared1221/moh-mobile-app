@@ -33,7 +33,6 @@ class ClinicRepository {
     final website = _readString(json['website']);
     final hours = _readString(json['hours']) ??
         _readString(json['workingHours']) ??
-        _hoursFromOperationalStatus(_readString(json['operationalStatus'])) ??
         'Hours not available';
     final description = _readString(json['description']) ?? _buildDescription(json);
     final services = _buildServices(json);
@@ -100,13 +99,10 @@ String? _readString(dynamic value) {
 
 String _buildAddress(Map<String, dynamic> json) {
   final specificAreaName = _readString(json['specificAreaName']);
-  final kebele = _readString(json['kebele']);
-  final city = _readString(json['city']);
   final zone = _readString(json['zoneSubcity']) ?? _readString(json['zoneSubCity']);
-  final region = _readString(json['region']);
   final fallback = _readString(json['address']) ?? 'Address not available';
 
-  final parts = [specificAreaName, kebele, city, zone, region]
+  final parts = [zone, specificAreaName]
       .whereType<String>()
       .where((item) => item.isNotEmpty)
       .toList();
@@ -118,29 +114,21 @@ String _buildAddress(Map<String, dynamic> json) {
   return parts.join(', ');
 }
 
-String? _hoursFromOperationalStatus(String? operationalStatus) {
-  if (operationalStatus == null) return null;
-  return operationalStatus == 'Operational' ? 'Open (Operational)' : operationalStatus;
-}
-
 String _buildDescription(Map<String, dynamic> json) {
   final facilityType = _readString(json['facilityType']);
   final facilitySubType = _readString(json['facilitySubType']);
   final ownership = _readString(json['ownership']);
-  final status = _readString(json['operationalStatus']) ?? _readString(json['status']);
 
   final parts = [facilityType, facilitySubType, ownership]
       .whereType<String>()
       .where((item) => item.isNotEmpty)
       .toList();
 
-  if (parts.isEmpty && status != null) {
-    return 'Service status: $status.';
+  if (parts.isEmpty) {
+    return 'Healthcare facility';
   }
 
-  final prefix = parts.isEmpty ? 'Healthcare facility' : parts.join(' - ');
-  final suffix = status == null ? '' : ' Status: $status.';
-  return '$prefix.$suffix'.trim();
+  return parts.join(' - ');
 }
 
 List<String> _buildServices(Map<String, dynamic> json) {

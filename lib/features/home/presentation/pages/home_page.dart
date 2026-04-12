@@ -8,8 +8,8 @@ import '../../../../shared/widgets/hero_banner.dart';
 import '../../../../shared/widgets/app_bottom_nav.dart';
 import '../../../learning/presentation/pages/learning_module_page.dart';
 import '../../../mentor/presentation/pages/mentor_page.dart';
+import '../../../risk_assessment/presentation/pages/risk_assessment_page.dart';
 import '../../../services/presentation/pages/clinic_page.dart';
-import 'risk_assessment_page.dart';
 
 class HomePage extends StatefulWidget {
   final String age;
@@ -139,7 +139,12 @@ class _HomePageState extends State<HomePage> {
         onTap: (context) {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const RiskAssessmentPage()),
+            MaterialPageRoute(
+              builder: (_) => RiskAssessmentPage(
+                age: widget.age,
+                userName: widget.userName,
+              ),
+            ),
           );
         },
       ),

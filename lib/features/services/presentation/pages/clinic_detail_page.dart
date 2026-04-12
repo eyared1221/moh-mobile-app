@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -153,7 +156,7 @@ class _ClinicDetailPageState extends State<ClinicDetailPage> {
               icon: Icons.location_on_outlined,
               label: 'Address',
               value: widget.clinic.address,
-              onCopy: () => _copyValue(context, widget.clinic.address),
+              onTap: () => _copyValue(context, widget.clinic.address),
             ),
             _InfoTile(
               icon: Icons.call_outlined,
@@ -161,7 +164,6 @@ class _ClinicDetailPageState extends State<ClinicDetailPage> {
               value: widget.clinic.phone,
               actionIcon: Icons.phone_rounded,
               onAction: () => _openUrl(context, 'tel:${widget.clinic.phone}'),
-              onCopy: () => _copyValue(context, widget.clinic.phone),
             ),
             if (widget.clinic.email != null && widget.clinic.email!.isNotEmpty)
               _InfoTile(
@@ -170,7 +172,6 @@ class _ClinicDetailPageState extends State<ClinicDetailPage> {
                 value: widget.clinic.email!,
                 actionIcon: Icons.mail_rounded,
                 onAction: () => _openUrl(context, 'mailto:${widget.clinic.email!}'),
-                onCopy: () => _copyValue(context, widget.clinic.email!),
               ),
             if (widget.clinic.website != null && widget.clinic.website!.isNotEmpty)
               _InfoTile(
@@ -179,36 +180,13 @@ class _ClinicDetailPageState extends State<ClinicDetailPage> {
                 value: widget.clinic.website!,
                 actionIcon: Icons.open_in_new_rounded,
                 onAction: () => _openUrl(context, _ensureUrl(widget.clinic.website!)),
-                onCopy: () => _copyValue(context, widget.clinic.website!),
               ),
-            _InfoTile(
-              icon: Icons.schedule_outlined,
-              label: 'Hours',
-              value: widget.clinic.hours,
-            ),
             _InfoTile(
               icon: Icons.directions_walk_outlined,
               label: 'Distance',
               value: widget.distanceKm == null
                   ? 'Enable precise location to calculate distance'
                   : '${widget.distanceKm!.toStringAsFixed(1)} km from you',
-            ),
-            const SizedBox(height: 14),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: colorScheme.primary.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                'Clinic information is loaded from the backend API when available.',
-                style: TextStyle(
-                  color: colorScheme.primary,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12.5,
-                ),
-              ),
             ),
             const SizedBox(height: 12),
             _ClinicMapPreview(
@@ -244,22 +222,21 @@ class _ClinicMapPreview extends StatefulWidget {
 class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
   WebViewController? _webViewController;
   String _defaultMapEmbedUrl = '';
-  String _activeMapEmbedUrl = '';
   String _mapViewType = 'clinic_map_initial';
   String _openMapUrl = '';
   bool _isMapLoading = true;
   bool _hasMapError = false;
   bool _isLoadingRoute = false;
-  bool _isRouteShown = false;
   String? _routeNotice;
   static const double _maxAcceptedAccuracyMeters = 80;
 
   @override
   void initState() {
     super.initState();
-    _defaultMapEmbedUrl =
-        'https://maps.google.com/maps?q=${widget.latitude},${widget.longitude}&z=15&output=embed';
-    _activeMapEmbedUrl = _defaultMapEmbedUrl;
+    _defaultMapEmbedUrl = _buildOpenStreetMapEmbedUrl(
+      latitude: widget.latitude,
+      longitude: widget.longitude,
+    );
     _mapViewType = _buildMapViewType(
       widget.latitude,
       widget.longitude,
@@ -290,47 +267,31 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
               if (!mounted) return;
               setState(() {
                 _isMapLoading = false;
-              _hasMapError = true;
-            });
-          },
-        ),
-      )
-        ..loadRequest(Uri.parse(_activeMapEmbedUrl));
+                _hasMapError = true;
+              });
+            },
+          ),
+        )
+        ..loadRequest(Uri.parse(_defaultMapEmbedUrl));
     } else {
       _isMapLoading = false;
-    }
-  }
-
-  void _loadMapInPlace({
-    required String embedUrl,
-    required String modeKey,
-    required bool showRoute,
-  }) {
-    if (!mounted) return;
-    setState(() {
-      _activeMapEmbedUrl = embedUrl;
-      _mapViewType = _buildMapViewType(widget.latitude, widget.longitude, modeKey);
-      _hasMapError = false;
-      _isRouteShown = showRoute;
-      _isMapLoading = !kIsWeb;
-    });
-
-    if (!kIsWeb && _webViewController != null) {
-      _webViewController!.loadRequest(Uri.parse(embedUrl));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final fallbackEmbedUrl =
-        'https://maps.google.com/maps?q=${widget.latitude},${widget.longitude}&z=15&output=embed';
+    final fallbackEmbedUrl = _buildOpenStreetMapEmbedUrl(
+      latitude: widget.latitude,
+      longitude: widget.longitude,
+    );
     final effectiveMapViewType =
-        _mapViewType.isEmpty ? _buildMapViewType(widget.latitude, widget.longitude, 'fallback') : _mapViewType;
-    final effectiveEmbedUrl =
-        _activeMapEmbedUrl.isEmpty
-            ? (_defaultMapEmbedUrl.isEmpty ? fallbackEmbedUrl : _defaultMapEmbedUrl)
-            : _activeMapEmbedUrl;
+        _mapViewType.isEmpty
+            ? _buildMapViewType(widget.latitude, widget.longitude, 'fallback')
+            : _mapViewType;
+    final effectiveEmbedUrl = _defaultMapEmbedUrl.isEmpty
+        ? fallbackEmbedUrl
+        : _defaultMapEmbedUrl;
 
     return Container(
       decoration: BoxDecoration(
@@ -471,27 +432,11 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
                   children: [
                     Expanded(
                       child: ElevatedButton.icon(
-                        onPressed: _isLoadingRoute ? null : () => _showRouteInMap(context),
+                        onPressed: _isLoadingRoute ? null : () => _navigateToClinic(context),
                         icon: const Icon(Icons.route_rounded, size: 18),
-                        label: const Text('Show Route From My Location'),
+                        label: const Text('Navigate'),
                       ),
                     ),
-                    if (_isRouteShown) ...[
-                      const SizedBox(width: 8),
-                      OutlinedButton(
-                        onPressed: _isLoadingRoute
-                            ? null
-                            : () {
-                                _routeNotice = null;
-                                _loadMapInPlace(
-                                  embedUrl: _defaultMapEmbedUrl,
-                                  modeKey: 'default_reset',
-                                  showRoute: false,
-                                );
-                              },
-                        child: const Text('Reset'),
-                      ),
-                    ],
                   ],
                 ),
                 if (_routeNotice != null) ...[
@@ -513,13 +458,30 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
     );
   }
 
-  Future<void> _showRouteInMap(BuildContext context) async {
+  Future<void> _navigateToClinic(BuildContext context) async {
     if (!mounted) return;
     setState(() {
       _isLoadingRoute = true;
       _routeNotice = null;
     });
 
+    try {
+      final routeUrl = await _buildNavigationUrl();
+      await _openUrl(context, routeUrl);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _routeNotice = 'Unable to start navigation right now.';
+      });
+    } finally {
+      if (!mounted) return;
+      setState(() {
+        _isLoadingRoute = false;
+      });
+    }
+  }
+
+  Future<String> _buildNavigationUrl() async {
     try {
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
       var permission = await Geolocator.checkPermission();
@@ -531,12 +493,10 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
       if (!serviceEnabled ||
           permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) {
-        if (!mounted) return;
-        setState(() {
-          _routeNotice = 'Location permission is required to show route in map.';
-          _isLoadingRoute = false;
-        });
-        return;
+        return _buildExternalDirectionsUrl(
+          destinationLat: widget.latitude,
+          destinationLon: widget.longitude,
+        );
       }
 
       final position = await Geolocator.getCurrentPosition(
@@ -544,39 +504,25 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
         timeLimit: const Duration(seconds: 10),
       );
       final betterPosition = await _getBetterPositionIfNeeded(position);
+
       if (betterPosition.accuracy > _maxAcceptedAccuracyMeters) {
-        if (!mounted) return;
-        setState(() {
-          _routeNotice =
-              'Current location is too approximate (~${betterPosition.accuracy.toStringAsFixed(0)} m). Enable precise location and try again.';
-          _isLoadingRoute = false;
-        });
-        return;
+        return _buildExternalDirectionsUrl(
+          destinationLat: widget.latitude,
+          destinationLon: widget.longitude,
+        );
       }
 
-      final routeEmbedUrl = _buildDirectionsEmbedUrl(
+      return _buildExternalDirectionsUrl(
         originLat: betterPosition.latitude,
         originLon: betterPosition.longitude,
         destinationLat: widget.latitude,
         destinationLon: widget.longitude,
       );
-
-      _loadMapInPlace(
-        embedUrl: routeEmbedUrl,
-        modeKey:
-            'route_${betterPosition.latitude.toStringAsFixed(4)}_${betterPosition.longitude.toStringAsFixed(4)}_${DateTime.now().millisecondsSinceEpoch}',
-        showRoute: true,
-      );
     } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _routeNotice = 'Unable to determine your current location.';
-      });
-    } finally {
-      if (!mounted) return;
-      setState(() {
-        _isLoadingRoute = false;
-      });
+      return _buildExternalDirectionsUrl(
+        destinationLat: widget.latitude,
+        destinationLon: widget.longitude,
+      );
     }
   }
 
@@ -603,49 +549,150 @@ String _buildMapViewType(double latitude, double longitude, String key) {
   return raw.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '_');
 }
 
-String _buildDirectionsEmbedUrl({
-  required double originLat,
-  required double originLon,
+String _buildOpenStreetMapEmbedUrl({
+  required double latitude,
+  required double longitude,
+}) {
+  const delta = 0.02;
+  final left = (longitude - delta).toStringAsFixed(6);
+  final bottom = (latitude - delta).toStringAsFixed(6);
+  final right = (longitude + delta).toStringAsFixed(6);
+  final top = (latitude + delta).toStringAsFixed(6);
+
+  return Uri.https(
+    'www.openstreetmap.org',
+    '/export/embed.html',
+    {
+      'bbox': '$left,$bottom,$right,$top',
+      'layer': 'mapnik',
+      'marker': '${latitude.toStringAsFixed(6)},${longitude.toStringAsFixed(6)}',
+    },
+  ).toString();
+}
+
+const String _configuredBaseUrl = String.fromEnvironment(
+  'MOBILE_API_BASE_URL',
+  defaultValue: 'http://10.0.2.2:4000',
+);
+
+String _buildExternalDirectionsUrl({
+  double? originLat,
+  double? originLon,
   required double destinationLat,
   required double destinationLon,
 }) {
   return Uri.https(
     'www.google.com',
-    '/maps',
+    '/maps/dir/',
     {
-      'f': 'd',
-      'source': 's_d',
-      'saddr': '$originLat,$originLon',
-      'daddr': '$destinationLat,$destinationLon',
-      'dirflg': 'd',
-      'hl': 'en',
-      'output': 'embed',
+      'api': '1',
+      if (originLat != null && originLon != null)
+        'origin': '${originLat.toStringAsFixed(6)},${originLon.toStringAsFixed(6)}',
+      'destination': '${destinationLat.toStringAsFixed(6)},${destinationLon.toStringAsFixed(6)}',
+      'travelmode': 'driving',
     },
   ).toString();
 }
 
 Widget _buildClinicImage(String imagePath) {
-  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-    return Image.network(
-      imagePath,
+  final resolvedImagePath = _resolveClinicImagePath(imagePath);
+  if (resolvedImagePath == null) {
+    return _buildImageFallback();
+  }
+
+  if (resolvedImagePath.startsWith('assets/')) {
+    return Image.asset(
+      resolvedImagePath,
       fit: BoxFit.cover,
       errorBuilder: (_, __, ___) => _buildImageFallback(),
     );
   }
 
-  if (imagePath.startsWith('assets/')) {
-    return Image.asset(
-      imagePath,
+  final dataBytes = _tryDecodeDataImage(resolvedImagePath);
+  if (dataBytes != null) {
+    return Image.memory(
+      dataBytes,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => _buildImageFallback(),
+    );
+  }
+
+  if (resolvedImagePath.startsWith('http://') || resolvedImagePath.startsWith('https://')) {
+    return Image.network(
+      resolvedImagePath,
       fit: BoxFit.cover,
       errorBuilder: (_, __, ___) => _buildImageFallback(),
     );
   }
 
   return Image.network(
-    imagePath,
+    resolvedImagePath,
     fit: BoxFit.cover,
     errorBuilder: (_, __, ___) => _buildImageFallback(),
   );
+}
+
+String? _resolveClinicImagePath(String? rawPath) {
+  if (rawPath == null) return null;
+
+  final path = rawPath.trim();
+  if (path.isEmpty) return null;
+  if (path.startsWith('assets/')) return path;
+  if (path.startsWith('data:image/')) return path;
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+
+  final base = _apiOrigin();
+  if (path.startsWith('/')) {
+    return '$base$path';
+  }
+
+  return '$base/$path';
+}
+
+String _apiOrigin() {
+  final configuredBaseUrl = _configuredBaseUrl.replaceAll(RegExp(r'/+$'), '');
+
+  if (kIsWeb) {
+    return 'http://localhost:4000';
+  }
+
+  if (configuredBaseUrl.endsWith('/api/mobile/auth')) {
+    return configuredBaseUrl.replaceFirst(RegExp(r'/api/mobile/auth$'), '');
+  }
+
+  if (configuredBaseUrl.endsWith('/api/v1/healthcare-facilities')) {
+    return configuredBaseUrl.replaceFirst(
+      RegExp(r'/api/v1/healthcare-facilities$'),
+      '',
+    );
+  }
+
+  if (configuredBaseUrl.endsWith('/api/v1')) {
+    return configuredBaseUrl.replaceFirst(RegExp(r'/api/v1$'), '');
+  }
+
+  if (configuredBaseUrl.endsWith('/api')) {
+    return configuredBaseUrl.replaceFirst(RegExp(r'/api$'), '');
+  }
+
+  return configuredBaseUrl;
+}
+
+Uint8List? _tryDecodeDataImage(String value) {
+  if (!value.startsWith('data:image/')) {
+    return null;
+  }
+
+  final commaIndex = value.indexOf(',');
+  if (commaIndex == -1 || commaIndex == value.length - 1) {
+    return null;
+  }
+
+  try {
+    return base64Decode(value.substring(commaIndex + 1));
+  } catch (_) {
+    return null;
+  }
 }
 
 Widget _buildImageFallback() {
@@ -686,23 +733,23 @@ class _InfoTile extends StatelessWidget {
   final String label;
   final String value;
   final IconData? actionIcon;
+  final VoidCallback? onTap;
   final VoidCallback? onAction;
-  final VoidCallback? onCopy;
 
   const _InfoTile({
     required this.icon,
     required this.label,
     required this.value,
     this.actionIcon,
+    this.onTap,
     this.onAction,
-    this.onCopy,
   });
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
+    final tile = Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
@@ -756,32 +803,28 @@ class _InfoTile extends StatelessWidget {
               ],
             ),
           ),
-          if (onCopy != null || onAction != null) ...[
+          if (onAction != null && actionIcon != null) ...[
             const SizedBox(width: 4),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (onCopy != null)
-                  IconButton(
-                    onPressed: onCopy,
-                    icon: const Icon(Icons.copy_rounded),
-                    color: colorScheme.onSurfaceVariant,
-                    visualDensity: VisualDensity.compact,
-                    tooltip: 'Copy',
-                  ),
-                if (onAction != null && actionIcon != null)
-                  IconButton(
-                    onPressed: onAction,
-                    icon: Icon(actionIcon),
-                    color: colorScheme.primary,
-                    visualDensity: VisualDensity.compact,
-                    tooltip: 'Open',
-                  ),
-              ],
+            IconButton(
+              onPressed: onAction,
+              icon: Icon(actionIcon),
+              color: colorScheme.primary,
+              visualDensity: VisualDensity.compact,
+              tooltip: 'Open',
             ),
           ],
         ],
       ),
+    );
+
+    if (onTap == null) {
+      return tile;
+    }
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: tile,
     );
   }
 }

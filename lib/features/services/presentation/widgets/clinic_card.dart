@@ -47,21 +47,22 @@ class ClinicCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      distanceKm == null ? 'Location required' : '${distanceKm!.toStringAsFixed(1)} km',
-                      style: TextStyle(
-                        color: colorScheme.primary,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12,
+                  if (distanceKm != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '${distanceKm!.toStringAsFixed(1)} km',
+                        style: TextStyle(
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                        ),
                       ),
                     ),
-                  ),
                 ],
               ),
               const SizedBox(height: 8),
@@ -73,11 +74,6 @@ class ClinicCard extends StatelessWidget {
               _IconText(
                 icon: Icons.call_outlined,
                 text: clinic.phone,
-              ),
-              const SizedBox(height: 4),
-              _IconText(
-                icon: Icons.schedule_outlined,
-                text: clinic.hours,
               ),
               const SizedBox(height: 10),
               const SizedBox(height: 6),

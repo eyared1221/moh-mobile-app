@@ -5,7 +5,7 @@ import 'features/auth/presentation/signin_screen.dart';
 import 'features/home/presentation/pages/home_page.dart';
 import 'features/learning/presentation/pages/learning_module_page.dart';
 import 'features/profile/presentation/profile_page.dart';
-import 'features/risk_assessment/presentation/hiv_risk_assessment_page.dart';
+import 'features/risk_assessment/presentation/pages/risk_assessment_page.dart';
 import 'features/services/presentation/pages/clinic_page.dart';
 import 'core/theme/theme_notifier.dart';
 
@@ -123,7 +123,10 @@ class _MyAppState extends State<MyApp> {
 
               case '/risk-assessment':
                 return MaterialPageRoute(
-                  builder: (_) => HivRiskAssessmentPage(ageRange: ageRange),
+                  builder: (_) => RiskAssessmentPage(
+                    age: ageRange,
+                    userName: userName,
+                  ),
                 );
               default:
                 return MaterialPageRoute(builder: (_) => const GuestPage());

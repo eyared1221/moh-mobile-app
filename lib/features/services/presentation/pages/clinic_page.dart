@@ -26,6 +26,7 @@ class ClinicPage extends StatefulWidget {
 class _ClinicPageState extends State<ClinicPage> {
   final ClinicRepository _repository = ClinicRepository();
   final TextEditingController _searchCtrl = TextEditingController();
+  static const int _maxNearbyClinics = 4;
 
   List<Clinic> _clinics = [];
   bool _isLoading = true;
@@ -125,8 +126,7 @@ class _ClinicPageState extends State<ClinicPage> {
           _locationNotice = null;
         } else {
           _userLocation = null;
-          _locationNotice =
-              'Current location is too approximate (~${accuracyMeters.toStringAsFixed(0)} m). Enable precise location and try again.';
+          _locationNotice = null;
         }
       });
     } catch (_) {
@@ -194,10 +194,10 @@ class _ClinicPageState extends State<ClinicPage> {
   List<Clinic> _nearbyClinics() {
     final filtered = _filteredClinics();
     if (_userLocation == null) {
-      return filtered.take(5).toList();
+      return filtered.take(_maxNearbyClinics).toList();
     }
-    filtered.sort((a, b) => _distanceKm(a).compareTo(_distanceKm(b)));
-    return filtered.take(5).toList();
+    final sorted = [...filtered]..sort((a, b) => _distanceKm(a).compareTo(_distanceKm(b)));
+    return sorted.take(_maxNearbyClinics).toList();
   }
 
   double _distanceKm(Clinic clinic) {
@@ -227,14 +227,16 @@ class _ClinicPageState extends State<ClinicPage> {
   double _degToRad(double deg) => deg * (math.pi / 180.0);
 
   String _locationHeaderText() {
+    final nearbyCount = _nearbyClinics().length;
+
     if (_showNearby) {
       if (_isResolvingLocation) {
         return 'Detecting your location for precise nearby clinics...';
       }
       if (_userLocation != null) {
-        return 'Showing 5 nearby clinics based on your current location';
+        return 'Showing $nearbyCount nearby clinics based on your current location';
       }
-      return 'Showing 5 clinics. Enable precise location for true nearby sorting.';
+      return 'Showing $nearbyCount clinics';
     }
     return 'Showing all clinics';
   }
@@ -244,7 +246,8 @@ class _ClinicPageState extends State<ClinicPage> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
-    final clinicsToShow = _showNearby ? _nearbyClinics() : _filteredClinics();
+    final nearbyClinics = _nearbyClinics();
+    final clinicsToShow = _showNearby ? nearbyClinics : _filteredClinics();
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -382,7 +385,7 @@ class _ClinicPageState extends State<ClinicPage> {
                         const SizedBox(width: 6),
                         Expanded(
                           child: _TogglePill(
-                            label: 'Nearby (5)',
+                            label: 'Nearby (${nearbyClinics.length})',
                             selected: _showNearby,
                             onTap: () => setState(() => _showNearby = true),
                           ),
