@@ -2,10 +2,9 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
-// Internal Widget Imports
-import '../../../../shared/widgets/top_header.dart';
 import '../../../../shared/widgets/hero_banner.dart';
 import '../../../../shared/widgets/app_bottom_nav.dart';
+import '../../../notifications/presentation/pages/notification_center_page.dart';
 import '../../../learning/presentation/pages/learning_module_page.dart';
 import '../../../mentor/presentation/pages/mentor_page.dart';
 import '../../../risk_assessment/presentation/pages/risk_assessment_page.dart';
@@ -23,6 +22,33 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int? _pressedNavIndex;
+  final ScrollController _scrollController = ScrollController();
+  bool _hasScrolled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_handleScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController
+      ..removeListener(_handleScroll)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _handleScroll() {
+    final hasScrolled = _scrollController.offset > 12;
+    if (hasScrolled == _hasScrolled) {
+      return;
+    }
+
+    setState(() {
+      _hasScrolled = hasScrolled;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,23 +59,53 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        centerTitle: true,
+        backgroundColor: _hasScrolled
+            ? colorScheme.surfaceVariant.withOpacity(isDark ? 0.18 : 0.9)
+            : Theme.of(context).scaffoldBackgroundColor,
+        surfaceTintColor: Colors.transparent,
+        title: const Text('Health Support'),
+        actions: [
+          IconButton(
+            onPressed: _openNotifications,
+            icon: const Icon(Icons.notifications_none),
+            tooltip: 'Notifications',
+          ),
+        ],
+      ),
       body: SafeArea(
+        top: false,
         bottom: false,
-        child: Column(
-          children: [
-            _buildOriginalHeader(colorScheme),
-            const SizedBox(height: 4),
-            _buildSlantedHero(isDark, colorScheme, isCompactHeight),
-            const SizedBox(height: 12),
-            Expanded(
-              child: _buildNavGrid(
-                navCards,
-                isDark,
-                colorScheme,
-                isCompactHeight,
+        child: CustomScrollView(
+          controller: _scrollController,
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: _buildSlantedHero(isDark, colorScheme, isCompactHeight),
               ),
             ),
-            const SizedBox(height: 2),
+            SliverPadding(
+              padding: EdgeInsets.fromLTRB(12, 12, 12, isCompactHeight ? 20 : 28),
+              sliver: SliverGrid(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  childAspectRatio: isCompactHeight ? 0.92 : 0.96,
+                ),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  return _buildNavCard(
+                    navCards[index],
+                    isDark,
+                    index,
+                    colorScheme,
+                  );
+                }, childCount: navCards.length),
+              ),
+            ),
           ],
         ),
       ),
@@ -61,14 +117,10 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildOriginalHeader(ColorScheme colorScheme) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          Expanded(child: TopHeader(onBellTap: () {}, showThemeToggle: false)),
-        ],
-      ),
+  void _openNotifications() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const NotificationCenterPage()),
     );
   }
 
@@ -119,7 +171,7 @@ class _HomePageState extends State<HomePage> {
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
               child: HeroBanner(
-                title: "Empower Your Health, Break Stigma",
+                title: "Choose Your Health Support",
                 subtitle: "",
                 age: widget.age,
               ),
@@ -180,38 +232,21 @@ class _HomePageState extends State<HomePage> {
       ),
       _HomeNavCardData(
         title: 'Get Peer Mentor',
-        image: 'assets/images/menter.png',
+        image: 'assets/images/getmentor.png',
         icon: Icons.people_alt_outlined,
         onTap: (context) {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const MentorPage()),
+            MaterialPageRoute(
+              builder: (_) => MentorPage(
+                age: widget.age,
+                userName: widget.userName,
+              ),
+            ),
           );
         },
       ),
     ];
-  }
-
-  Widget _buildNavGrid(
-    List<_HomeNavCardData> cards,
-    bool isDark,
-    ColorScheme colorScheme,
-    bool isCompactHeight,
-  ) {
-    return GridView.builder(
-      padding: EdgeInsets.fromLTRB(12, 0, 12, isCompactHeight ? 20 : 28),
-      physics: const BouncingScrollPhysics(),
-      itemCount: cards.length,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
-        childAspectRatio: isCompactHeight ? 0.92 : 0.96,
-      ),
-      itemBuilder: (context, index) {
-        return _buildNavCard(cards[index], isDark, index, colorScheme);
-      },
-    );
   }
 
   Widget _buildNavCard(

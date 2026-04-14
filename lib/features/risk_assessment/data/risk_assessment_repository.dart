@@ -19,7 +19,7 @@ class RiskAssessmentRepository {
     return rawItems
         .whereType<Map<String, dynamic>>()
         .map(_mapQuestion)
-        .where((question) => question.title.trim().isNotEmpty)
+        .where((question) => question.active && question.title.trim().isNotEmpty)
         .toList(growable: false);
   }
 

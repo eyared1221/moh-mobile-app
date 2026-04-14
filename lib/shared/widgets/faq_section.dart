@@ -9,26 +9,46 @@ class FaqSection extends StatelessWidget {
 
     final items = [
       const _FaqItem(
-        question: "Do I need an account to use the app?",
+        question: "What can I do in this app?",
         answer:
-            "You can browse general health information and FAQs as a guest. "
-            "Create an account to access full content, personalized tools, and support services.",
+            "You can learn about HIV, STIs, hepatitis, sexual and reproductive health, GBV, and substance use. "
+            "You can also take a risk check, find nearby care, and connect with support.",
       ),
       const _FaqItem(
-        question: "What can guests see?",
+        question: "Can I use the app without signing in?",
         answer:
-            "Guest access is limited to basic health information and FAQs. "
-            "Interactive features such as risk assessment and community chat require an account.",
+            "Yes. As a guest, you can read general health information and FAQs. "
+            "Sign in to unlock the full experience, including risk assessment, reminders, and more support options.",
       ),
       const _FaqItem(
-        question: "Is my data private?",
+        question: "What is the risk assessment?",
         answer:
-            "Yes. We collect only what is needed to provide services, and your information is handled securely.",
+            "It is a short check-in that asks about situations that may affect your health. "
+            "It does not label you or replace a clinic visit, but it can guide you toward safer next steps.",
       ),
       const _FaqItem(
-        question: "How do I get full access?",
+        question: "How do I find help near me?",
         answer:
-            "Tap Create Account or Sign In to unlock personalized guidance, risk assessment, and support options.",
+            "Use the care or service section to view nearby clinics and health services. "
+            "If you allow location access, the app can show places that are closer to you.",
+      ),
+      const _FaqItem(
+        question: "Can I talk to someone for support?",
+        answer:
+            "Yes. The app can help you find peer mentors and support contacts. "
+            "If you need guidance, you can use those options to reach someone safe and helpful.",
+      ),
+      const _FaqItem(
+        question: "Will the app keep reminding me?",
+        answer:
+            "It can send reminders about things like learning updates or check-ins. "
+            "You can control those reminders in your notification settings.",
+      ),
+      const _FaqItem(
+        question: "Is my information private?",
+        answer:
+            "Your information should be handled carefully and used only for the support the app provides. "
+            "You should not need to share more than what is necessary to use its features.",
       ),
     ];
 

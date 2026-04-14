@@ -1,140 +1,125 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
-class SixCardsSection extends StatelessWidget {
+class SixCardsSection extends StatefulWidget {
   const SixCardsSection({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  State<SixCardsSection> createState() => _SixCardsSectionState();
+}
 
-    // Actual data list - do not leave this as [...]
-    final List<Map<String, String>> items = [
-      {
-        "title": "What is HIV?",
-        "desc": "HIV attacks the immune system, making it harder for the body to fight infections. Early testing and treatment help people live healthy lives.",
-        "image": "assets/images/Aidsbbb.png"
-      },
-      {
-        "title": "What are STDs?",
-        "desc": "STDs like chlamydia and syphilis spread through sexual contact. Using condoms and getting tested regularly helps prevent issues.",
-        "image": "assets/images/stdb.png"
-      },
-      {
-        "title": "What is GBV?",
-        "desc": "Gender-Based Violence includes physical, emotional, or sexual harm caused due to someone’s gender. Survivors need support and safety.",
-        "image": "assets/images/GBVB.png"
-      },
-      {
-        "title": "What is Hepatitis?",
-        "desc": "Hepatitis causes inflammation of the liver. Vaccines, hygiene, and safe practices prevent infection. Early detection improves outcomes.",
-        "image": "assets/images/HBTB.png"
-      },
-      {
-        "title": "What is SRH?",
-        "desc": "Sexual and Reproductive Health helps young people make informed choices about sex, contraception, and their bodies.",
-        "image": "assets/images/momb.png"
-      },
-      {
-        "title": "Drug Use & Effects",
-        "desc": "Drug use affects the brain, relationships, and future goals. Some drugs cause addiction. Early help prevents long-term harm.",
-        "image": "assets/images/smokingb.png"
-      },
-    ];
+class _SixCardsSectionState extends State<SixCardsSection> {
+  static const _images = [
+    'assets/images/slide-image1.png',
+    'assets/images/slide-image2.png',
+    'assets/images/slide-image3.png',
+    'assets/images/slide-image4.png',
+    'assets/images/slide-image5.png',
+    'assets/images/slide-image6.png',
+  ];
+
+  late final PageController _pageController;
+  Timer? _autoSlideTimer;
+  int _currentPage = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(viewportFraction: 0.9);
+    _startAutoSlide();
+  }
+
+  @override
+  void dispose() {
+    _stopAutoSlide();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _startAutoSlide() {
+    _stopAutoSlide();
+    _autoSlideTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (!mounted || !_pageController.hasClients) {
+        return;
+      }
+
+      _currentPage = (_currentPage + 1) % _images.length;
+      _pageController.animateToPage(
+        _currentPage,
+        duration: const Duration(milliseconds: 450),
+        curve: Curves.easeInOut,
+      );
+    });
+  }
+
+  void _stopAutoSlide() {
+    _autoSlideTimer?.cancel();
+    _autoSlideTimer = null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
 
     return SizedBox(
-      height: 300,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: items.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 18),
-        itemBuilder: (context, index) {
-          final item = items[index];
-
-          return Container(
-            width: 280,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(isDark ? 0.4 : 0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                )
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(18),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  // BACKGROUND IMAGE
-                  Image.asset(
-                    item["image"]!,
-                    fit: BoxFit.cover,
-                  ),
-
-                  // DARK OVERLAY FOR READABILITY
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withOpacity(0.5),
-                        ],
+      height: 362,
+      child: Column(
+        children: [
+          Expanded(
+            child: Listener(
+              onPointerDown: (_) => _stopAutoSlide(),
+              onPointerUp: (_) => _startAutoSlide(),
+              onPointerCancel: (_) => _startAutoSlide(),
+              child: PageView.builder(
+                controller: _pageController,
+                itemCount: _images.length,
+                onPageChanged: (index) {
+                  setState(() {
+                    _currentPage = index;
+                  });
+                },
+                itemBuilder: (context, index) {
+                  return Padding(
+                    padding: EdgeInsets.only(
+                      left: index == 0 ? 18 : 8,
+                      right: index == _images.length - 1 ? 18 : 8,
+                      top: 10,
+                      bottom: 8,
+                    ),
+                    child: AspectRatio(
+                      aspectRatio: 1,
+                      child: Image.asset(
+                        _images[index],
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                       ),
                     ),
-                  ),
-
-                  // FLOATING BOX
-                  Positioned(
-                    left: 12,
-                    right: 12,
-                    bottom: 12,
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        // THE DARK MODE FIX:
-                        color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                        border: isDark ? Border.all(color: Colors.white10) : null,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            item["title"]!,
-                            style: TextStyle(
-                              color: isDark ? Colors.white : Colors.black,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w900,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            item["desc"]!,
-                            style: TextStyle(
-                              color: isDark ? Colors.white70 : Colors.grey[850],
-                              fontSize: 12.5,
-                              height: 1.40,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+                  );
+                },
               ),
             ),
-          );
-        },
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(
+              _images.length,
+              (index) => AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                width: 8,
+                height: 8,
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: index == _currentPage
+                      ? colorScheme.primary
+                      : colorScheme.primary.withOpacity(0.24),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

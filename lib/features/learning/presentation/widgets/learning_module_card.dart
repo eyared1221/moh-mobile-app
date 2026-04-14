@@ -4,19 +4,19 @@ import 'learning_image.dart';
 
 class LearningModuleCard extends StatelessWidget {
   final LearningModule module;
+  final int moduleNumber;
   final VoidCallback onMoreTap;
 
   const LearningModuleCard({
     super.key,
     required this.module,
+    required this.moduleNumber,
     required this.onMoreTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isTopImage = module.displayOrder > 0
-        ? module.displayOrder.isOdd
-        : module.imagePosition == ModuleImagePosition.top;
+    final isTopImage = moduleNumber.isEven;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;

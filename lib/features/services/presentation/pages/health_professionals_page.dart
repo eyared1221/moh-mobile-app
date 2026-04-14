@@ -149,7 +149,7 @@ class HealthProfessionalsPage extends StatelessWidget {
       ),
       bottomNavigationBar: AppBottomNav(
         age: age,
-        currentIndex: 1,
+        currentIndex: 3,
       ),
     );
   }

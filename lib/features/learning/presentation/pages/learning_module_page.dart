@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../shared/widgets/app_bottom_nav.dart';
+import '../../../notifications/presentation/pages/notification_center_page.dart';
 import '../../data/learning_service.dart';
 import '../../models/learning_module.dart';
 import '../widgets/learning_module_card.dart';
@@ -78,15 +79,28 @@ class _LearningModulesPageState extends State<LearningModulesPage> {
     }
   }
 
+  void _openNotifications() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const NotificationCenterPage()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
-          elevation: 0,
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          title: _buildAppBarTitle(context),
+          centerTitle: true,
+          title: const Text('Learning Modules'),
+          actions: [
+            IconButton(
+              onPressed: _openNotifications,
+              icon: const Icon(Icons.notifications_none),
+              tooltip: 'Notifications',
+            ),
+          ],
         ),
         body: const Center(
           child: CircularProgressIndicator(),
@@ -103,9 +117,15 @@ class _LearningModulesPageState extends State<LearningModulesPage> {
       return Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
-          elevation: 0,
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          title: _buildAppBarTitle(context),
+          centerTitle: true,
+          title: const Text('Learning Modules'),
+          actions: [
+            IconButton(
+              onPressed: _openNotifications,
+              icon: const Icon(Icons.notifications_none),
+              tooltip: 'Notifications',
+            ),
+          ],
         ),
         body: Center(
           child: Padding(
@@ -145,9 +165,15 @@ class _LearningModulesPageState extends State<LearningModulesPage> {
       return Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
-          elevation: 0,
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          title: _buildAppBarTitle(context),
+          centerTitle: true,
+          title: const Text('Learning Modules'),
+          actions: [
+            IconButton(
+              onPressed: _openNotifications,
+              icon: const Icon(Icons.notifications_none),
+              tooltip: 'Notifications',
+            ),
+          ],
         ),
         body: Center(
           child: Padding(
@@ -185,9 +211,15 @@ class _LearningModulesPageState extends State<LearningModulesPage> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        title: _buildAppBarTitle(context),
+        centerTitle: true,
+        title: const Text('Learning Modules'),
+        actions: [
+          IconButton(
+            onPressed: _openNotifications,
+            icon: const Icon(Icons.notifications_none),
+            tooltip: 'Notifications',
+          ),
+        ],
       ),
       body: SafeArea(
         child: Column(
@@ -205,6 +237,7 @@ class _LearningModulesPageState extends State<LearningModulesPage> {
                     padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                     child: LearningModuleCard(
                       module: module,
+                      moduleNumber: index + 1,
                       onMoreTap: () {
                         Navigator.push(
                           context,
@@ -281,58 +314,6 @@ class _LearningModulesPageState extends State<LearningModulesPage> {
       ),
     );
   }
-}
-
-Widget _buildAppBarTitle(BuildContext context) {
-  final colorScheme = Theme.of(context).colorScheme;
-  final textTheme = Theme.of(context).textTheme;
-  
-  return Row(
-    children: [
-      ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Image.asset(
-          'assets/images/logo.png',
-          width: 42,
-          height: 42,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceVariant,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.health_and_safety_outlined,
-              color: colorScheme.primary,
-            ),
-          ),
-        ),
-      ),
-      const SizedBox(width: 10),
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'MINISTRY OF HEALTH',
-            style: textTheme.titleSmall?.copyWith(
-              fontSize: 14,
-              fontWeight: FontWeight.w800,
-              color: colorScheme.onSurface,
-            ),
-          ),
-          Text(
-            'Ethiopia',
-            style: textTheme.bodySmall?.copyWith(
-              fontSize: 12,
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
-    ],
-  );
 }
 
 class _NavCircleButton extends StatelessWidget {

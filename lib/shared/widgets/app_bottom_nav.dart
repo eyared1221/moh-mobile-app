@@ -18,21 +18,10 @@ class AppBottomNav extends StatelessWidget {
 
   String get _resolvedAgeRange => ageRange ?? age ?? '10-14';
 
-  int get _mappedIndex {
-    switch (currentIndex) {
-      case 1:
-        return 3;
-      case 3:
-        return 4;
-      default:
-        return currentIndex;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return GuestBottomNav(
-      currentIndex: _mappedIndex,
+      currentIndex: currentIndex,
       ageRange: _resolvedAgeRange,
       userName: userName,
       isLoggedIn: true,

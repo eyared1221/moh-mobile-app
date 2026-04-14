@@ -2,10 +2,19 @@ import 'package:flutter/material.dart';
 
 import '../../data/mentor_repository.dart';
 import '../../models/mentor.dart';
+import '../../../../shared/widgets/app_bottom_nav.dart';
+import '../../../notifications/presentation/pages/notification_center_page.dart';
 import '../widgets/mentor_card.dart';
 
 class MentorPage extends StatefulWidget {
-  const MentorPage({super.key});
+  final String? age;
+  final String? userName;
+
+  const MentorPage({
+    super.key,
+    this.age,
+    this.userName,
+  });
 
   @override
   State<MentorPage> createState() => _MentorPageState();
@@ -38,25 +47,15 @@ class _MentorPageState extends State<MentorPage> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          color: colorScheme.primary,
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          'Mentor Contact',
-          style:
-              textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-                color: colorScheme.primary,
-              ) ??
-              TextStyle(
-                fontWeight: FontWeight.w800,
-                color: colorScheme.primary,
-              ),
-        ),
+        centerTitle: true,
+        title: const Text('Peer Mentors'),
+        actions: [
+          IconButton(
+            onPressed: _openNotifications,
+            icon: const Icon(Icons.notifications_none),
+            tooltip: 'Notifications',
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
@@ -134,6 +133,11 @@ class _MentorPageState extends State<MentorPage> {
             );
           },
         ),
+      ),
+      bottomNavigationBar: AppBottomNav(
+        age: widget.age,
+        currentIndex: 2,
+        userName: widget.userName,
       ),
     );
   }
@@ -250,5 +254,12 @@ class _MentorPageState extends State<MentorPage> {
       final phone = mentor.phone.toLowerCase();
       return name.contains(normalized) || phone.contains(normalized);
     }).toList();
+  }
+
+  void _openNotifications() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const NotificationCenterPage()),
+    );
   }
 }

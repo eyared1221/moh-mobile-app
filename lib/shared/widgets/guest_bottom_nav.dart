@@ -56,7 +56,14 @@ class _GuestBottomNavState extends State<GuestBottomNav> {
     if (index == widget.currentIndex) return;
 
     if (index == 2) {
-      _navigateTo('/');
+      if (_isLoggedIn) {
+        _navigateTo(
+          '/mentor',
+          arguments: {'ageRange': _ageRange, 'userName': _userName},
+        );
+      } else {
+        _showSignInPrompt(context);
+      }
       return;
     }
 
@@ -81,7 +88,7 @@ class _GuestBottomNavState extends State<GuestBottomNav> {
       case 3:
         _navigateTo(
           '/clinic',
-          arguments: {'ageRange': _ageRange},
+          arguments: {'ageRange': _ageRange, 'userName': _userName},
         );
         break;
       case 4:
@@ -151,7 +158,7 @@ class _GuestBottomNavState extends State<GuestBottomNav> {
                     Navigator.pop(sheetContext);
                     Navigator.pushNamed(context, '/signin');
                   },
-                  child: const Text("SIGN IN", style: TextStyle(fontWeight: FontWeight.bold)),
+                  child: const Text("Sign In", style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
               ),
             ],
@@ -196,10 +203,11 @@ class _GuestBottomNavState extends State<GuestBottomNav> {
               onTap: () => _handleTap(1),
             ),
             _GuestCenterItem(
-              label: "Guest",
+              label: "Mentor",
               active: widget.currentIndex == 2,
               onTap: () => _handleTap(2),
               color: primaryBlue,
+              icon: Icons.people_alt_rounded,
             ),
             _GuestNavItem(
               icon: Icons.location_on_rounded,
@@ -247,14 +255,6 @@ class _GuestNavItem extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: active ? primaryBlue.withOpacity(isDark ? 0.18 : 0.12) : Colors.transparent,
-          border: Border.all(
-            color: active ? primaryBlue : Colors.transparent,
-            width: 1.2,
-          ),
-          borderRadius: BorderRadius.circular(16),
-        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -280,12 +280,14 @@ class _GuestCenterItem extends StatelessWidget {
   final bool active;
   final VoidCallback onTap;
   final Color color;
+  final IconData icon;
 
   const _GuestCenterItem({
     required this.label,
     required this.active,
     required this.onTap,
     required this.color,
+    required this.icon,
   });
 
   @override
@@ -313,7 +315,7 @@ class _GuestCenterItem extends StatelessWidget {
                   ),
                 ],
               ),
-              child: const Icon(Icons.public_rounded, color: Colors.white, size: 26),
+              child: Icon(icon, color: Colors.white, size: 26),
             ),
             const SizedBox(height: 4),
             Text(

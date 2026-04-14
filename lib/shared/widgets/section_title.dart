@@ -7,16 +7,38 @@ class SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 22,
-          fontWeight: FontWeight.bold,
-          color: Theme.of(context).textTheme.titleLarge?.color,
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Row(
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(
+            color: colorScheme.primary,
+            shape: BoxShape.circle,
+          ),
         ),
-      ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            title,
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w900,
+              color: Theme.of(context).textTheme.titleLarge?.color,
+            ),
+          ),
+        ),
+        Container(
+          width: 40,
+          height: 4,
+          decoration: BoxDecoration(
+            color: colorScheme.primary.withOpacity(0.18),
+            borderRadius: BorderRadius.circular(99),
+          ),
+        ),
+      ],
     );
   }
 }

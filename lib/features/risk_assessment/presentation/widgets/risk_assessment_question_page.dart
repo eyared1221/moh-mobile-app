@@ -141,7 +141,7 @@ class RiskAssessmentQuestionPage extends StatelessWidget {
         Align(
           alignment: Alignment.centerRight,
           child: Text(
-            '$currentQuestion/$totalQuestions',
+            'Question $currentQuestion of $totalQuestions',
             style: textTheme.bodySmall?.copyWith(
                   color: colorScheme.primary,
                   fontWeight: FontWeight.w800,

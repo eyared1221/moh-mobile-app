@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/constants.dart';
 
 class MinistrySection extends StatelessWidget {
   const MinistrySection({super.key});
@@ -6,17 +7,15 @@ class MinistrySection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    const primaryBlue = Color(0xFF005C8F);
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 18),
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
         // Deep Slate for Dark Mode, very light blue for Light Mode
-        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF4FAFF),
+        color: isDark ? const Color(0xFF1E293B) : kPrimarySoft,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: isDark ? Colors.white10 : primaryBlue.withOpacity(0.1),
+          color: isDark ? Colors.white10 : kPrimaryStroke,
           width: 1.5,
         ),
       ),
@@ -32,7 +31,7 @@ class MinistrySection extends StatelessWidget {
           Text(
             "ሚኒስቴሪ - ጤና",
             style: TextStyle(
-              color: isDark ? Colors.white : const Color(0xFF003D6E),
+              color: isDark ? Colors.white : const Color(0xFF10304B),
               fontSize: 20,
               fontWeight: FontWeight.w900,
               letterSpacing: 1.2,
@@ -45,7 +44,7 @@ class MinistrySection extends StatelessWidget {
             "Official Service of the Ministry of Health",
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: isDark ? const Color(0xFF47A6DC) : const Color(0xFF005C8F),
+              color: isDark ? const Color(0xFF47A6DC) : kPrimary,
               fontSize: 17,
               fontWeight: FontWeight.w800,
             ),

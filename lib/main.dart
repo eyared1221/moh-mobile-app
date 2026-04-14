@@ -4,9 +4,11 @@ import 'features/auth/presentation/signup_screen.dart';
 import 'features/auth/presentation/signin_screen.dart';
 import 'features/home/presentation/pages/home_page.dart';
 import 'features/learning/presentation/pages/learning_module_page.dart';
-import 'features/profile/presentation/profile_page.dart';
+import 'features/mentor/presentation/pages/mentor_page.dart';
+import 'features/profile/presentation/pages/profile_page.dart';
 import 'features/risk_assessment/presentation/pages/risk_assessment_page.dart';
 import 'features/services/presentation/pages/clinic_page.dart';
+import 'core/constants.dart';
 import 'core/theme/theme_notifier.dart';
 
 void main() async {
@@ -25,22 +27,38 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
-    const primaryColor = Color(0xFF005C8F);
-
     final light = ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      primaryColor: primaryColor,
+      primaryColor: kPrimary,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: primaryColor,
+        seedColor: kPrimary,
         brightness: Brightness.light,
-        primary: primaryColor,
+        primary: kPrimary,
       ),
-      scaffoldBackgroundColor: Colors.white,
+      scaffoldBackgroundColor: kBg,
       cardColor: Colors.white,
+      appBarTheme: const AppBarTheme(
+        backgroundColor: kBg,
+        foregroundColor: kPrimary,
+        surfaceTintColor: Colors.transparent,
+        shadowColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: false,
+        titleTextStyle: TextStyle(
+          color: kPrimary,
+          fontSize: 18,
+          fontWeight: FontWeight.w500,
+        ),
+        iconTheme: IconThemeData(
+          color: kPrimary,
+          size: 24,
+        ),
+      ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: primaryColor,
+          backgroundColor: kPrimary,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
@@ -49,24 +67,42 @@ class _MyAppState extends State<MyApp> {
       ),
       textTheme: ThemeData.light().textTheme.apply(
         bodyColor: Colors.black87,
-        displayColor: primaryColor,
+        displayColor: kPrimary,
       ),
     );
 
     final dark = ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      primaryColor: primaryColor,
+      primaryColor: kPrimary,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: primaryColor,
+        seedColor: kPrimary,
         brightness: Brightness.dark,
-        primary: primaryColor,
+        primary: kPrimary,
       ),
       scaffoldBackgroundColor: const Color(0xFF0B1220),
       cardColor: const Color(0xFF161D2C),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Color(0xFF0B1220),
+        foregroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        shadowColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: false,
+        titleTextStyle: TextStyle(
+          color: Colors.white,
+          fontSize: 18,
+          fontWeight: FontWeight.w500,
+        ),
+        iconTheme: IconThemeData(
+          color: Colors.white,
+          size: 24,
+        ),
+      ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: primaryColor,
+          backgroundColor: kPrimary,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
@@ -109,9 +145,16 @@ class _MyAppState extends State<MyApp> {
                 return MaterialPageRoute(
                   builder: (_) => ClinicPage(age: ageRange, userName: userName),
                 );
+              case '/mentor':
+                return MaterialPageRoute(
+                  builder: (_) => MentorPage(
+                    age: ageRange,
+                    userName: userName,
+                  ),
+                );
               case '/profile':
                 return MaterialPageRoute(
-                  builder: (_) => ProfilePage(ageRange: ageRange, userName: userName),
+                  builder: (_) => ProfilePage(age: ageRange, userName: userName),
                 );
               case '/learning':
                 return MaterialPageRoute(

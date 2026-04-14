@@ -1,0 +1,241 @@
+Software Requirements Specification (SRS)
+Mobile Application Support 
+for High-Risk Adolescent Girls and Young Women
+Version: 1.0
+Date: [Feb-2 -2026]
+Acknowledgement of Institutional Roles and Contributions 
+Th
+e following system requirement specification shall be developed with the agreement to conduct the following system features.
+3.
+System Features
+3.1 Admin Management 
+3.1.1 Description and Priority
+This feature allows administrators to manage the application, including app user accounts, health service providers
+and peer mentors
+ Information
+. 
+3.1.2 Functional Requirements
+REQ-001-
+1
+:
+ The system SHALL allow administrators to activate user accounts.
+REQ-001-
+2
+:
+ The system SHALL allow administrators to deactivate user accounts.
+REQ-001-
+3
+:
+ The system SHALL allow administrators to create, read, update, and delete (CRUD) health service provider information
+ and educational content
+.
+REQ-001-
+4
+:
+ The system SHALL allow administrators to create, read, update, and delete (CRUD) peer mentor information linked to service providers.
+3.2 User Risk Assessment
+3.2.1 Description and Priority
+This feature allows users to assess their HIV risk level based on exposure and other relevant risk factors. Before taking the assessment, users will receive brief awareness information. After completing the assessment, the system will display the result along with feedback (e.g., 
+High Risk
+, 
+Low Risk with Caution
+) and recommended action steps.
+Users will have the option to navigate to nearby 
+health facilities
+ through a “Get Service” button or connect with 
+peer mentors
+ for 
+counseling
+ support through a “Get Mentors” button.
+3.2.2 Functional Requirements
+REQ-002-1:
+ The system SHALL allow the user to enter all 
+the 
+requested information required for the risk assessment.
+REQ-002-2:
+ The system SHALL 
+analyze
+ the entered information using the defined risk assessment 
+rule
+.
+REQ-002-3:
+ The system SHALL display the assessment result along with feedback and recommended actions based on the risk level.
+REQ-002-4:
+ The system SHALL provide a “Get Service” button for users to navigate to nearby healthcare facilities.
+REQ-002-5:
+ The system SHALL allow users to navigate to peer mentors for 
+counselling
+ support.
+REQ-002-6:
+ The system SHALL only categorize results as 
+High Risk
+ or 
+Low Risk with Caution
+, with appropriate guidance for each.
+3.3 Guest Page Information
+3.3.1 Description and Priority
+This feature allows guest users to access a limited set of the application’s content without creating an account. Guests can view general health information and FAQs
+,
+ but cannot access full content, interactive features, or peer mentor navigation. The page encourages registration for full access.
+3.3.2 Functional Requirements
+REQ-003-1:
+ The system SHALL provide general health information accessible to guest users without an account.
+REQ-003-2:
+ The system SHALL restrict guest access to basic content.
+REQ-003-3:
+ The system SHALL display FAQs 
+above
+ the footer on the guest page.
+3.4 Health Information Access (Learning Module)
+3.4.1 Description and Priority
+This feature delivers tailored health content for users aged 15–24. It provides 
+health 
+information
+ on
+ HIV, sexually transmitted 
+infections 
+(ST
+I
+s), hepatitis, sexual and reproductive health, gender-based violence (GBV), and substance use.
+3.4.2 Functional Requirements
+REQ-004-1:
+ The system SHALL display health information organized into six modules: HIV, ST
+I
+s, hepatitis, sexual and reproductive health, GBV, and substance use.
+REQ-004-2:
+ The system SHALL ensure graphical representation is consistent across all modules.
+REQ-004-3:
+ Upon login, the system SHALL display four main cards for navigation:
+Risk Assessment
+Learning Module
+Get Health Service
+Get Peer Mentor 
+3.5 Healthcare Provider and Peer Mentor Information
+3.5.1 Description and Priority
+This feature helps users locate nearby healthcare providers and services, making it easier to access relevant care options. It supports navigation to facilities and peer mentors following risk assessment results.
+3.5.2 Functional Requirements
+REQ-005-1:
+The system SHALL display provider details, including name, service, contact information, and address.
+REQ-005-
+2
+:
+The system SHALL provide users with the nearby health facilities based on the user’s location.
+REQ-005-
+3
+:
+ Following risk assessment, the system SHALL provide options to connect with a 
+counsellor
+ or peer mentor:
+Option 1:
+“Get Peer Mentor” → show list of mentors → provide direct contact (Name & phone only).
+Option 2:
+“Get Service” → allow location access → recommend nearby 
+facilities (
+health centre)
+3.6 Notifications and Reminders
+3.6.1 Description and Priority
+This feature ensures users
+ receive a welcome message after login and a reminder alert 
+based on 
+their 
+last 
+login
+. 
+3.6.2 Functional Requirements
+REQ-006-1:
+ The system SHALL send notifications for 
+welcome message after login and a reminder alert based on their last login. 
+REQ-006-2:
+ The system SHALL allow users to 
+accept/reject 
+notification preferences, including the option to turn off reminders or updates.
+3.
+7
+ User Account Management
+3.
+7
+.1 Description and Priority
+This feature allows users to create personalized accounts.
+3.
+7
+.2 Functional Requirements
+REQ-00
+7
+-1:
+ The system SHALL allow users to sign up with an email or phone number, username, password, and Age.
+REQ-00
+7
+-2:
+ The system SHALL allow users to edit their profile information as needed.
+REQ-00
+7
+-3:
+ The system SHALL optionally collect phone numbers or email to verify the account using OTP or email verification.
+REQ-007-
+4
+:
+ The system SHALL 
+provide Forget password functionality
+.
+The Ministry of Health and Addis Ababa Science and Technology University (AASTU) hereby confirm that the requirements outlined in this Software Requirements Specification (SRS) document are accurate, complete, and agreed upon for the development of the Mobile Application designed to benefit High-Risk Adolescent Girls and Young Women (HRAGYW).
+Both parties formally declare their acceptance of this SRS document under the stated terms and conditions and sign two (2) original copies of the same on February 20, 2026. 
+By 
+MoH:_
+___________________________________
+Name: ____________________________________
+Position: _______________________________
+Date: February 20, 2026 
+By the 
+AASTU:_
+____________________________________
+Name: __________________________________
+Position: ________________________________
+Date: February 20, 2026
+List of participants 
+S.No.
+Name 
+Institution 
+1
+Tefera 
+Feysssa
+MoH
+2
+Minilik
+Seoum
+MoH
+3
+Dr.
+ Awoke 
+Andualem
+MoH
+4
+Biniam
+ Bayu
+AHF
+5
+Tolessa
+Ollana
+AHF
+6
+Teklu
+ Kuma
+OSSHD
+7
+Beruck
+ Baye
+MoH
+8
+Tezera
+Tadele
+MoH
+9
+Eyerusalem
+Yared
+10
+Dr.
+ Lemlem Kassa
+AASTU
+11
+Dr.
+ Aster Teshome
+CAGH

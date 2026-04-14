@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../shared/widgets/app_bottom_nav.dart';
+import '../../../notifications/presentation/pages/notification_center_page.dart';
 import '../../../mentor/presentation/pages/mentor_page.dart';
 import '../../data/risk_assessment_repository.dart';
 import '../../models/risk_question.dart';
@@ -91,7 +92,14 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
         ),
         actions: [
           IconButton(
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const NotificationCenterPage(),
+                ),
+              );
+            },
             icon: const Icon(Icons.notifications_none),
             color: colorScheme.primary,
             tooltip: 'Notifications',
@@ -225,7 +233,7 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
     if (_stage == _RiskStage.intro) {
       return AppBottomNav(
         age: widget.age ?? '',
-        currentIndex: 2,
+        currentIndex: -1,
         userName: widget.userName,
       );
     }
@@ -240,7 +248,7 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
         ),
         AppBottomNav(
           age: widget.age ?? '',
-          currentIndex: 2,
+          currentIndex: -1,
           userName: widget.userName,
         ),
       ],
@@ -279,20 +287,6 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
           children: [
             Expanded(
               child: ElevatedButton.icon(
-                onPressed: _openHealthService,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: colorScheme.primary,
-                  foregroundColor: colorScheme.onPrimary,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                ),
-                icon: const Icon(Icons.local_hospital_outlined),
-                label: const Text('Get Service'),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: ElevatedButton.icon(
                 onPressed: _openPeerMentor,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: colorScheme.primary,
@@ -302,6 +296,20 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
                 ),
                 icon: const Icon(Icons.people_alt_outlined),
                 label: const Text('Talk to Mentor'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: _openHealthService,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colorScheme.primary,
+                  foregroundColor: colorScheme.onPrimary,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+                icon: const Icon(Icons.local_hospital_outlined),
+                label: const Text('Get Service'),
               ),
             ),
           ],
@@ -412,7 +420,12 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
   void _openPeerMentor() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const MentorPage()),
+      MaterialPageRoute(
+        builder: (_) => MentorPage(
+          age: widget.age,
+          userName: widget.userName,
+        ),
+      ),
     );
   }
 

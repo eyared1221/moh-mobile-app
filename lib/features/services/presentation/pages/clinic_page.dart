@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:yegna_health/shared/widgets/app_bottom_nav.dart';
 
+import '../../../notifications/presentation/pages/notification_center_page.dart';
 import '../../data/clinic_repository.dart';
 import '../../models/clinic.dart';
 import '../pages/clinic_detail_page.dart';
@@ -250,20 +251,15 @@ class _ClinicPageState extends State<ClinicPage> {
     final clinicsToShow = _showNearby ? nearbyClinics : _filteredClinics();
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Clinics'),
-        backgroundColor: colorScheme.surface,
-        foregroundColor: colorScheme.onSurface,
-        elevation: 0,
+        centerTitle: true,
+        title: const Text('Health Services'),
         actions: [
           IconButton(
-            onPressed: () {
-              _loadClinics();
-              _resolveUserLocation();
-            },
-            icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Refresh',
+            onPressed: _openNotifications,
+            icon: const Icon(Icons.notifications_none),
+            tooltip: 'Notifications',
           ),
         ],
       ),
@@ -274,26 +270,40 @@ class _ClinicPageState extends State<ClinicPage> {
             child: TextField(
               controller: _searchCtrl,
               onChanged: (value) => setState(() => _searchQuery = value),
-              style: TextStyle(color: colorScheme.onSurface),
-              cursorColor: colorScheme.primary,
+              style:
+                  theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                  ) ??
+                  TextStyle(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                  ),
               decoration: InputDecoration(
-                hintText: 'Search clinic, address, or service',
-                prefixIcon: const Icon(Icons.search_rounded),
+                hintText: 'Search clinics',
+                hintStyle:
+                    theme.textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ) ??
+                    TextStyle(color: colorScheme.onSurfaceVariant),
+                prefixIcon: Icon(Icons.search, color: colorScheme.onSurfaceVariant),
                 filled: true,
-                fillColor: isDark ? colorScheme.surfaceVariant : Colors.white,
-                hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                fillColor: colorScheme.surfaceVariant.withOpacity(0.4),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide(color: colorScheme.outlineVariant),
+                  borderSide: BorderSide.none,
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                  borderSide: BorderSide(color: colorScheme.primary, width: 1.2),
                 ),
               ),
             ),
@@ -456,6 +466,13 @@ class _ClinicPageState extends State<ClinicPage> {
           },
         );
       },
+    );
+  }
+
+  void _openNotifications() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const NotificationCenterPage()),
     );
   }
 }
