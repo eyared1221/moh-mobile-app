@@ -6,12 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart' hide LatLng;
 import 'package:webview_flutter/webview_flutter.dart' if (dart.library.html) 'navigation_web_stub.dart';
 
 import '../../models/clinic.dart';
-import '../widgets/google_map_iframe.dart';
-import '../widgets/navigation_bottom_sheet.dart';
 
 class ClinicDetailPage extends StatefulWidget {
   final Clinic clinic;
@@ -261,17 +259,6 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final fallbackEmbedUrl = _buildGoogleMapsEmbedUrl(
-      latitude: widget.latitude,
-      longitude: widget.longitude,
-    );
-    final effectiveMapViewType =
-        _mapViewType.isEmpty
-            ? _buildMapViewType(widget.latitude, widget.longitude, 'fallback')
-            : _mapViewType;
-    final effectiveEmbedUrl = _defaultMapEmbedUrl.isEmpty
-        ? fallbackEmbedUrl
-        : _defaultMapEmbedUrl;
 
     return Container(
       decoration: BoxDecoration(
@@ -348,18 +335,8 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
                     myLocationButtonEnabled: false,
                     zoomControlsEnabled: false,
                     mapToolbarEnabled: false,
-                      ? Container(
-                          color: colorScheme.surfaceVariant,
-                          alignment: Alignment.center,
-                          child: Icon(
-                            Icons.map_outlined,
-                            size: 42,
-                            color: colorScheme.primary,
-                          ),
-                        )
-                      : WebViewWidget(controller: _webViewController!),
-                if (_isMapLoading && !_hasMapError)
-                  if (!kIsWeb)
+                  ),
+                if (_isMapLoading && !_hasMapError && !kIsWeb)
                   Container(
                     color: colorScheme.surface.withOpacity(0.75),
                     alignment: Alignment.center,
@@ -457,51 +434,6 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
     }
   }
 
-  Future<String> _buildNavigationUrl() async {
-    try {
-      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      var permission = await Geolocator.checkPermission();
-
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-
-      if (!serviceEnabled ||
-          permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
-        return _buildExternalDirectionsUrl(
-          destinationLat: widget.latitude,
-          destinationLon: widget.longitude,
-        );
-      }
-
-      final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.best,
-        timeLimit: const Duration(seconds: 10),
-      );
-      final betterPosition = await _getBetterPositionIfNeeded(position);
-
-      if (betterPosition.accuracy > _maxAcceptedAccuracyMeters) {
-        return _buildExternalDirectionsUrl(
-          destinationLat: widget.latitude,
-          destinationLon: widget.longitude,
-        );
-      }
-
-      return _buildExternalDirectionsUrl(
-        originLat: betterPosition.latitude,
-        originLon: betterPosition.longitude,
-        destinationLat: widget.latitude,
-        destinationLon: widget.longitude,
-      );
-    } catch (_) {
-      return _buildExternalDirectionsUrl(
-        destinationLat: widget.latitude,
-        destinationLon: widget.longitude,
-      );
-    }
-  }
-
   Future<Position?> _getCurrentUserPosition() async {
     try {
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -586,11 +518,6 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
     }
   }
 
-  String _buildDirectionsUrl(Position userPosition) {
-    // Show both points on Google Maps - user location and clinic
-    return 'https://maps.google.com/maps?q=${userPosition.latitude},${userPosition.longitude}+${widget.latitude},${widget.longitude}&z=11&output=embed&t=m';
-  }
-
   void _openExternalDirections(Position userPosition) {
     final externalUrl = 'https://www.google.com/maps/dir/?api=1&origin=${userPosition.latitude},${userPosition.longitude}&destination=${widget.latitude},${widget.longitude}&travelmode=driving';
     
@@ -622,13 +549,9 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
     });
   }
 
-  bool _isShowingRoute() {
-    // Check if route is currently displayed
-    return _isShowingRoute;
-  }
-
+  
   void _toggleMapView(BuildContext context) {
-    if (_isShowingRoute()) {
+    if (_isShowingRoute) {
       // Reset to show just the clinic location
       _resetMapToClinic();
     } else {
@@ -684,19 +607,6 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
         destinationLon: widget.longitude,
       );
     });
-  }
-
-  void _showNavigationBottomSheet(BuildContext context, Position userPosition) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => NavigationBottomSheet(
-        userPosition: userPosition,
-        clinicPosition: LatLng(widget.latitude, widget.longitude),
-        clinicName: widget.clinicName,
-      ),
-    );
   }
 
   Future<Position> _getBetterPositionIfNeeded(Position first) async {
