@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart' hide LatLng;
+import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
 import 'package:webview_flutter/webview_flutter.dart' if (dart.library.html) 'navigation_web_stub.dart';
 
 import '../../models/clinic.dart';
@@ -220,9 +220,9 @@ class _ClinicMapPreview extends StatefulWidget {
 }
 
 class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
-  GoogleMapController? _mapController;
-  Set<Marker> _markers = {};
-  Set<Polyline> _polylines = {};
+  gmaps.GoogleMapController? _mapController;
+  Set<gmaps.Marker> _markers = {};
+  Set<gmaps.Polyline> _polylines = {};
   String _openMapUrl = '';
   bool _isMapLoading = true;
   bool _hasMapError = false;
@@ -240,14 +240,14 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
   }
 
   void _initializeMarkers() {
-    final clinicMarker = Marker(
-      markerId: const MarkerId('clinic'),
-      position: LatLng(widget.latitude, widget.longitude),
-      infoWindow: InfoWindow(
+    final clinicMarker = gmaps.Marker(
+      markerId: const gmaps.MarkerId('clinic'),
+      position: gmaps.LatLng(widget.latitude, widget.longitude),
+      infoWindow: gmaps.InfoWindow(
         title: widget.clinicName,
         snippet: widget.altitude != null ? 'Altitude: ${widget.altitude}m' : null,
       ),
-      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+      icon: gmaps.BitmapDescriptor.defaultMarkerWithHue(gmaps.BitmapDescriptor.hueBlue),
     );
 
     setState(() {
@@ -302,8 +302,8 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
                 const SizedBox(width: 10),
                 OutlinedButton.icon(
                   onPressed: () => _toggleMapView(context),
-                  icon: Icon(_isShowingRoute() ? Icons.map_outlined : Icons.open_in_new_rounded, size: 16),
-                  label: Text(_isShowingRoute() ? 'Reset Map' : 'Open Map'),
+                  icon: Icon(_isShowingRoute ? Icons.map_outlined : Icons.open_in_new_rounded, size: 16),
+                  label: Text(_isShowingRoute ? 'Reset Map' : 'Open Map'),
                 ),
               ],
             ),
@@ -318,14 +318,14 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
                   HtmlElementView(viewType: _buildMapViewType(widget.latitude, widget.longitude, 'web'))
                 else
                   // Mobile - use GoogleMap widget
-                  GoogleMap(
-                    initialCameraPosition: CameraPosition(
-                      target: LatLng(widget.latitude, widget.longitude),
+                  gmaps.GoogleMap(
+                    initialCameraPosition: gmaps.CameraPosition(
+                      target: gmaps.LatLng(widget.latitude, widget.longitude),
                       zoom: 15,
                     ),
                     markers: _markers,
                     polylines: _polylines,
-                    onMapCreated: (GoogleMapController controller) {
+                    onMapCreated: (gmaps.GoogleMapController controller) {
                       _mapController = controller;
                       setState(() {
                         _isMapLoading = false;
@@ -464,30 +464,30 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
     print('Showing route on GoogleMap widget'); // Debug log
     
     // Add user location marker
-    final userMarker = Marker(
-      markerId: const MarkerId('user'),
-      position: LatLng(userPosition.latitude, userPosition.longitude),
-      infoWindow: const InfoWindow(title: 'Your Location'),
-      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+    final userMarker = gmaps.Marker(
+      markerId: const gmaps.MarkerId('user'),
+      position: gmaps.LatLng(userPosition.latitude, userPosition.longitude),
+      infoWindow: const gmaps.InfoWindow(title: 'Your Location'),
+      icon: gmaps.BitmapDescriptor.defaultMarkerWithHue(gmaps.BitmapDescriptor.hueGreen),
     );
 
     // Add clinic marker
-    final clinicMarker = Marker(
-      markerId: const MarkerId('clinic'),
-      position: LatLng(widget.latitude, widget.longitude),
-      infoWindow: InfoWindow(
+    final clinicMarker = gmaps.Marker(
+      markerId: const gmaps.MarkerId('clinic'),
+      position: gmaps.LatLng(widget.latitude, widget.longitude),
+      infoWindow: gmaps.InfoWindow(
         title: widget.clinicName,
         snippet: widget.altitude != null ? 'Altitude: ${widget.altitude}m' : null,
       ),
-      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+      icon: gmaps.BitmapDescriptor.defaultMarkerWithHue(gmaps.BitmapDescriptor.hueBlue),
     );
 
     // Create route polyline
-    final routePolyline = Polyline(
-      polylineId: const PolylineId('route'),
+    final routePolyline = gmaps.Polyline(
+      polylineId: const gmaps.PolylineId('route'),
       points: [
-        LatLng(userPosition.latitude, userPosition.longitude),
-        LatLng(widget.latitude, widget.longitude),
+        gmaps.LatLng(userPosition.latitude, userPosition.longitude),
+        gmaps.LatLng(widget.latitude, widget.longitude),
       ],
       color: Colors.blue,
       width: 4,
@@ -503,18 +503,18 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
 
     // Center map to show both points
     if (_mapController != null) {
-      final bounds = LatLngBounds(
-        southwest: LatLng(
+      final bounds = gmaps.LatLngBounds(
+        southwest: gmaps.LatLng(
           userPosition.latitude < widget.latitude ? userPosition.latitude : widget.latitude,
           userPosition.longitude < widget.longitude ? userPosition.longitude : widget.longitude,
         ),
-        northeast: LatLng(
+        northeast: gmaps.LatLng(
           userPosition.latitude > widget.latitude ? userPosition.latitude : widget.latitude,
           userPosition.longitude > widget.longitude ? userPosition.longitude : widget.longitude,
         ),
       );
       
-      _mapController!.animateCamera(CameraUpdate.newLatLngBounds(bounds, 100));
+      _mapController!.animateCamera(gmaps.CameraUpdate.newLatLngBounds(bounds, 100));
     }
   }
 
@@ -572,14 +572,14 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
 
   void _resetMapToClinic() {
     // Reset to show only clinic marker
-    final clinicMarker = Marker(
-      markerId: const MarkerId('clinic'),
-      position: LatLng(widget.latitude, widget.longitude),
-      infoWindow: InfoWindow(
+    final clinicMarker = gmaps.Marker(
+      markerId: const gmaps.MarkerId('clinic'),
+      position: gmaps.LatLng(widget.latitude, widget.longitude),
+      infoWindow: gmaps.InfoWindow(
         title: widget.clinicName,
         snippet: widget.altitude != null ? 'Altitude: ${widget.altitude}m' : null,
       ),
-      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+      icon: gmaps.BitmapDescriptor.defaultMarkerWithHue(gmaps.BitmapDescriptor.hueBlue),
     );
 
     setState(() {
@@ -592,9 +592,9 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
     // Center map on clinic
     if (_mapController != null) {
       _mapController!.animateCamera(
-        CameraUpdate.newCameraPosition(
-          CameraPosition(
-            target: LatLng(widget.latitude, widget.longitude),
+        gmaps.CameraUpdate.newCameraPosition(
+          gmaps.CameraPosition(
+            target: gmaps.LatLng(widget.latitude, widget.longitude),
             zoom: 15,
           ),
         ),
