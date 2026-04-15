@@ -6,7 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:webview_flutter/webview_flutter.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:webview_flutter/webview_flutter.dart' if (dart.library.html) 'navigation_web_stub.dart';
 
 import '../../models/clinic.dart';
 import '../widgets/google_map_iframe.dart';
@@ -221,62 +222,40 @@ class _ClinicMapPreview extends StatefulWidget {
 }
 
 class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
-  WebViewController? _webViewController;
-  String _defaultMapEmbedUrl = '';
-  String _mapViewType = 'clinic_map_initial';
+  GoogleMapController? _mapController;
+  Set<Marker> _markers = {};
+  Set<Polyline> _polylines = {};
   String _openMapUrl = '';
   bool _isMapLoading = true;
   bool _hasMapError = false;
   bool _isLoadingRoute = false;
+  bool _isShowingRoute = false;
   String? _routeNotice;
   static const double _maxAcceptedAccuracyMeters = 80;
 
   @override
   void initState() {
     super.initState();
-    _defaultMapEmbedUrl = _buildGoogleMapsEmbedUrl(
-      latitude: widget.latitude,
-      longitude: widget.longitude,
-    );
-    _mapViewType = _buildMapViewType(
-      widget.latitude,
-      widget.longitude,
-      'default',
-    );
     _openMapUrl =
         'https://www.google.com/maps/search/?api=1&query=${widget.latitude},${widget.longitude}';
+    _initializeMarkers();
+  }
 
-    if (!kIsWeb) {
-      _webViewController = WebViewController()
-        ..setJavaScriptMode(JavaScriptMode.unrestricted)
-        ..setBackgroundColor(const Color(0x00000000))
-        ..setNavigationDelegate(
-          NavigationDelegate(
-            onPageStarted: (_) {
-              if (!mounted) return;
-              setState(() {
-                _isMapLoading = true;
-                _hasMapError = false;
-              });
-            },
-            onPageFinished: (_) {
-              if (!mounted) return;
-              setState(() => _isMapLoading = false);
-            },
-            onWebResourceError: (error) {
-              if (error.isForMainFrame != true) return;
-              if (!mounted) return;
-              setState(() {
-                _isMapLoading = false;
-                _hasMapError = true;
-              });
-            },
-          ),
-        )
-        ..loadRequest(Uri.parse(_defaultMapEmbedUrl));
-    } else {
+  void _initializeMarkers() {
+    final clinicMarker = Marker(
+      markerId: const MarkerId('clinic'),
+      position: LatLng(widget.latitude, widget.longitude),
+      infoWindow: InfoWindow(
+        title: widget.clinicName,
+        snippet: widget.altitude != null ? 'Altitude: ${widget.altitude}m' : null,
+      ),
+      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+    );
+
+    setState(() {
+      _markers = {clinicMarker};
       _isMapLoading = false;
-    }
+    });
   }
 
   @override
@@ -347,36 +326,28 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                if (_hasMapError)
-                  Container(
-                    color: colorScheme.surfaceVariant,
-                    alignment: Alignment.center,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.map_outlined,
-                          size: 42,
-                          color: colorScheme.primary,
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          'Map unavailable for ${widget.clinicName}',
-                          style: TextStyle(
-                            color: colorScheme.onSurfaceVariant,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                else if (kIsWeb)
-                  buildGoogleMapIFrame(
-                    viewType: effectiveMapViewType,
-                    embedUrl: effectiveEmbedUrl,
-                  )
+                if (kIsWeb)
+                  // Web fallback - use iframe
+                  HtmlElementView(viewType: _buildMapViewType(widget.latitude, widget.longitude, 'web'))
                 else
-                  (_webViewController == null)
+                  // Mobile - use GoogleMap widget
+                  GoogleMap(
+                    initialCameraPosition: CameraPosition(
+                      target: LatLng(widget.latitude, widget.longitude),
+                      zoom: 15,
+                    ),
+                    markers: _markers,
+                    polylines: _polylines,
+                    onMapCreated: (GoogleMapController controller) {
+                      _mapController = controller;
+                      setState(() {
+                        _isMapLoading = false;
+                      });
+                    },
+                    myLocationEnabled: true,
+                    myLocationButtonEnabled: false,
+                    zoomControlsEnabled: false,
+                    mapToolbarEnabled: false,
                       ? Container(
                           color: colorScheme.surfaceVariant,
                           alignment: Alignment.center,
@@ -558,35 +529,61 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
   }
 
   void _showRouteOnMap(Position userPosition) {
-    // Build Google Maps URL with directions from user location to clinic
-    final directionsUrl = _buildDirectionsUrl(userPosition);
+    print('Showing route on GoogleMap widget'); // Debug log
     
-    print('Loading directions on clinic map: $directionsUrl'); // Debug log
-    
-    // Update the existing map to show directions
-    if (!kIsWeb && _webViewController != null) {
-      setState(() {
-        _isMapLoading = true;
-        _hasMapError = false;
-      });
-      
-      _webViewController!.loadRequest(Uri.parse(directionsUrl)).then((_) {
-        print('Directions loaded on clinic map'); // Debug log
-      }).catchError((error) {
-        print('Error loading directions on clinic map: $error'); // Debug log
-        if (mounted) {
-          setState(() {
-            _hasMapError = true;
-            _isMapLoading = false;
-            _routeNotice = 'Unable to load routes on map';
-          });
-        }
-      });
-    }
-    
+    // Add user location marker
+    final userMarker = Marker(
+      markerId: const MarkerId('user'),
+      position: LatLng(userPosition.latitude, userPosition.longitude),
+      infoWindow: const InfoWindow(title: 'Your Location'),
+      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+    );
+
+    // Add clinic marker
+    final clinicMarker = Marker(
+      markerId: const MarkerId('clinic'),
+      position: LatLng(widget.latitude, widget.longitude),
+      infoWindow: InfoWindow(
+        title: widget.clinicName,
+        snippet: widget.altitude != null ? 'Altitude: ${widget.altitude}m' : null,
+      ),
+      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+    );
+
+    // Create route polyline
+    final routePolyline = Polyline(
+      polylineId: const PolylineId('route'),
+      points: [
+        LatLng(userPosition.latitude, userPosition.longitude),
+        LatLng(widget.latitude, widget.longitude),
+      ],
+      color: Colors.blue,
+      width: 4,
+    );
+
+    // Update map with route
     setState(() {
-      _openMapUrl = directionsUrl;
+      _markers = {userMarker, clinicMarker};
+      _polylines = {routePolyline};
+      _isShowingRoute = true;
+      _isMapLoading = false;
     });
+
+    // Center map to show both points
+    if (_mapController != null) {
+      final bounds = LatLngBounds(
+        southwest: LatLng(
+          userPosition.latitude < widget.latitude ? userPosition.latitude : widget.latitude,
+          userPosition.longitude < widget.longitude ? userPosition.longitude : widget.longitude,
+        ),
+        northeast: LatLng(
+          userPosition.latitude > widget.latitude ? userPosition.latitude : widget.latitude,
+          userPosition.longitude > widget.longitude ? userPosition.longitude : widget.longitude,
+        ),
+      );
+      
+      _mapController!.animateCamera(CameraUpdate.newLatLngBounds(bounds, 100));
+    }
   }
 
   String _buildDirectionsUrl(Position userPosition) {
@@ -626,8 +623,8 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
   }
 
   bool _isShowingRoute() {
-    // Check if current URL contains directions (OpenStreetMap directions or Google Maps saddr)
-    return _openMapUrl.contains('directions') || _openMapUrl.contains('saddr=');
+    // Check if route is currently displayed
+    return _isShowingRoute;
   }
 
   void _toggleMapView(BuildContext context) {
@@ -651,13 +648,34 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
   }
 
   void _resetMapToClinic() {
-    final clinicUrl = _buildGoogleMapsEmbedUrl(
-      latitude: widget.latitude,
-      longitude: widget.longitude,
+    // Reset to show only clinic marker
+    final clinicMarker = Marker(
+      markerId: const MarkerId('clinic'),
+      position: LatLng(widget.latitude, widget.longitude),
+      infoWindow: InfoWindow(
+        title: widget.clinicName,
+        snippet: widget.altitude != null ? 'Altitude: ${widget.altitude}m' : null,
+      ),
+      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
     );
-    
-    if (!kIsWeb && _webViewController != null) {
-      _webViewController!.loadRequest(Uri.parse(clinicUrl));
+
+    setState(() {
+      _markers = {clinicMarker};
+      _polylines = {};
+      _isShowingRoute = false;
+      _isMapLoading = false;
+    });
+
+    // Center map on clinic
+    if (_mapController != null) {
+      _mapController!.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: LatLng(widget.latitude, widget.longitude),
+            zoom: 15,
+          ),
+        ),
+      );
     }
     
     setState(() {
