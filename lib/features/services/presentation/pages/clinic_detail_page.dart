@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
@@ -10,6 +10,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 
 import '../../models/clinic.dart';
 import '../widgets/google_map_iframe.dart';
+import '../widgets/navigation_bottom_sheet.dart';
 
 class ClinicDetailPage extends StatefulWidget {
   final Clinic clinic;
@@ -233,7 +234,7 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
   @override
   void initState() {
     super.initState();
-    _defaultMapEmbedUrl = _buildOpenStreetMapEmbedUrl(
+    _defaultMapEmbedUrl = _buildGoogleMapsEmbedUrl(
       latitude: widget.latitude,
       longitude: widget.longitude,
     );
@@ -281,7 +282,7 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final fallbackEmbedUrl = _buildOpenStreetMapEmbedUrl(
+    final fallbackEmbedUrl = _buildGoogleMapsEmbedUrl(
       latitude: widget.latitude,
       longitude: widget.longitude,
     );
@@ -334,9 +335,9 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
                 ),
                 const SizedBox(width: 10),
                 OutlinedButton.icon(
-                  onPressed: () => _openUrl(context, _openMapUrl),
-                  icon: const Icon(Icons.open_in_new_rounded, size: 16),
-                  label: const Text('Open Map'),
+                  onPressed: () => _toggleMapView(context),
+                  icon: Icon(_isShowingRoute() ? Icons.map_outlined : Icons.open_in_new_rounded, size: 16),
+                  label: Text(_isShowingRoute() ? 'Reset Map' : 'Open Map'),
                 ),
               ],
             ),
@@ -466,8 +467,12 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
     });
 
     try {
-      final routeUrl = await _buildNavigationUrl();
-      await _openUrl(context, routeUrl);
+      final userPosition = await _getCurrentUserPosition();
+      if (userPosition != null) {
+        _showRouteOnMap(userPosition);
+      } else {
+        _routeNotice = 'Unable to get your location. Please enable location services.';
+      }
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -526,6 +531,156 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
     }
   }
 
+  Future<Position?> _getCurrentUserPosition() async {
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      var permission = await Geolocator.checkPermission();
+
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (!serviceEnabled ||
+          permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        return null;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.best,
+        timeLimit: const Duration(seconds: 10),
+      );
+      
+      return await _getBetterPositionIfNeeded(position);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _showRouteOnMap(Position userPosition) {
+    // Build Google Maps URL with directions from user location to clinic
+    final directionsUrl = _buildDirectionsUrl(userPosition);
+    
+    print('Loading directions on clinic map: $directionsUrl'); // Debug log
+    
+    // Update the existing map to show directions
+    if (!kIsWeb && _webViewController != null) {
+      setState(() {
+        _isMapLoading = true;
+        _hasMapError = false;
+      });
+      
+      _webViewController!.loadRequest(Uri.parse(directionsUrl)).then((_) {
+        print('Directions loaded on clinic map'); // Debug log
+      }).catchError((error) {
+        print('Error loading directions on clinic map: $error'); // Debug log
+        if (mounted) {
+          setState(() {
+            _hasMapError = true;
+            _isMapLoading = false;
+            _routeNotice = 'Unable to load routes on map';
+          });
+        }
+      });
+    }
+    
+    setState(() {
+      _openMapUrl = directionsUrl;
+    });
+  }
+
+  String _buildDirectionsUrl(Position userPosition) {
+    // Show both points on Google Maps - user location and clinic
+    return 'https://maps.google.com/maps?q=${userPosition.latitude},${userPosition.longitude}+${widget.latitude},${widget.longitude}&z=11&output=embed&t=m';
+  }
+
+  void _openExternalDirections(Position userPosition) {
+    final externalUrl = 'https://www.google.com/maps/dir/?api=1&origin=${userPosition.latitude},${userPosition.longitude}&destination=${widget.latitude},${widget.longitude}&travelmode=driving';
+    
+    print('Opening external directions: $externalUrl'); // Debug log
+    
+    // Reset loading state
+    if (mounted) {
+      setState(() {
+        _isMapLoading = false;
+        _hasMapError = false;
+        _routeNotice = 'Opening navigation in Google Maps...';
+      });
+    }
+    
+    // Launch external Google Maps
+    launchUrl(Uri.parse(externalUrl), mode: LaunchMode.externalApplication).then((success) {
+      if (mounted) {
+        setState(() {
+          _routeNotice = success ? null : 'Unable to open Google Maps';
+        });
+      }
+    }).catchError((error) {
+      print('Error launching external maps: $error'); // Debug log
+      if (mounted) {
+        setState(() {
+          _routeNotice = 'Unable to open Google Maps';
+        });
+      }
+    });
+  }
+
+  bool _isShowingRoute() {
+    // Check if current URL contains directions (OpenStreetMap directions or Google Maps saddr)
+    return _openMapUrl.contains('directions') || _openMapUrl.contains('saddr=');
+  }
+
+  void _toggleMapView(BuildContext context) {
+    if (_isShowingRoute()) {
+      // Reset to show just the clinic location
+      _resetMapToClinic();
+    } else {
+      // Always open external Google Maps with current location to clinic
+      _getCurrentUserPosition().then((userPosition) {
+        if (userPosition != null) {
+          _openExternalDirections(userPosition);
+        } else {
+          // Fallback to clinic location only
+          _openUrl(context, _buildExternalDirectionsUrl(
+            destinationLat: widget.latitude,
+            destinationLon: widget.longitude,
+          ));
+        }
+      });
+    }
+  }
+
+  void _resetMapToClinic() {
+    final clinicUrl = _buildGoogleMapsEmbedUrl(
+      latitude: widget.latitude,
+      longitude: widget.longitude,
+    );
+    
+    if (!kIsWeb && _webViewController != null) {
+      _webViewController!.loadRequest(Uri.parse(clinicUrl));
+    }
+    
+    setState(() {
+      _openMapUrl = _buildExternalDirectionsUrl(
+        destinationLat: widget.latitude,
+        destinationLon: widget.longitude,
+      );
+    });
+  }
+
+  void _showNavigationBottomSheet(BuildContext context, Position userPosition) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => NavigationBottomSheet(
+        userPosition: userPosition,
+        clinicPosition: LatLng(widget.latitude, widget.longitude),
+        clinicName: widget.clinicName,
+      ),
+    );
+  }
+
   Future<Position> _getBetterPositionIfNeeded(Position first) async {
     if (first.accuracy <= 80) {
       return first;
@@ -549,25 +704,11 @@ String _buildMapViewType(double latitude, double longitude, String key) {
   return raw.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '_');
 }
 
-String _buildOpenStreetMapEmbedUrl({
+String _buildGoogleMapsEmbedUrl({
   required double latitude,
   required double longitude,
 }) {
-  const delta = 0.02;
-  final left = (longitude - delta).toStringAsFixed(6);
-  final bottom = (latitude - delta).toStringAsFixed(6);
-  final right = (longitude + delta).toStringAsFixed(6);
-  final top = (latitude + delta).toStringAsFixed(6);
-
-  return Uri.https(
-    'www.openstreetmap.org',
-    '/export/embed.html',
-    {
-      'bbox': '$left,$bottom,$right,$top',
-      'layer': 'mapnik',
-      'marker': '${latitude.toStringAsFixed(6)},${longitude.toStringAsFixed(6)}',
-    },
-  ).toString();
+  return 'https://maps.google.com/maps?q=${latitude},${longitude}&z=15&output=embed';
 }
 
 const String _configuredBaseUrl = String.fromEnvironment(
