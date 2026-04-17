@@ -6,13 +6,13 @@ import '../data/auth_service.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   final String? language;
-  final String email;
+  final String contact;
   final String resetCode;
 
   const ResetPasswordScreen({
     super.key,
     this.language,
-    required this.email,
+    required this.contact,
     required this.resetCode,
   });
 
@@ -71,7 +71,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
     try {
       await _authService.resetPassword(
-        email: widget.email,
+        contact: widget.contact,
         code: widget.resetCode,
         password: _passwordCtrl.text,
       );
@@ -91,12 +91,13 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     } on AuthApiException catch (error) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
+      showAuthErrorDialog(context, message: error.message);
     } catch (_) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to reset password. Please try again.')),
+      showAuthErrorDialog(
+        context,
+        message: 'Failed to reset password. Please try again.',
       );
     }
   }
@@ -174,7 +175,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Create a new password for ${widget.email}.',
+                    'Create a new password for ${widget.contact}.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14.5,
@@ -198,7 +199,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) return 'Password is required';
-                      if (value.length < 6) return 'Password must be at least 6 characters';
+                      if (value.length < 8) return 'Password must be at least 8 characters';
                       return null;
                     },
                   ),
@@ -219,6 +220,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) return 'Confirm password is required';
+                      if (value.length < 8) return 'Password must be at least 8 characters';
                       if (value != _passwordCtrl.text) return 'Passwords do not match';
                       return null;
                     },

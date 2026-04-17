@@ -15,18 +15,23 @@ class ForgotPasswordScreen extends StatefulWidget {
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailCtrl = TextEditingController();
+  final _contactCtrl = TextEditingController();
   bool _isLoading = false;
   final AuthService _authService = AuthService.instance;
 
   @override
   void dispose() {
-    _emailCtrl.dispose();
+    _contactCtrl.dispose();
     super.dispose();
   }
 
   bool _isValidEmail(String value) {
     return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(value);
+  }
+
+  bool _isValidPhone(String value) {
+    final digits = value.replaceAll(RegExp(r'[^0-9]'), '');
+    return RegExp(r'^(09|07)\d{8}$').hasMatch(digits);
   }
 
   InputDecoration _buildInputDecoration(String label, IconData icon, BuildContext context) {
@@ -63,34 +68,38 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final email = _emailCtrl.text.trim();
-      await _authService.forgotPassword(email: email);
+      final contact = _contactCtrl.text.trim();
+      final result = await _authService.forgotPassword(contact: contact);
 
       if (!mounted) return;
       setState(() => _isLoading = false);
 
       showAuthSuccessDialog(
         context,
-        message: 'A password reset code was sent to $email.',
+        message: result.debugCode == null
+            ? result.message
+            : '${result.message} Use ${result.debugCode}.',
       );
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) => VerifyResetCodeScreen(
             language: widget.language,
-            email: email,
+            contact: contact,
+            debugCode: result.debugCode,
           ),
         ),
       );
     } on AuthApiException catch (error) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
+      showAuthErrorDialog(context, message: error.message);
     } catch (_) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to start password reset. Please try again.')),
+      showAuthErrorDialog(
+        context,
+        message: 'Failed to start password reset. Please try again.',
       );
     }
   }
@@ -157,7 +166,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Enter your email address and we will send you a password reset code.',
+                    'Enter your email or phone number and we will generate a password reset code.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14.5,
@@ -166,15 +175,19 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   ),
                   const SizedBox(height: 28),
                   TextFormField(
-                    controller: _emailCtrl,
+                    controller: _contactCtrl,
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.done,
                     style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-                    decoration: _buildInputDecoration('Enter your email', Icons.email_outlined, context),
+                    decoration: _buildInputDecoration('Enter your email or phone number', Icons.contact_mail_outlined, context),
                     validator: (value) {
-                      if (value == null || value.trim().isEmpty) return 'Email is required';
-                      if (!_isValidEmail(value.trim())) return 'Enter a valid email address';
-                      return null;
+                      if (value == null || value.trim().isEmpty) return 'Email or phone is required';
+                      final contact = value.trim();
+                      if (contact.contains('@')) {
+                        return _isValidEmail(contact) ? null : 'Enter a valid email address';
+                      }
+                      if (_isValidPhone(contact)) return null;
+                      return 'Enter a valid email or a 10-digit phone number starting with 09 or 07';
                     },
                     onFieldSubmitted: (_) => _isLoading ? null : _handleReset(),
                   ),

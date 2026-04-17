@@ -30,6 +30,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final AuthService _authService = AuthService.instance;
 
   @override
+  void initState() {
+    super.initState();
+    _ageCtrl.text = '10';
+    _ageCtrl.selection = TextSelection.fromPosition(
+      TextPosition(offset: _ageCtrl.text.length),
+    );
+  }
+
+  @override
   void dispose() {
     _contactCtrl.dispose();
     _usernameCtrl.dispose();
@@ -45,7 +54,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   bool _isValidPhone(String value) {
     final digits = value.replaceAll(RegExp(r'[^0-9]'), '');
-    return digits.length >= 9 && digits.length <= 15;
+    return RegExp(r'^(09|07)\d{8}$').hasMatch(digits);
   }
 
   String? _validateContact(String? value) {
@@ -57,14 +66,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
       return _isValidEmail(v) ? null : 'Enter a valid email address';
     }
     if (_isValidPhone(v)) return null;
-    return 'Enter a valid email or phone number';
+    return 'Phone number must be 10 digits and start with 09 or 07';
   }
 
   String? _validateAge(String? value) {
     if (value == null || value.trim().isEmpty) return 'Age is required';
     final age = int.tryParse(value.trim());
     if (age == null) return 'Enter a valid age';
-    if (age < 10 || age > 24) return 'Age must be between 10 and 24';
+    if (age < 10) return 'Age must be at least 10';
+    if (age > 24) return 'Age must be 24 or below';
     return null;
   }
 
@@ -87,28 +97,32 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
       showAuthSuccessDialog(
         context,
-        message: 'Your account has been created successfully.',
+        message: result.message.isNotEmpty
+            ? result.message
+            : 'Your account has been created successfully.',
       );
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) => VerifyEmailScreen(
             language: widget.language,
-            contact: result.user.email,
+            contact: _contactCtrl.text.trim(),
             userName: result.user.username,
             age: result.user.age,
+            debugCode: result.debugCode,
           ),
         ),
       );
     } on AuthApiException catch (error) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
+      showAuthErrorDialog(context, message: error.message);
     } catch (_) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to create account. Please try again.')),
+      showAuthErrorDialog(
+        context,
+        message: 'Failed to create account. Please try again.',
       );
     }
   }
@@ -203,6 +217,34 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     controller: _contactCtrl,
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
+                    inputFormatters: [
+                      TextInputFormatter.withFunction((oldValue, newValue) {
+                        final text = newValue.text;
+                        if (text.isEmpty || text.contains('@')) {
+                          return newValue;
+                        }
+
+                        if (!RegExp(r'^\d*$').hasMatch(text)) {
+                          return oldValue;
+                        }
+
+                        if (text.length > 10) {
+                          return oldValue;
+                        }
+
+                        if (text.length >= 2 &&
+                            !text.startsWith('09') &&
+                            !text.startsWith('07')) {
+                          return oldValue;
+                        }
+
+                        if (text.length == 1 && text != '0') {
+                          return oldValue;
+                        }
+
+                        return newValue;
+                      }),
+                    ],
                     style: TextStyle(color: isDark ? Colors.white : Colors.black87),
                     decoration: _buildInputDecoration('Enter your email or phone number', Icons.contact_mail_outlined, context),
                     validator: _validateContact,
@@ -228,8 +270,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       LengthLimitingTextInputFormatter(2),
                       TextInputFormatter.withFunction((oldValue, newValue) {
                         final text = newValue.text;
-                        if (text.isEmpty || !text.startsWith('0')) return newValue;
-                        return oldValue;
+                        if (text.isEmpty) return newValue;
+                        final age = int.tryParse(text);
+                        if (age == null) return oldValue;
+                        if (text.length == 1) {
+                          return (text == '1' || text == '2') ? newValue : oldValue;
+                        }
+                        return (age >= 10 && age <= 24) ? newValue : oldValue;
                       }),
                     ],
                     style: TextStyle(color: isDark ? Colors.white : Colors.black87),
@@ -275,7 +322,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                       ),
                     ),
-                    validator: (v) => (v != null && v.length >= 6) ? null : 'Min 6 characters required',
+                    validator: (v) => (v != null && v.length >= 8) ? null : 'Min 8 characters required',
                   ),
                   const SizedBox(height: 16),
 
@@ -294,8 +341,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                     ),
                     validator: (v) {
-                      if (v != _passwordCtrl.text) return 'Passwords do not match';
                       if (v == null || v.isEmpty) return 'Please confirm password';
+                      if (v.length < 8) return 'Min 8 characters required';
+                      if (v != _passwordCtrl.text) return 'Passwords do not match';
                       return null;
                     },
                   ),

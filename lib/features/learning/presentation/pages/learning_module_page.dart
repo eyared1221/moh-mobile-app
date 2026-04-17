@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../../shared/widgets/app_bottom_nav.dart';
+import '../../../../shared/widgets/notification_badge.dart';
+import '../../../notifications/data/app_notification_service.dart';
+import '../../../notifications/data/notification_provider.dart';
 import '../../../notifications/presentation/pages/notification_center_page.dart';
 import '../../data/learning_service.dart';
 import '../../models/learning_module.dart';
@@ -26,12 +29,33 @@ class _LearningModulesPageState extends State<LearningModulesPage> {
   List<LearningModule> _learningModules = [];
   bool _isLoading = true;
   String? _errorMessage;
+  final AppNotificationService _notificationService = AppNotificationService.instance;
+  final NotificationProvider _provider = NotificationProvider();
+  int _unreadCount = 0;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController(viewportFraction: 0.96);
     _loadLearningModules();
+    _unreadCount = _provider.unreadCount;
+    _loadUnreadCount();
+    _provider.addListener(_onNotificationCountChanged);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _provider.removeListener(_onNotificationCountChanged);
+    super.dispose();
+  }
+
+  void _onNotificationCountChanged() {
+    if (mounted) {
+      setState(() {
+        _unreadCount = _provider.unreadCount;
+      });
+    }
   }
 
   Future<void> _loadLearningModules() async {
@@ -55,12 +79,7 @@ class _LearningModulesPageState extends State<LearningModulesPage> {
     }
   }
 
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
+  
   void _goNext() {
     if (_currentIndex < _learningModules.length - 1) {
       _pageController.nextPage(
@@ -79,6 +98,10 @@ class _LearningModulesPageState extends State<LearningModulesPage> {
     }
   }
 
+  Future<void> _loadUnreadCount() async {
+    await _notificationService.getUnreadCount();
+  }
+
   void _openNotifications() {
     Navigator.push(
       context,
@@ -95,10 +118,13 @@ class _LearningModulesPageState extends State<LearningModulesPage> {
           centerTitle: true,
           title: const Text('Learning Modules'),
           actions: [
-            IconButton(
-              onPressed: _openNotifications,
-              icon: const Icon(Icons.notifications_none),
-              tooltip: 'Notifications',
+            NotificationBadge(
+              count: _unreadCount,
+              child: IconButton(
+                onPressed: _openNotifications,
+                icon: const Icon(Icons.notifications_none),
+                tooltip: 'Notifications',
+              ),
             ),
           ],
         ),
@@ -120,10 +146,13 @@ class _LearningModulesPageState extends State<LearningModulesPage> {
           centerTitle: true,
           title: const Text('Learning Modules'),
           actions: [
-            IconButton(
-              onPressed: _openNotifications,
-              icon: const Icon(Icons.notifications_none),
-              tooltip: 'Notifications',
+            NotificationBadge(
+              count: _unreadCount,
+              child: IconButton(
+                onPressed: _openNotifications,
+                icon: const Icon(Icons.notifications_none),
+                tooltip: 'Notifications',
+              ),
             ),
           ],
         ),
@@ -168,10 +197,13 @@ class _LearningModulesPageState extends State<LearningModulesPage> {
           centerTitle: true,
           title: const Text('Learning Modules'),
           actions: [
-            IconButton(
-              onPressed: _openNotifications,
-              icon: const Icon(Icons.notifications_none),
-              tooltip: 'Notifications',
+            NotificationBadge(
+              count: _unreadCount,
+              child: IconButton(
+                onPressed: _openNotifications,
+                icon: const Icon(Icons.notifications_none),
+                tooltip: 'Notifications',
+              ),
             ),
           ],
         ),

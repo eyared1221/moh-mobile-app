@@ -127,7 +127,7 @@ class _GuestBottomNavState extends State<GuestBottomNav> {
                 ),
               ),
               Text(
-                "Sign in to get more features",
+                "Sign in for full access",
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -136,7 +136,7 @@ class _GuestBottomNavState extends State<GuestBottomNav> {
               ),
               const SizedBox(height: 6),
               Text(
-                "Sign in to unlock risk assessment, support services, and your profile.",
+                "Sign in to use risk assessment, find care, connect with support, and manage your profile.",
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13.5,

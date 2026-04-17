@@ -27,7 +27,7 @@ class AuthService {
       'password': password,
     });
 
-    return RegisterResult.fromJson(payload['data'] as Map<String, dynamic>? ?? const {});
+    return RegisterResult.fromJson(payload);
   }
 
   Future<LoginResult> login({
@@ -45,44 +45,46 @@ class AuthService {
   }
 
   Future<void> verifyOtp({
-    required String email,
+    required String contact,
     required String otp,
   }) async {
     await _apiClient.post('/verification?action=verify-otp', {
-      'email': email,
+      'contact': contact,
       'otp': otp,
     });
   }
 
-  Future<void> resendOtp({required String email}) async {
-    await _apiClient.post('/verification?action=resend-otp', {
-      'email': email,
+  Future<AuthActionResult> resendOtp({required String contact}) async {
+    final payload = await _apiClient.post('/verification?action=resend-otp', {
+      'contact': contact,
     });
+    return AuthActionResult.fromJson(payload);
   }
 
-  Future<void> forgotPassword({required String email}) async {
-    await _apiClient.post('/password?action=forgot', {
-      'email': email,
+  Future<AuthActionResult> forgotPassword({required String contact}) async {
+    final payload = await _apiClient.post('/password?action=forgot', {
+      'contact': contact,
     });
+    return AuthActionResult.fromJson(payload);
   }
 
   Future<void> verifyResetCode({
-    required String email,
+    required String contact,
     required String code,
   }) async {
     await _apiClient.post('/password?action=verify-code', {
-      'email': email,
+      'contact': contact,
       'code': code,
     });
   }
 
   Future<void> resetPassword({
-    required String email,
+    required String contact,
     required String code,
     required String password,
   }) async {
     await _apiClient.post('/password?action=reset', {
-      'email': email,
+      'contact': contact,
       'code': code,
       'password': password,
     });

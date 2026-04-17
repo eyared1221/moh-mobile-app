@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../../shared/widgets/app_bottom_nav.dart';
+import '../../../../shared/widgets/notification_badge.dart';
+import '../../../notifications/data/app_notification_service.dart';
+import '../../../notifications/data/notification_provider.dart';
 import '../../../notifications/presentation/pages/notification_center_page.dart';
 import '../../../mentor/presentation/pages/mentor_page.dart';
 import '../../data/risk_assessment_repository.dart';
@@ -37,11 +40,31 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
 
   _RiskStage _stage = _RiskStage.intro;
   int _currentIndex = 0;
+  final AppNotificationService _notificationService = AppNotificationService.instance;
+  final NotificationProvider _provider = NotificationProvider();
+  int _unreadCount = 0;
 
   @override
   void initState() {
     super.initState();
     _loadQuestions();
+    _unreadCount = _provider.unreadCount;
+    _loadUnreadCount();
+    _provider.addListener(_onNotificationCountChanged);
+  }
+
+  @override
+  void dispose() {
+    _provider.removeListener(_onNotificationCountChanged);
+    super.dispose();
+  }
+
+  void _onNotificationCountChanged() {
+    if (mounted) {
+      setState(() {
+        _unreadCount = _provider.unreadCount;
+      });
+    }
   }
 
   Future<void> _loadQuestions() async {
@@ -61,6 +84,10 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
         _isLoadingQuestions = false;
       });
     }
+  }
+
+  Future<void> _loadUnreadCount() async {
+    await _notificationService.getUnreadCount();
   }
 
   @override
@@ -91,18 +118,21 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
               ),
         ),
         actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const NotificationCenterPage(),
-                ),
-              );
-            },
-            icon: const Icon(Icons.notifications_none),
-            color: colorScheme.primary,
-            tooltip: 'Notifications',
+          NotificationBadge(
+            count: _unreadCount,
+            child: IconButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const NotificationCenterPage(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.notifications_none),
+              color: colorScheme.primary,
+              tooltip: 'Notifications',
+            ),
           ),
           const SizedBox(width: 6),
         ],

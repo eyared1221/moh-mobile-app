@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../profile/data/profile_repository.dart';
 import '../models/app_notification.dart';
+import 'notification_provider.dart';
 
 class AppNotificationService {
   AppNotificationService({
@@ -15,6 +16,7 @@ class AppNotificationService {
   static final AppNotificationService instance = AppNotificationService();
 
   final ProfileRepository _profileRepository;
+  final NotificationProvider _provider = NotificationProvider();
 
   Future<List<AppNotification>> getNotifications() async {
     final prefs = await SharedPreferences.getInstance();
@@ -44,6 +46,8 @@ class AppNotificationService {
 
   Future<void> markRead(String id) async {
     final notifications = await getNotifications();
+    final wasUnread = notifications.any((n) => n.id == id && !n.isRead);
+    
     final updated = notifications
         .map(
           (notification) => notification.id == id && !notification.isRead
@@ -54,6 +58,10 @@ class AppNotificationService {
 
     final prefs = await SharedPreferences.getInstance();
     await _persist(prefs, updated);
+    
+    if (wasUnread) {
+      _provider.decrementUnreadCount();
+    }
   }
 
   Future<void> markAllRead() async {
@@ -69,6 +77,35 @@ class AppNotificationService {
 
     final prefs = await SharedPreferences.getInstance();
     await _persist(prefs, updated);
+    
+    _provider.resetUnreadCount();
+  }
+
+  Future<int> getUnreadCount() async {
+    final notifications = await getNotifications();
+    final count = notifications.where((notification) => !notification.isRead).length;
+    _provider.updateUnreadCount(count);
+    return count;
+  }
+
+  Future<void> deleteNotification(String id) async {
+    final notifications = await getNotifications();
+    final wasUnread = notifications.any((n) => n.id == id && !n.isRead);
+    final updated = notifications.where((notification) => notification.id != id).toList();
+
+    final prefs = await SharedPreferences.getInstance();
+    await _persist(prefs, updated);
+    
+    if (wasUnread) {
+      _provider.decrementUnreadCount();
+    }
+  }
+
+  Future<void> clearAllNotifications() async {
+    final prefs = await SharedPreferences.getInstance();
+    await _persist(prefs, <AppNotification>[]);
+    
+    _provider.resetUnreadCount();
   }
 
   Future<List<AppNotification>> _buildDefaultNotifications() async {

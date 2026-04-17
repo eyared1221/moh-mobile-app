@@ -7,6 +7,25 @@ class AuthApiException implements Exception {
   String toString() => message;
 }
 
+class AuthActionResult {
+  final String message;
+  final String? debugCode;
+
+  const AuthActionResult({
+    required this.message,
+    this.debugCode,
+  });
+
+  factory AuthActionResult.fromJson(Map<String, dynamic> json) {
+    final data = json['data'] as Map<String, dynamic>? ?? const {};
+
+    return AuthActionResult(
+      message: json['message'] as String? ?? '',
+      debugCode: data['debugCode'] as String?,
+    );
+  }
+}
+
 class AuthUser {
   final String id;
   final String email;
@@ -58,12 +77,22 @@ class LoginResult {
 
 class RegisterResult {
   final AuthUser user;
+  final String message;
+  final String? debugCode;
 
-  const RegisterResult({required this.user});
+  const RegisterResult({
+    required this.user,
+    required this.message,
+    this.debugCode,
+  });
 
   factory RegisterResult.fromJson(Map<String, dynamic> json) {
+    final data = json['data'] as Map<String, dynamic>? ?? const {};
+
     return RegisterResult(
-      user: AuthUser.fromJson(json['user'] as Map<String, dynamic>? ?? const {}),
+      user: AuthUser.fromJson(data['user'] as Map<String, dynamic>? ?? const {}),
+      message: json['message'] as String? ?? '',
+      debugCode: data['debugCode'] as String?,
     );
   }
 }

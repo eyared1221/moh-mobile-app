@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import '../../data/mentor_repository.dart';
 import '../../models/mentor.dart';
 import '../../../../shared/widgets/app_bottom_nav.dart';
+import '../../../../shared/widgets/notification_badge.dart';
+import '../../../notifications/data/app_notification_service.dart';
+import '../../../notifications/data/notification_provider.dart';
 import '../../../notifications/presentation/pages/notification_center_page.dart';
 import '../widgets/mentor_card.dart';
 
@@ -25,18 +28,33 @@ class _MentorPageState extends State<MentorPage> {
   late final TextEditingController _searchController;
   late final Future<List<Mentor>> _mentorsFuture;
   String _query = '';
+  final AppNotificationService _notificationService = AppNotificationService.instance;
+  final NotificationProvider _provider = NotificationProvider();
+  int _unreadCount = 0;
 
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController();
     _mentorsFuture = _repository.fetchMentors();
+    _unreadCount = _provider.unreadCount;
+    _loadUnreadCount();
+    _provider.addListener(_onNotificationCountChanged);
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _provider.removeListener(_onNotificationCountChanged);
     super.dispose();
+  }
+
+  void _onNotificationCountChanged() {
+    if (mounted) {
+      setState(() {
+        _unreadCount = _provider.unreadCount;
+      });
+    }
   }
 
   @override
@@ -50,10 +68,13 @@ class _MentorPageState extends State<MentorPage> {
         centerTitle: true,
         title: const Text('Peer Mentors'),
         actions: [
-          IconButton(
-            onPressed: _openNotifications,
-            icon: const Icon(Icons.notifications_none),
-            tooltip: 'Notifications',
+          NotificationBadge(
+            count: _unreadCount,
+            child: IconButton(
+              onPressed: _openNotifications,
+              icon: const Icon(Icons.notifications_none),
+              tooltip: 'Notifications',
+            ),
           ),
         ],
       ),
@@ -254,6 +275,10 @@ class _MentorPageState extends State<MentorPage> {
       final phone = mentor.phone.toLowerCase();
       return name.contains(normalized) || phone.contains(normalized);
     }).toList();
+  }
+
+  Future<void> _loadUnreadCount() async {
+    await _notificationService.getUnreadCount();
   }
 
   void _openNotifications() {

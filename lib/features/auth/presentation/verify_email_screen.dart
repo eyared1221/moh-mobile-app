@@ -10,6 +10,7 @@ class VerifyEmailScreen extends StatefulWidget {
   final String contact;
   final String userName;
   final int age;
+  final String? debugCode;
 
   const VerifyEmailScreen({
     super.key,
@@ -17,6 +18,7 @@ class VerifyEmailScreen extends StatefulWidget {
     required this.contact,
     required this.userName,
     required this.age,
+    this.debugCode,
   });
 
   @override
@@ -30,6 +32,8 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   bool _isLoading = false;
   bool _showCodeError = false;
   final AuthService _authService = AuthService.instance;
+
+  bool get _isEmailContact => widget.contact.contains('@');
 
   @override
   void dispose() {
@@ -152,7 +156,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
 
     try {
       await _authService.verifyOtp(
-        email: widget.contact,
+        contact: widget.contact,
         otp: _verificationCode,
       );
 
@@ -161,7 +165,9 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
 
       showAuthSuccessDialog(
         context,
-        message: 'Your email has been verified successfully.',
+        message: _isEmailContact
+            ? 'Your email has been verified successfully.'
+            : 'Your phone number has been verified successfully.',
       );
       Navigator.pushAndRemoveUntil(
         context,
@@ -171,31 +177,37 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     } on AuthApiException catch (error) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
+      showAuthErrorDialog(context, message: error.message);
     } catch (_) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to verify email. Please try again.')),
+      showAuthErrorDialog(
+        context,
+        message: _isEmailContact
+            ? 'Failed to verify email. Please try again.'
+            : 'Failed to verify phone number. Please try again.',
       );
     }
   }
 
   void _handleResend() async {
     try {
-      await _authService.resendOtp(email: widget.contact);
+      final result = await _authService.resendOtp(contact: widget.contact);
       if (!mounted) return;
       showAuthSuccessDialog(
         context,
-        message: 'A new verification code was sent to ${widget.contact}.',
+        message: result.debugCode == null
+            ? 'A new verification code was sent to ${widget.contact}.'
+            : 'A new verification code was generated for ${widget.contact}. Use ${result.debugCode}.',
       );
     } on AuthApiException catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
+      showAuthErrorDialog(context, message: error.message);
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to resend code. Please try again.')),
+      showAuthErrorDialog(
+        context,
+        message: 'Failed to resend code. Please try again.',
       );
     }
   }
@@ -251,7 +263,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    'Verify Your Email',
+                    _isEmailContact ? 'Verify Your Email' : 'Verify Your Phone',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 26,
@@ -262,7 +274,9 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'We''ve sent a 6-digit code to ${widget.contact}. Enter it below to complete your sign up.',
+                    _isEmailContact
+                        ? 'We''ve sent a 6-digit code to ${widget.contact}. Enter it below to complete your sign up.'
+                        : 'Enter the 6-digit code for ${widget.contact} to complete your sign up.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14.5,
@@ -270,6 +284,28 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                     ),
                   ),
                   const SizedBox(height: 28),
+                  if (widget.debugCode != null) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: primaryColor.withOpacity(isDark ? 0.20 : 0.10),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: primaryColor.withOpacity(0.22),
+                        ),
+                      ),
+                      child: Text(
+                        'Use this code: ${widget.debugCode}',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: isDark ? Colors.white : primaryColor,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
                   Text(
                     'Enter 6-digit code',
                     textAlign: TextAlign.center,
@@ -314,7 +350,10 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                               height: 24,
                               child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                             )
-                          : const Text('Verify Email', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          : Text(
+                              _isEmailContact ? 'Verify Email' : 'Verify Phone',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
                     ),
                   ),
                   const SizedBox(height: 20),

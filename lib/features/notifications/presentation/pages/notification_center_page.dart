@@ -44,6 +44,42 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
     await _load();
   }
 
+  Future<void> _deleteNotification(String id) async {
+    await _service.deleteNotification(id);
+    await _load();
+  }
+
+  Future<void> _clearAllNotifications() async {
+    await _service.clearAllNotifications();
+    await _load();
+  }
+
+  void _showClearAllConfirmation() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Clear All Notifications'),
+          content: const Text('Are you sure you want to clear all notifications? This action cannot be undone.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _clearAllNotifications();
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Clear All'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -97,93 +133,149 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
                     ),
                   ),
                 )
-              : ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
-                  itemCount: _notifications.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 10),
-                  itemBuilder: (context, index) {
-                    final notification = _notifications[index];
-                    final spec = _styleFor(notification, colorScheme);
+              : Column(
+                  children: [
+                    Expanded(
+                      child: ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+                        itemCount: _notifications.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 10),
+                        itemBuilder: (context, index) {
+                          final notification = _notifications[index];
+                          final spec = _styleFor(notification, colorScheme);
 
-                    return InkWell(
-                      onTap: () => _openNotification(notification),
-                      borderRadius: BorderRadius.circular(18),
-                      child: Container(
-                        padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+                          return Dismissible(
+                            key: Key(notification.id),
+                            direction: DismissDirection.endToStart,
+                            background: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                borderRadius: BorderRadius.circular(18),
+                              ),
+                              alignment: Alignment.centerRight,
+                              padding: const EdgeInsets.only(right: 20),
+                              child: const Icon(
+                                Icons.delete_outline,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                            ),
+                            onDismissed: (direction) {
+                              _deleteNotification(notification.id);
+                            },
+                            child: InkWell(
+                              onTap: () => _openNotification(notification),
+                              borderRadius: BorderRadius.circular(18),
+                              child: Container(
+                                padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+                                decoration: BoxDecoration(
+                                  color: notification.isRead
+                                      ? theme.cardColor
+                                      : colorScheme.primary.withOpacity(0.05),
+                                  borderRadius: BorderRadius.circular(18),
+                                  border: Border.all(
+                                    color: notification.isRead
+                                        ? colorScheme.outlineVariant
+                                        : colorScheme.primary.withOpacity(0.18),
+                                  ),
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      width: 46,
+                                      height: 46,
+                                      decoration: BoxDecoration(
+                                        color: spec.background,
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                      child: Icon(spec.icon, color: spec.foreground),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  notification.title,
+                                                  style: theme.textTheme.titleSmall?.copyWith(
+                                                    fontWeight: FontWeight.w800,
+                                                    color: colorScheme.onSurface,
+                                                  ),
+                                                ),
+                                              ),
+                                              if (!notification.isRead)
+                                                Container(
+                                                  width: 10,
+                                                  height: 10,
+                                                  decoration: BoxDecoration(
+                                                    color: colorScheme.primary,
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            notification.message,
+                                            style: theme.textTheme.bodyMedium?.copyWith(
+                                              color: colorScheme.onSurfaceVariant,
+                                              height: 1.35,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            _formatTime(notification.createdAt),
+                                            style: theme.textTheme.labelSmall?.copyWith(
+                                              color: colorScheme.onSurfaceVariant,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    // Clear All button at the bottom
+                    if (_notifications.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: notification.isRead
-                              ? theme.cardColor
-                              : colorScheme.primary.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(
-                            color: notification.isRead
-                                ? colorScheme.outlineVariant
-                                : colorScheme.primary.withOpacity(0.18),
+                          color: theme.scaffoldBackgroundColor,
+                          border: Border(
+                            top: BorderSide(
+                              color: colorScheme.outlineVariant,
+                              width: 0.5,
+                            ),
                           ),
                         ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              width: 46,
-                              height: 46,
-                              decoration: BoxDecoration(
-                                color: spec.background,
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              child: Icon(spec.icon, color: spec.foreground),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          notification.title,
-                                          style: theme.textTheme.titleSmall?.copyWith(
-                                            fontWeight: FontWeight.w800,
-                                            color: colorScheme.onSurface,
-                                          ),
-                                        ),
-                                      ),
-                                      if (!notification.isRead)
-                                        Container(
-                                          width: 10,
-                                          height: 10,
-                                          decoration: BoxDecoration(
-                                            color: colorScheme.primary,
-                                            shape: BoxShape.circle,
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    notification.message,
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      color: colorScheme.onSurfaceVariant,
-                                      height: 1.35,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    _formatTime(notification.createdAt),
-                                    style: theme.textTheme.labelSmall?.copyWith(
-                                      color: colorScheme.onSurfaceVariant,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ],
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () => _showClearAllConfirmation(),
+                            icon: const Icon(Icons.clear_all),
+                            label: const Text('Clear All'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red.withOpacity(0.1),
+                              foregroundColor: Colors.red,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                          ],
+                          ),
                         ),
                       ),
-                    );
-                  },
+                  ],
                 ),
     );
   }

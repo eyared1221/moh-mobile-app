@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'reset_password_screen.dart';
+import 'auth_success_dialog.dart';
 import '../data/auth_models.dart';
 import '../data/auth_service.dart';
 
 class VerifyResetCodeScreen extends StatefulWidget {
   final String? language;
-  final String email;
+  final String contact;
+  final String? debugCode;
 
   const VerifyResetCodeScreen({
     super.key,
     this.language,
-    required this.email,
+    required this.contact,
+    this.debugCode,
   });
 
   @override
@@ -120,7 +123,7 @@ class _VerifyResetCodeScreenState extends State<VerifyResetCodeScreen> {
 
     try {
       final code = _resetCode;
-      await _authService.verifyResetCode(email: widget.email, code: code);
+      await _authService.verifyResetCode(contact: widget.contact, code: code);
 
       if (!mounted) return;
       setState(() => _isLoading = false);
@@ -130,7 +133,7 @@ class _VerifyResetCodeScreenState extends State<VerifyResetCodeScreen> {
         MaterialPageRoute(
           builder: (_) => ResetPasswordScreen(
             language: widget.language,
-            email: widget.email,
+            contact: widget.contact,
             resetCode: code,
           ),
         ),
@@ -138,12 +141,13 @@ class _VerifyResetCodeScreenState extends State<VerifyResetCodeScreen> {
     } on AuthApiException catch (error) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
+      showAuthErrorDialog(context, message: error.message);
     } catch (_) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to verify reset code. Please try again.')),
+      showAuthErrorDialog(
+        context,
+        message: 'Failed to verify reset code. Please try again.',
       );
     }
   }
@@ -221,7 +225,7 @@ class _VerifyResetCodeScreenState extends State<VerifyResetCodeScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Enter the 6-digit code sent to ${widget.email}.',
+                    'Enter the 6-digit code sent to ${widget.contact}.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14.5,
@@ -229,6 +233,26 @@ class _VerifyResetCodeScreenState extends State<VerifyResetCodeScreen> {
                     ),
                   ),
                   const SizedBox(height: 28),
+                  if (widget.debugCode != null) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: primaryColor.withOpacity(isDark ? 0.20 : 0.10),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: primaryColor.withOpacity(0.22)),
+                      ),
+                      child: Text(
+                        'Use this code: ${widget.debugCode}',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: isDark ? Colors.white : primaryColor,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
                   Text(
                     'Enter 6-digit code',
                     textAlign: TextAlign.center,

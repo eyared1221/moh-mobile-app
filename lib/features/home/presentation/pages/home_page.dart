@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 
 import '../../../../shared/widgets/hero_banner.dart';
 import '../../../../shared/widgets/app_bottom_nav.dart';
+import '../../../../shared/widgets/notification_badge.dart';
+import '../../../notifications/data/app_notification_service.dart';
+import '../../../notifications/data/notification_provider.dart';
 import '../../../notifications/presentation/pages/notification_center_page.dart';
 import '../../../learning/presentation/pages/learning_module_page.dart';
 import '../../../mentor/presentation/pages/mentor_page.dart';
@@ -24,19 +27,33 @@ class _HomePageState extends State<HomePage> {
   int? _pressedNavIndex;
   final ScrollController _scrollController = ScrollController();
   bool _hasScrolled = false;
+  final AppNotificationService _notificationService = AppNotificationService.instance;
+  final NotificationProvider _provider = NotificationProvider();
+  int _unreadCount = 0;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_handleScroll);
+    _unreadCount = _provider.unreadCount;
+    _loadUnreadCount();
+    _provider.addListener(_onNotificationCountChanged);
   }
 
   @override
   void dispose() {
-    _scrollController
-      ..removeListener(_handleScroll)
-      ..dispose();
+    _scrollController.removeListener(_handleScroll);
+    _scrollController.dispose();
+    _provider.removeListener(_onNotificationCountChanged);
     super.dispose();
+  }
+
+  void _onNotificationCountChanged() {
+    if (mounted) {
+      setState(() {
+        _unreadCount = _provider.unreadCount;
+      });
+    }
   }
 
   void _handleScroll() {
@@ -48,6 +65,10 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _hasScrolled = hasScrolled;
     });
+  }
+
+  Future<void> _loadUnreadCount() async {
+    await _notificationService.getUnreadCount();
   }
 
   @override
@@ -67,10 +88,13 @@ class _HomePageState extends State<HomePage> {
         surfaceTintColor: Colors.transparent,
         title: const Text('Health Support'),
         actions: [
-          IconButton(
-            onPressed: _openNotifications,
-            icon: const Icon(Icons.notifications_none),
-            tooltip: 'Notifications',
+          NotificationBadge(
+            count: _unreadCount,
+            child: IconButton(
+              onPressed: _openNotifications,
+              icon: const Icon(Icons.notifications_none),
+              tooltip: 'Notifications',
+            ),
           ),
         ],
       ),

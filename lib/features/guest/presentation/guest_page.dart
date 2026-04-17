@@ -112,36 +112,6 @@ class _GuestPageState extends State<GuestPage>
                     start: 0.64,
                     child: const FaqSection(),
                   ),
-                  _AnimatedReveal(
-                    controller: _controller,
-                    start: 0.76,
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 22, 20, 0),
-                      child: SizedBox(
-                        width: double.infinity,
-                        height: 56,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: kPrimary,
-                            foregroundColor: Colors.white,
-                            elevation: 10,
-                            shadowColor: kPrimary.withOpacity(0.28),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(18),
-                            ),
-                          ),
-                          onPressed: _openSignIn,
-                          child: const Text(
-                            "Get Started",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
                   const SizedBox(height: 22),
                 ],
               ),

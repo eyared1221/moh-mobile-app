@@ -36,7 +36,7 @@ class _SignInScreenState extends State<SignInScreen> {
 
   bool _isValidPhone(String value) {
     final digits = value.replaceAll(RegExp(r'[^0-9]'), '');
-    return digits.length >= 9 && digits.length <= 15;
+    return RegExp(r'^(09|07)\d{8}$').hasMatch(digits);
   }
 
   String? _validateContact(String? value) {
@@ -48,7 +48,7 @@ class _SignInScreenState extends State<SignInScreen> {
       return _isValidEmail(v) ? null : 'Enter a valid email address';
     }
     if (_isValidPhone(v)) return null;
-    return 'Enter a valid email or phone number';
+    return 'Enter a valid email or a 10-digit phone number starting with 09 or 07';
   }
 
   // Simulate a network request
@@ -69,7 +69,7 @@ class _SignInScreenState extends State<SignInScreen> {
 
       showAuthSuccessDialog(
         context,
-        message: 'You have logged in successfully.',
+        message: 'You have signed in successfully.',
       );
       Navigator.pushReplacement(
         context,
@@ -83,12 +83,13 @@ class _SignInScreenState extends State<SignInScreen> {
     } on AuthApiException catch (error) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
+      showAuthErrorDialog(context, message: error.message);
     } catch (_) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to sign in. Please try again.')),
+      showAuthErrorDialog(
+        context,
+        message: 'Failed to sign in. Please try again.',
       );
     }
   }
