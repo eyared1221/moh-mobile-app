@@ -4,7 +4,7 @@ import 'signin_screen.dart';
 import 'verify_email_screen.dart';
 import 'auth_success_dialog.dart';
 import '../data/auth_models.dart';
-import '../data/auth_service.dart';
+import 'controllers/auth_controller.dart';
 
 class SignUpScreen extends StatefulWidget {
   final String? language;
@@ -27,7 +27,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
   bool _isLoading = false;
-  final AuthService _authService = AuthService.instance;
+  final AuthController _authController = AuthController.standard();
 
   @override
   void initState() {
@@ -85,7 +85,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final result = await _authService.register(
+      final result = await _authController.register(
         contact: _contactCtrl.text.trim(),
         username: _usernameCtrl.text.trim(),
         age: int.parse(_ageCtrl.text.trim()),

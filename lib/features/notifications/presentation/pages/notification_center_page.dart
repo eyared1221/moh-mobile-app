@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../../data/app_notification_service.dart';
-import '../../models/app_notification.dart';
+import '../../domain/entities/app_notification_entity.dart';
+import '../../domain/usecases/clear_all_notifications_use_case.dart';
+import '../../domain/usecases/delete_notification_use_case.dart';
+import '../../domain/usecases/get_notifications_use_case.dart';
+import '../../domain/usecases/mark_all_notifications_read_use_case.dart';
+import '../../domain/usecases/mark_notification_read_use_case.dart';
+import '../controllers/notification_center_controller.dart';
 
 class NotificationCenterPage extends StatefulWidget {
   const NotificationCenterPage({super.key});
@@ -11,19 +17,27 @@ class NotificationCenterPage extends StatefulWidget {
 }
 
 class _NotificationCenterPageState extends State<NotificationCenterPage> {
-  final AppNotificationService _service = AppNotificationService.instance;
+  late final NotificationCenterController _controller;
 
   bool _isLoading = true;
-  List<AppNotification> _notifications = const [];
+  List<AppNotificationEntity> _notifications = const [];
 
   @override
   void initState() {
     super.initState();
+    final repository = AppNotificationService.instance;
+    _controller = NotificationCenterController(
+      getNotificationsUseCase: GetNotificationsUseCase(repository),
+      markAllReadUseCase: MarkAllNotificationsReadUseCase(repository),
+      markReadUseCase: MarkNotificationReadUseCase(repository),
+      deleteNotificationUseCase: DeleteNotificationUseCase(repository),
+      clearAllNotificationsUseCase: ClearAllNotificationsUseCase(repository),
+    );
     _load();
   }
 
   Future<void> _load() async {
-    final notifications = await _service.getNotifications();
+    final notifications = await _controller.loadNotifications();
     if (!mounted) return;
 
     setState(() {
@@ -33,24 +47,22 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
   }
 
   Future<void> _markAllRead() async {
-    await _service.markAllRead();
+    await _controller.markAllRead();
     await _load();
   }
 
-  Future<void> _openNotification(AppNotification notification) async {
-    if (!notification.isRead) {
-      await _service.markRead(notification.id);
-    }
+  Future<void> _openNotification(AppNotificationEntity notification) async {
+    await _controller.openNotification(notification);
     await _load();
   }
 
   Future<void> _deleteNotification(String id) async {
-    await _service.deleteNotification(id);
+    await _controller.deleteNotification(id);
     await _load();
   }
 
   Future<void> _clearAllNotifications() async {
-    await _service.clearAllNotifications();
+    await _controller.clearAllNotifications();
     await _load();
   }
 
@@ -280,7 +292,7 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
     );
   }
 
-  _NotificationStyle _styleFor(AppNotification notification, ColorScheme colorScheme) {
+  _NotificationStyle _styleFor(AppNotificationEntity notification, ColorScheme colorScheme) {
     switch (notification.type) {
       case 'welcome':
         return _NotificationStyle(

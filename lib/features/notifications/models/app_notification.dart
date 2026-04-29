@@ -1,21 +1,14 @@
-class AppNotification {
-  final String id;
-  final String type;
-  final String title;
-  final String message;
-  final DateTime createdAt;
-  final DateTime? readAt;
+import '../domain/entities/app_notification_entity.dart';
 
+class AppNotification extends AppNotificationEntity {
   const AppNotification({
-    required this.id,
-    required this.type,
-    required this.title,
-    required this.message,
-    required this.createdAt,
-    this.readAt,
+    required super.id,
+    required super.type,
+    required super.title,
+    required super.message,
+    required super.createdAt,
+    super.readAt,
   });
-
-  bool get isRead => readAt != null;
 
   AppNotification copyWith({
     String? id,

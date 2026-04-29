@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'signin_screen.dart';
 import 'auth_success_dialog.dart';
 import '../data/auth_models.dart';
-import '../data/auth_service.dart';
+import 'controllers/auth_controller.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   final String? language;
@@ -27,7 +27,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
   bool _isLoading = false;
-  final AuthService _authService = AuthService.instance;
+  final AuthController _authController = AuthController.standard();
 
   @override
   void dispose() {
@@ -70,7 +70,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await _authService.resetPassword(
+      await _authController.resetPassword(
         contact: widget.contact,
         code: widget.resetCode,
         password: _passwordCtrl.text,

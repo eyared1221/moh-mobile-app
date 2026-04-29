@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'verify_reset_code_screen.dart';
 import 'auth_success_dialog.dart';
 import '../data/auth_models.dart';
-import '../data/auth_service.dart';
+import 'controllers/auth_controller.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   final String? language;
@@ -17,7 +17,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _contactCtrl = TextEditingController();
   bool _isLoading = false;
-  final AuthService _authService = AuthService.instance;
+  final AuthController _authController = AuthController.standard();
 
   @override
   void dispose() {
@@ -69,7 +69,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     try {
       final contact = _contactCtrl.text.trim();
-      final result = await _authService.forgotPassword(contact: contact);
+      final result = await _authController.forgotPassword(contact: contact);
 
       if (!mounted) return;
       setState(() => _isLoading = false);

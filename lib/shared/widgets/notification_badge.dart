@@ -26,8 +26,8 @@ class NotificationBadge extends StatelessWidget {
         child,
         if (showBadge && count > 0)
           Positioned(
-            right: -6,
-            top: -6,
+            right: -2,
+            top: -2,
             child: Container(
               height: badgeSize,
               padding: const EdgeInsets.symmetric(horizontal: 4),

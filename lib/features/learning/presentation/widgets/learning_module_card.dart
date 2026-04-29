@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../models/learning_module.dart';
+import '../../domain/entities/learning_module_entity.dart';
 import 'learning_image.dart';
 
 class LearningModuleCard extends StatelessWidget {
-  final LearningModule module;
+  final LearningModuleEntity module;
   final int moduleNumber;
   final VoidCallback onMoreTap;
 
@@ -117,7 +117,7 @@ class LearningModuleCard extends StatelessWidget {
 }
 
 class _ModuleImage extends StatelessWidget {
-  final LearningModule module;
+  final LearningModuleEntity module;
 
   const _ModuleImage({
     required this.module,

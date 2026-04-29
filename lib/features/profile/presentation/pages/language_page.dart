@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../data/profile_repository.dart';
-import '../../models/profile_user.dart';
+import '../../domain/entities/profile_user_entity.dart';
+import '../controllers/profile_controller.dart';
 
 class LanguagePage extends StatelessWidget {
-  final ProfileUser profile;
+  final ProfileUserEntity profile;
 
   const LanguagePage({
     super.key,
@@ -15,6 +15,7 @@ class LanguagePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final controller = ProfileController.standard();
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -60,7 +61,7 @@ class LanguagePage extends StatelessWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           final updated = profile.copyWith(language: 'English');
-          await ProfileRepository().saveProfile(updated);
+          await controller.saveProfile(updated);
           if (!context.mounted) return;
           Navigator.pop(context, updated);
         },

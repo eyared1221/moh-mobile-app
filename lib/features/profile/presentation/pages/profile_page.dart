@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 
 import '../../../../shared/widgets/app_bottom_nav.dart';
 import '../../../auth/presentation/signin_screen.dart';
-import '../../data/profile_repository.dart';
-import '../../models/profile_user.dart';
+import '../../domain/entities/profile_user_entity.dart';
+import '../controllers/profile_controller.dart';
 import 'language_page.dart';
 import 'notifications_page.dart';
 import 'privacy_security_page.dart';
@@ -27,16 +27,16 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  final ProfileRepository _repository = ProfileRepository();
+  final ProfileController _controller = ProfileController.standard();
 
   bool _isLoading = true;
   bool _isLoggedIn = false;
-  late ProfileUser _profile;
+  late ProfileUserEntity _profile;
 
   @override
   void initState() {
     super.initState();
-    _profile = ProfileUser(
+    _profile = ProfileUserEntity(
       fullName: widget.userName ?? 'Alex Johnston',
       age: int.tryParse(widget.age) ?? 24,
       email: '',
@@ -47,8 +47,8 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _loadProfile() async {
-    final isLoggedIn = await _repository.isLoggedIn();
-    final profile = await _repository.fetchProfile(
+    final isLoggedIn = await _controller.isLoggedIn();
+    final profile = await _controller.loadProfile(
       fallbackAge: int.tryParse(widget.age) ?? 24,
       fallbackName: widget.userName,
     );
@@ -60,9 +60,9 @@ class _ProfilePageState extends State<ProfilePage> {
     });
   }
 
-  Future<void> _saveProfile(ProfileUser profile) async {
+  Future<void> _saveProfile(ProfileUserEntity profile) async {
     try {
-      final savedProfile = await _repository.saveProfile(profile);
+      final savedProfile = await _controller.saveProfile(profile);
       if (!mounted) return;
       setState(() => _profile = savedProfile);
       _showProfileUpdatedNotice();
@@ -160,7 +160,7 @@ class _ProfilePageState extends State<ProfilePage> {
     final ageCtrl = TextEditingController(text: _profile.age.toString());
     final formKey = GlobalKey<FormState>();
 
-    final updated = await showDialog<ProfileUser>(
+    final updated = await showDialog<ProfileUserEntity>(
       context: context,
       barrierDismissible: true,
       builder: (dialogContext) {
@@ -286,7 +286,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _openLanguagePage() async {
-    final updated = await Navigator.push<ProfileUser>(
+    final updated = await Navigator.push<ProfileUserEntity>(
       context,
       MaterialPageRoute(
         builder: (_) => LanguagePage(profile: _profile),
@@ -329,7 +329,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _logout() async {
-    await _repository.setLoggedIn(false);
+    await _controller.logout();
     if (!mounted) return;
     Navigator.pushAndRemoveUntil(
       context,
@@ -607,7 +607,12 @@ Widget _actionTile(
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const PrivacySecurityPage()),
+                MaterialPageRoute(
+                  builder: (_) => PrivacySecurityPage(
+                    language: widget.language,
+                    email: _profile.email,
+                  ),
+                ),
               );
             },
           ),

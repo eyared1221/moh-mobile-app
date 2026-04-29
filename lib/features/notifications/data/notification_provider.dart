@@ -23,6 +23,11 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
 
+  void incrementUnreadCount() {
+    _unreadCount++;
+    notifyListeners();
+  }
+
   void resetUnreadCount() {
     if (_unreadCount != 0) {
       _unreadCount = 0;

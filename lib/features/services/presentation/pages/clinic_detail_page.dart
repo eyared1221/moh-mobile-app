@@ -6,16 +6,16 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
-import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:webview_flutter/webview_flutter.dart'
+    if (dart.library.html) '../widgets/navigation_web_stub.dart';
 
-import '../../models/clinic.dart';
+import '../../domain/entities/clinic_entity.dart';
 import '../widgets/google_map_iframe_stub.dart'
     if (dart.library.html) '../widgets/google_map_iframe_web.dart';
 
 class ClinicDetailPage extends StatefulWidget {
-  final Clinic clinic;
+  final ClinicEntity clinic;
   final double? distanceKm;
 
   const ClinicDetailPage({
@@ -223,30 +223,18 @@ class _ClinicMapPreview extends StatefulWidget {
 }
 
 class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
-  static const MethodChannel _mapsConfigChannel = MethodChannel(
-    'com.yegna_health/maps_config',
-  );
   static const double _maxAcceptedAccuracyMeters = 80;
-  static const double _routeRefreshDistanceMeters = 30;
-  static const Duration _routeRefreshInterval = Duration(seconds: 15);
 
-  gmaps.GoogleMapController? _mapController;
-  StreamSubscription<Position>? _positionSubscription;
-  Set<gmaps.Marker> _markers = {};
-  Set<gmaps.Polyline> _polylines = {};
+  late final WebViewController _webViewController;
   bool _isMapLoading = true;
   bool _isLoadingRoute = false;
-  bool _isShowingRoute = false;
   bool _isNavigating = false;
   bool _hasLocationPermission = false;
-  bool _isDirectionsRequestActive = false;
+  bool _hasMapError = false;
   String? _routeNotice;
   bool _routeNoticeIsError = false;
   String? _routeDistanceLabel;
   String? _routeDurationLabel;
-  Position? _lastRouteOrigin;
-  DateTime? _lastRouteRefreshAt;
-  String? _mapsApiKey;
   late String _webMapUrl;
 
   @override
@@ -256,35 +244,70 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
       latitude: widget.latitude,
       longitude: widget.longitude,
     );
-    _initializeMarkers();
-    if (!kIsWeb) {
+    if (kIsWeb) {
+      _isMapLoading = false;
+    } else {
+      _initializeNativeMap();
       unawaited(_syncLocationPermissionState());
     }
   }
 
   @override
   void dispose() {
-    _positionSubscription?.cancel();
     super.dispose();
   }
 
-  void _initializeMarkers() {
-    setState(() {
-      _markers = {_buildClinicMarker()};
-      _polylines = {};
-      _isMapLoading = false;
-    });
+  void _initializeNativeMap() {
+    _webViewController = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(const Color(0x00000000))
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageStarted: (_) {
+            if (!mounted) return;
+            setState(() {
+              _isMapLoading = true;
+              _hasMapError = false;
+            });
+          },
+          onPageFinished: (_) {
+            if (!mounted) return;
+            setState(() => _isMapLoading = false);
+          },
+          onWebResourceError: (error) {
+            if (error.isForMainFrame != true || !mounted) return;
+            setState(() {
+              _isMapLoading = false;
+              _hasMapError = true;
+              _routeNotice =
+                  'Map failed to load inside the app. You can still use Open in Maps.';
+              _routeNoticeIsError = true;
+            });
+          },
+        ),
+      );
+
+    unawaited(_loadMapUrl(_webMapUrl));
   }
 
-  gmaps.Marker _buildClinicMarker() {
-    return gmaps.Marker(
-      markerId: const gmaps.MarkerId('clinic'),
-      position: gmaps.LatLng(widget.latitude, widget.longitude),
-      infoWindow: gmaps.InfoWindow(
-        title: widget.clinicName,
-        snippet: widget.altitude != null ? 'Altitude: ${widget.altitude}m' : null,
-      ),
-      icon: gmaps.BitmapDescriptor.defaultMarkerWithHue(gmaps.BitmapDescriptor.hueBlue),
+  Future<void> _loadMapUrl(String url) async {
+    if (!mounted) return;
+
+    setState(() {
+      _webMapUrl = url;
+      if (!kIsWeb) {
+        _isMapLoading = true;
+        _hasMapError = false;
+      }
+    });
+
+    if (kIsWeb) {
+      return;
+    }
+
+    await _webViewController.loadHtmlString(
+      _buildMobileMapFrameHtml(url),
+      baseUrl: 'https://www.google.com',
     );
   }
 
@@ -350,26 +373,42 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
                     viewType: _buildMapViewType(widget.latitude, widget.longitude, 'web'),
                     embedUrl: _webMapUrl,
                   )
-                else
-                  gmaps.GoogleMap(
-                    initialCameraPosition: gmaps.CameraPosition(
-                      target: gmaps.LatLng(widget.latitude, widget.longitude),
-                      zoom: 15,
+                else if (_hasMapError)
+                  Container(
+                    color: colorScheme.surfaceVariant.withOpacity(0.3),
+                    alignment: Alignment.center,
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.map_outlined,
+                          size: 42,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Map unavailable in the app right now.',
+                          style: TextStyle(
+                            color: colorScheme.onSurface,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Use Open in Maps while the in-app view reloads.',
+                          style: TextStyle(
+                            color: colorScheme.onSurfaceVariant,
+                            fontSize: 12,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                     ),
-                    markers: _markers,
-                    polylines: _polylines,
-                    onMapCreated: (gmaps.GoogleMapController controller) {
-                      _mapController = controller;
-                      setState(() {
-                        _isMapLoading = false;
-                      });
-                    },
-                    myLocationEnabled: _hasLocationPermission,
-                    myLocationButtonEnabled: _hasLocationPermission,
-                    compassEnabled: true,
-                    zoomControlsEnabled: false,
-                    mapToolbarEnabled: false,
-                  ),
+                  )
+                else
+                  WebViewWidget(controller: _webViewController),
                 if (_isMapLoading && !kIsWeb)
                   Container(
                     color: colorScheme.surface.withOpacity(0.75),
@@ -415,7 +454,7 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
                   children: [
                     Expanded(
                       child: ElevatedButton.icon(
-                        onPressed: _isLoadingRoute ? null : () => _navigateToClinic(context),
+                        onPressed: _isLoadingRoute ? null : _navigateToClinic,
                         icon: Icon(
                           _isNavigating ? Icons.stop_circle_outlined : Icons.route_rounded,
                           size: 18,
@@ -443,8 +482,8 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
                         ),
                       if (_isNavigating)
                         const _MapMetricChip(
-                          icon: Icons.my_location_rounded,
-                          label: 'Live',
+                          icon: Icons.route_rounded,
+                          label: 'In App',
                         ),
                     ],
                   ),
@@ -470,7 +509,7 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
     );
   }
 
-  Future<void> _navigateToClinic(BuildContext context) async {
+  Future<void> _navigateToClinic() async {
     if (_isNavigating) {
       _resetMapToClinic();
       return;
@@ -486,7 +525,7 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
     try {
       final userPosition = await _getCurrentUserPosition();
       if (userPosition != null) {
-        await _startLiveNavigation(userPosition);
+        await _showNavigationRoute(userPosition);
       } else {
         setState(() {
           _routeNotice = 'Unable to get your location. Please enable location services.';
@@ -511,127 +550,7 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
     await _ensureLocationAccess(requestIfNeeded: false);
   }
 
-  Future<void> _startLiveNavigation(Position initialPosition) async {
-    await _positionSubscription?.cancel();
-    _positionSubscription = null;
-
-    if (mounted) {
-      setState(() {
-        _isNavigating = true;
-        _isShowingRoute = true;
-      });
-    }
-
-    await _refreshRouteForPosition(
-      initialPosition,
-      forceDirectionsRefresh: true,
-      focusRoute: true,
-    );
-
-    _positionSubscription = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.best,
-        distanceFilter: 10,
-      ),
-    ).listen(
-      (position) {
-        final shouldRefresh = _shouldRefreshRoute(position);
-        unawaited(
-          _refreshRouteForPosition(
-            position,
-            forceDirectionsRefresh: shouldRefresh,
-            focusRoute: false,
-          ),
-        );
-      },
-      onError: (_) {
-        if (!mounted) return;
-        setState(() {
-          _routeNotice =
-              'Live location updates paused. Check your location permission and GPS.';
-          _routeNoticeIsError = true;
-        });
-      },
-    );
-  }
-
-  bool _shouldRefreshRoute(Position position) {
-    if (_lastRouteOrigin == null || _lastRouteRefreshAt == null) {
-      return true;
-    }
-
-    final movedDistance = Geolocator.distanceBetween(
-      _lastRouteOrigin!.latitude,
-      _lastRouteOrigin!.longitude,
-      position.latitude,
-      position.longitude,
-    );
-
-    return movedDistance >= _routeRefreshDistanceMeters ||
-        DateTime.now().difference(_lastRouteRefreshAt!) >= _routeRefreshInterval;
-  }
-
-  Future<void> _refreshRouteForPosition(
-    Position userPosition, {
-    required bool forceDirectionsRefresh,
-    required bool focusRoute,
-  }) async {
-    if (_isDirectionsRequestActive) {
-      return;
-    }
-
-    if (!forceDirectionsRefresh && _polylines.isNotEmpty) {
-      return;
-    }
-
-    _isDirectionsRequestActive = true;
-    try {
-      final routeSnapshot = await _resolveRouteSnapshot(userPosition);
-      if (!mounted) return;
-
-      setState(() {
-        _markers = {_buildClinicMarker()};
-        _polylines = {
-          gmaps.Polyline(
-            polylineId: const gmaps.PolylineId('route'),
-            points: routeSnapshot.points,
-            color: const Color(0xFF0F74B8),
-            width: 5,
-            geodesic: true,
-          ),
-        };
-        _isShowingRoute = true;
-        _isNavigating = true;
-        _routeDistanceLabel = routeSnapshot.distanceLabel;
-        _routeDurationLabel = routeSnapshot.durationLabel;
-        _routeNotice = routeSnapshot.notice ?? 'Live navigation active on the map.';
-        _routeNoticeIsError = routeSnapshot.isNoticeError;
-        _lastRouteOrigin = userPosition;
-        _lastRouteRefreshAt = DateTime.now();
-        if (kIsWeb) {
-          _webMapUrl = _buildGoogleMapsDirectionsEmbedUrl(
-            originLat: userPosition.latitude,
-            originLon: userPosition.longitude,
-            destinationLat: widget.latitude,
-            destinationLon: widget.longitude,
-          );
-        }
-      });
-
-      if (focusRoute) {
-        await _fitMapToRoute(userPosition, routeSnapshot.points);
-      }
-    } finally {
-      _isDirectionsRequestActive = false;
-    }
-  }
-
-  Future<_RouteSnapshot> _resolveRouteSnapshot(Position userPosition) async {
-    final googleRoute = await _fetchGoogleDirectionsRoute(userPosition);
-    if (googleRoute != null) {
-      return googleRoute;
-    }
-
+  Future<void> _showNavigationRoute(Position userPosition) async {
     final distanceMeters = Geolocator.distanceBetween(
       userPosition.latitude,
       userPosition.longitude,
@@ -639,117 +558,23 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
       widget.longitude,
     );
 
-    return _RouteSnapshot(
-      points: [
-        gmaps.LatLng(userPosition.latitude, userPosition.longitude),
-        gmaps.LatLng(widget.latitude, widget.longitude),
-      ],
-      distanceLabel: _formatDistance(distanceMeters),
-      durationLabel: null,
-      notice:
-          'Live navigation is active. Add a Google Maps Directions-enabled API key to show road routes instead of a direct line.',
-      isNoticeError: false,
+    final directionsUrl = _buildGoogleMapsDirectionsEmbedUrl(
+      originLat: userPosition.latitude,
+      originLon: userPosition.longitude,
+      destinationLat: widget.latitude,
+      destinationLon: widget.longitude,
     );
-  }
 
-  Future<_RouteSnapshot?> _fetchGoogleDirectionsRoute(Position userPosition) async {
-    final mapsApiKey = await _getMapsApiKey();
-    if (mapsApiKey.isEmpty) {
-      return null;
-    }
+    if (!mounted) return;
+    setState(() {
+      _isNavigating = true;
+      _routeDistanceLabel = _formatDistance(distanceMeters);
+      _routeDurationLabel = null;
+      _routeNotice = 'Route loaded inside the app.';
+      _routeNoticeIsError = false;
+    });
 
-    try {
-      final routeUri = Uri.https(
-        'maps.googleapis.com',
-        '/maps/api/directions/json',
-        {
-          'origin': '${userPosition.latitude},${userPosition.longitude}',
-          'destination': '${widget.latitude},${widget.longitude}',
-          'mode': 'driving',
-          'key': mapsApiKey,
-        },
-      );
-
-      final response = await http.get(routeUri).timeout(const Duration(seconds: 12));
-      if (response.statusCode != 200) {
-        return null;
-      }
-
-      final payload = jsonDecode(response.body);
-      if (payload is! Map<String, dynamic> || payload['status'] != 'OK') {
-        return null;
-      }
-
-      final routes = payload['routes'];
-      if (routes is! List || routes.isEmpty || routes.first is! Map<String, dynamic>) {
-        return null;
-      }
-
-      final route = routes.first as Map<String, dynamic>;
-      final overviewPolyline = route['overview_polyline'];
-      if (overviewPolyline is! Map<String, dynamic>) {
-        return null;
-      }
-
-      final encodedPolyline = overviewPolyline['points'];
-      if (encodedPolyline is! String || encodedPolyline.isEmpty) {
-        return null;
-      }
-
-      final routePoints = _decodePolyline(encodedPolyline);
-      if (routePoints.length < 2) {
-        return null;
-      }
-
-      String? distanceLabel;
-      String? durationLabel;
-      final legs = route['legs'];
-      if (legs is List && legs.isNotEmpty && legs.first is Map<String, dynamic>) {
-        final firstLeg = legs.first as Map<String, dynamic>;
-        final distance = firstLeg['distance'];
-        final duration = firstLeg['duration'];
-        if (distance is Map<String, dynamic>) {
-          distanceLabel = distance['text'] as String?;
-        }
-        if (duration is Map<String, dynamic>) {
-          durationLabel = duration['text'] as String?;
-        }
-      }
-
-      return _RouteSnapshot(
-        points: routePoints,
-        distanceLabel: distanceLabel,
-        durationLabel: durationLabel,
-        notice: 'Live navigation active with Google Maps routing.',
-        isNoticeError: false,
-      );
-    } catch (_) {
-      return null;
-    }
-  }
-
-  Future<String> _getMapsApiKey() async {
-    if (_mapsApiKey != null) {
-      return _mapsApiKey!;
-    }
-
-    try {
-      final rawApiKey =
-          await _mapsConfigChannel.invokeMethod<String>('getGoogleMapsApiKey') ?? '';
-      _mapsApiKey = _sanitizeMapsApiKey(rawApiKey);
-    } catch (_) {
-      _mapsApiKey = '';
-    }
-
-    return _mapsApiKey!;
-  }
-
-  String _sanitizeMapsApiKey(String value) {
-    final trimmed = value.trim();
-    if (trimmed.isEmpty || trimmed.startsWith(r'$(')) {
-      return '';
-    }
-    return trimmed;
+    await _loadMapUrl(directionsUrl);
   }
 
   Future<Position?> _getCurrentUserPosition() async {
@@ -828,99 +653,21 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
     );
   }
 
-  Future<void> _fitMapToRoute(
-    Position userPosition,
-    List<gmaps.LatLng> routePoints,
-  ) async {
-    final controller = _mapController;
-    if (controller == null) {
-      return;
-    }
-
-    final boundsPoints = <gmaps.LatLng>[
-      gmaps.LatLng(userPosition.latitude, userPosition.longitude),
-      gmaps.LatLng(widget.latitude, widget.longitude),
-      ...routePoints,
-    ];
-
-    final bounds = _calculateBounds(boundsPoints);
-    if (bounds == null) {
-      await controller.animateCamera(
-        gmaps.CameraUpdate.newCameraPosition(
-          gmaps.CameraPosition(
-            target: gmaps.LatLng(widget.latitude, widget.longitude),
-            zoom: 15,
-          ),
-        ),
-      );
-      return;
-    }
-
-    await controller.animateCamera(
-      gmaps.CameraUpdate.newLatLngBounds(bounds, 56),
-    );
-  }
-
-  gmaps.LatLngBounds? _calculateBounds(List<gmaps.LatLng> points) {
-    if (points.isEmpty) {
-      return null;
-    }
-
-    double minLat = points.first.latitude;
-    double maxLat = points.first.latitude;
-    double minLon = points.first.longitude;
-    double maxLon = points.first.longitude;
-
-    for (final point in points.skip(1)) {
-      if (point.latitude < minLat) minLat = point.latitude;
-      if (point.latitude > maxLat) maxLat = point.latitude;
-      if (point.longitude < minLon) minLon = point.longitude;
-      if (point.longitude > maxLon) maxLon = point.longitude;
-    }
-
-    if (minLat == maxLat && minLon == maxLon) {
-      return null;
-    }
-
-    return gmaps.LatLngBounds(
-      southwest: gmaps.LatLng(minLat, minLon),
-      northeast: gmaps.LatLng(maxLat, maxLon),
-    );
-  }
-
   void _resetMapToClinic() {
-    _positionSubscription?.cancel();
-    _positionSubscription = null;
+    final clinicUrl = _buildGoogleMapsEmbedUrl(
+      latitude: widget.latitude,
+      longitude: widget.longitude,
+    );
 
     setState(() {
-      _markers = {_buildClinicMarker()};
-      _polylines = {};
-      _isShowingRoute = false;
       _isNavigating = false;
-      _isMapLoading = false;
       _routeNotice = null;
       _routeNoticeIsError = false;
       _routeDistanceLabel = null;
       _routeDurationLabel = null;
-      _lastRouteOrigin = null;
-      _lastRouteRefreshAt = null;
-      _webMapUrl = _buildGoogleMapsEmbedUrl(
-        latitude: widget.latitude,
-        longitude: widget.longitude,
-      );
     });
 
-    final controller = _mapController;
-    if (controller != null) {
-      controller.animateCamera(
-        gmaps.CameraUpdate.newCameraPosition(
-          gmaps.CameraPosition(
-            target: gmaps.LatLng(widget.latitude, widget.longitude),
-            zoom: 15,
-          ),
-        ),
-      );
-    }
+    unawaited(_loadMapUrl(clinicUrl));
   }
 
   Future<Position> _getBetterPositionIfNeeded(Position first) async {
@@ -939,22 +686,6 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
       return first;
     }
   }
-}
-
-class _RouteSnapshot {
-  const _RouteSnapshot({
-    required this.points,
-    required this.distanceLabel,
-    required this.durationLabel,
-    required this.notice,
-    required this.isNoticeError,
-  });
-
-  final List<gmaps.LatLng> points;
-  final String? distanceLabel;
-  final String? durationLabel;
-  final String? notice;
-  final bool isNoticeError;
 }
 
 class _MapMetricChip extends StatelessWidget {
@@ -1016,6 +747,45 @@ String _buildGoogleMapsDirectionsEmbedUrl({
   return 'https://www.google.com/maps?saddr=$originLat,$originLon&daddr=$destinationLat,$destinationLon&output=embed';
 }
 
+String _buildMobileMapFrameHtml(String embedUrl) {
+  final safeUrl = const HtmlEscape().convert(embedUrl);
+  return '''
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    >
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #f8fafc;
+      }
+      iframe {
+        border: 0;
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <iframe
+      src="$safeUrl"
+      allowfullscreen
+      loading="eager"
+      referrerpolicy="no-referrer-when-downgrade"
+    ></iframe>
+  </body>
+</html>
+''';
+}
+
 const String _configuredBaseUrl = String.fromEnvironment(
   'MOBILE_API_BASE_URL',
   defaultValue: 'http://10.0.2.2:4000',
@@ -1045,46 +815,6 @@ String _formatDistance(double meters) {
     return '${(meters / 1000).toStringAsFixed(1)} km';
   }
   return '${meters.round()} m';
-}
-
-List<gmaps.LatLng> _decodePolyline(String encoded) {
-  final points = <gmaps.LatLng>[];
-  var index = 0;
-  var latitude = 0;
-  var longitude = 0;
-
-  while (index < encoded.length) {
-    var result = 0;
-    var shift = 0;
-    int byte;
-
-    do {
-      byte = encoded.codeUnitAt(index++) - 63;
-      result |= (byte & 0x1f) << shift;
-      shift += 5;
-    } while (byte >= 0x20 && index < encoded.length);
-
-    final latitudeChange = (result & 1) == 0 ? (result >> 1) : ~(result >> 1);
-    latitude += latitudeChange;
-
-    result = 0;
-    shift = 0;
-
-    do {
-      byte = encoded.codeUnitAt(index++) - 63;
-      result |= (byte & 0x1f) << shift;
-      shift += 5;
-    } while (byte >= 0x20 && index < encoded.length);
-
-    final longitudeChange = (result & 1) == 0 ? (result >> 1) : ~(result >> 1);
-    longitude += longitudeChange;
-
-    points.add(
-      gmaps.LatLng(latitude / 1e5, longitude / 1e5),
-    );
-  }
-
-  return points;
 }
 
 Widget _buildClinicImage(String imagePath) {

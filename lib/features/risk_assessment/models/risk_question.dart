@@ -1,31 +1,14 @@
+import '../domain/entities/risk_question_entity.dart';
 import 'risk_option.dart';
 
-class RiskQuestion {
-  final String id;
-  final int? number;
-  final String title;
-  final String helper;
-  final String type;
-  final bool active;
-  final List<RiskOption> options;
-
+class RiskQuestion extends RiskQuestionEntity {
   const RiskQuestion({
-    required this.id,
-    this.number,
-    required this.title,
-    required this.helper,
-    this.type = 'yesno',
-    this.active = true,
-    required this.options,
+    required super.id,
+    super.number,
+    required super.title,
+    required super.helper,
+    super.type = 'yesno',
+    super.active = true,
+    required List<RiskOption> super.options,
   });
-
-  int get maxScore {
-    var maxScore = 0;
-    for (final option in options) {
-      if (option.score > maxScore) {
-        maxScore = option.score;
-      }
-    }
-    return maxScore;
-  }
 }

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../models/learning_content_block.dart';
-import '../../models/learning_section.dart';
+import '../../domain/entities/learning_content_block_entity.dart';
+import '../../domain/entities/learning_section_entity.dart';
 import 'learning_image.dart';
 
 class LearningSectionTile extends StatelessWidget {
-  final LearningSection section;
+  final LearningSectionEntity section;
 
   const LearningSectionTile({
     super.key,
@@ -48,7 +48,7 @@ class LearningSectionTile extends StatelessWidget {
 }
 
 class _SectionBlockView extends StatelessWidget {
-  final LearningContentBlock block;
+  final LearningContentBlockEntity block;
 
   const _SectionBlockView({
     required this.block,

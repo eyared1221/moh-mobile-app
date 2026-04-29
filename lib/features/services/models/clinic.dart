@@ -1,36 +1,23 @@
-class Clinic {
-  final String id;
-  final String name;
-  final String address;
-  final String phone;
-  final String? email;
-  final String? website;
-  final String hours;
-  final String description;
-  final List<String> services;
-  final LatLng location;
-  final String? imageUrl;
-  final String? altitude;
+import '../domain/entities/clinic_entity.dart';
+import '../domain/entities/lat_lng_entity.dart';
 
+class Clinic extends ClinicEntity {
   const Clinic({
-    required this.id,
-    required this.name,
-    required this.address,
-    required this.phone,
-    this.email,
-    this.website,
-    required this.hours,
-    required this.description,
-    required this.services,
-    required this.location,
-    this.imageUrl,
-    this.altitude,
+    required super.id,
+    required super.name,
+    required super.address,
+    required super.phone,
+    super.email,
+    super.website,
+    required super.hours,
+    required super.description,
+    required super.services,
+    required LatLng super.location,
+    super.imageUrl,
+    super.altitude,
   });
 }
 
-class LatLng {
-  final double latitude;
-  final double longitude;
-
-  const LatLng(this.latitude, this.longitude);
+class LatLng extends LatLngEntity {
+  const LatLng(double latitude, double longitude) : super(latitude, longitude);
 }

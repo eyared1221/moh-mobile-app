@@ -3,7 +3,7 @@ import 'signup_screen.dart';
 import 'forgot_password_screen.dart';
 import 'auth_success_dialog.dart';
 import '../data/auth_models.dart';
-import '../data/auth_service.dart';
+import 'controllers/auth_controller.dart';
 import 'package:yegna_health/features/home/presentation/pages/home_page.dart';
 
 class SignInScreen extends StatefulWidget {
@@ -21,7 +21,7 @@ class _SignInScreenState extends State<SignInScreen> {
   
   bool _obscure = true;
   bool _isLoading = false; // Loading state for professional feel
-  final AuthService _authService = AuthService.instance;
+  final AuthController _authController = AuthController.standard();
 
   @override
   void dispose() {
@@ -59,7 +59,7 @@ class _SignInScreenState extends State<SignInScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final result = await _authService.login(
+      final result = await _authController.login(
         identifier: _contactCtrl.text.trim(),
         password: _passwordCtrl.text,
       );

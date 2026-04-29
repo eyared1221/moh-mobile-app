@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 
-import '../../data/mentor_repository.dart';
-import '../../models/mentor.dart';
 import '../../../../shared/widgets/app_bottom_nav.dart';
 import '../../../../shared/widgets/notification_badge.dart';
 import '../../../notifications/data/app_notification_service.dart';
 import '../../../notifications/data/notification_provider.dart';
 import '../../../notifications/presentation/pages/notification_center_page.dart';
+import '../../data/mentor_repository.dart';
+import '../../domain/entities/mentor_entity.dart';
+import '../../domain/usecases/get_mentors_use_case.dart';
+import '../controllers/mentor_page_controller.dart';
 import '../widgets/mentor_card.dart';
 
 class MentorPage extends StatefulWidget {
@@ -24,9 +26,9 @@ class MentorPage extends StatefulWidget {
 }
 
 class _MentorPageState extends State<MentorPage> {
-  final MentorRepository _repository = MentorRepository();
+  late final MentorPageController _controller;
   late final TextEditingController _searchController;
-  late final Future<List<Mentor>> _mentorsFuture;
+  late final Future<List<MentorEntity>> _mentorsFuture;
   String _query = '';
   final AppNotificationService _notificationService = AppNotificationService.instance;
   final NotificationProvider _provider = NotificationProvider();
@@ -35,8 +37,11 @@ class _MentorPageState extends State<MentorPage> {
   @override
   void initState() {
     super.initState();
+    _controller = MentorPageController(
+      GetMentorsUseCase(MentorRepository()),
+    );
     _searchController = TextEditingController();
-    _mentorsFuture = _repository.fetchMentors();
+    _mentorsFuture = _controller.loadMentors();
     _unreadCount = _provider.unreadCount;
     _loadUnreadCount();
     _provider.addListener(_onNotificationCountChanged);
@@ -80,7 +85,7 @@ class _MentorPageState extends State<MentorPage> {
       ),
       body: Padding(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-        child: FutureBuilder<List<Mentor>>(
+        child: FutureBuilder<List<MentorEntity>>(
           future: _mentorsFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
@@ -100,7 +105,7 @@ class _MentorPageState extends State<MentorPage> {
               );
             }
 
-            final mentors = snapshot.data ?? const <Mentor>[];
+            final mentors = snapshot.data ?? const <MentorEntity>[];
             if (mentors.isEmpty) {
               return ListView(
                 physics: const BouncingScrollPhysics(),
@@ -119,7 +124,7 @@ class _MentorPageState extends State<MentorPage> {
               );
             }
 
-            final filtered = _filterMentors(mentors, _query);
+            final filtered = _controller.filterMentors(mentors, _query);
             if (filtered.isEmpty) {
               return ListView(
                 physics: const BouncingScrollPhysics(),
@@ -265,16 +270,6 @@ class _MentorPageState extends State<MentorPage> {
         ],
       ),
     );
-  }
-
-  List<Mentor> _filterMentors(List<Mentor> mentors, String query) {
-    final normalized = query.trim().toLowerCase();
-    if (normalized.isEmpty) return mentors;
-    return mentors.where((mentor) {
-      final name = mentor.fullName.toLowerCase();
-      final phone = mentor.phone.toLowerCase();
-      return name.contains(normalized) || phone.contains(normalized);
-    }).toList();
   }
 
   Future<void> _loadUnreadCount() async {

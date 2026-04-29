@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../models/clinic.dart';
+import '../../domain/entities/clinic_entity.dart';
 
 class ClinicCard extends StatelessWidget {
-  final Clinic clinic;
+  final ClinicEntity clinic;
   final double? distanceKm;
   final VoidCallback onTap;
 

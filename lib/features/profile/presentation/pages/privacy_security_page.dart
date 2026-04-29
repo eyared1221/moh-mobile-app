@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../../../auth/presentation/forgot_password_screen.dart';
 import 'privacy_policy_page.dart';
+import 'two_factor_auth_page.dart';
 
 class PrivacySecurityPage extends StatefulWidget {
-  const PrivacySecurityPage({super.key});
+  const PrivacySecurityPage({super.key, this.language, this.email});
+
+  final String? language;
+  final String? email;
 
   @override
   State<PrivacySecurityPage> createState() => _PrivacySecurityPageState();
@@ -11,6 +16,18 @@ class PrivacySecurityPage extends StatefulWidget {
 
 class _PrivacySecurityPageState extends State<PrivacySecurityPage> {
   bool _twoFactor = false;
+
+  Future<void> _openTwoFactorSetup() async {
+    final enabled = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => TwoFactorAuthPage(email: widget.email),
+      ),
+    );
+
+    if (!mounted || enabled == null) return;
+    setState(() => _twoFactor = enabled);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +57,14 @@ class _PrivacySecurityPageState extends State<PrivacySecurityPage> {
             iconTint: colorScheme.primary,
             iconBg: colorScheme.primary.withOpacity(0.12),
             control: Icon(Icons.chevron_right_rounded, color: colorScheme.outline),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ForgotPasswordScreen(language: widget.language),
+                ),
+              );
+            },
           ),
           const SizedBox(height: 10),
           _accessCard(
@@ -51,8 +76,9 @@ class _PrivacySecurityPageState extends State<PrivacySecurityPage> {
             iconBg: const Color(0xFFF8D9CF),
             control: Switch.adaptive(
               value: _twoFactor,
-              onChanged: (value) => setState(() => _twoFactor = value),
+              onChanged: (_) => _openTwoFactorSetup(),
             ),
+            onTap: _openTwoFactorSetup,
           ),
           const SizedBox(height: 24),
           _sectionTitle(context, 'Personal Data'),
@@ -225,56 +251,61 @@ class _PrivacySecurityPageState extends State<PrivacySecurityPage> {
     required Color iconBg,
     required Color iconTint,
     required Widget control,
+    VoidCallback? onTap,
   }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: colorScheme.outlineVariant),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: iconBg,
-              borderRadius: BorderRadius.circular(14),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+        decoration: BoxDecoration(
+          color: theme.cardColor,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: colorScheme.outlineVariant),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: iconBg,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(icon, color: iconTint),
             ),
-            child: Icon(icon, color: iconTint),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    color: colorScheme.onSurface,
-                    fontSize: 17,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      color: colorScheme.onSurface,
+                      fontSize: 17,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    color: colorScheme.onSurfaceVariant,
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w500,
+                  const SizedBox(height: 3),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: colorScheme.onSurfaceVariant,
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-          control,
-        ],
+            const SizedBox(width: 8),
+            control,
+          ],
+        ),
       ),
     );
   }

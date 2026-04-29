@@ -7,7 +7,9 @@ import '../../../notifications/data/notification_provider.dart';
 import '../../../notifications/presentation/pages/notification_center_page.dart';
 import '../../../mentor/presentation/pages/mentor_page.dart';
 import '../../data/risk_assessment_repository.dart';
-import '../../models/risk_question.dart';
+import '../../domain/entities/risk_question_entity.dart';
+import '../../domain/usecases/get_risk_assessment_questions_use_case.dart';
+import '../controllers/risk_assessment_page_controller.dart';
 import '../widgets/risk_assessment_intro_page.dart';
 import '../widgets/risk_assessment_question_page.dart';
 import '../widgets/risk_assessment_result_page.dart';
@@ -32,9 +34,9 @@ enum _RiskStage { intro, questions, result }
 enum _RiskLevel { low, high }
 
 class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
-  final RiskAssessmentRepository _repository = RiskAssessmentRepository();
+  late final RiskAssessmentPageController _controller;
 
-  List<RiskQuestion> _questions = const [];
+  List<RiskQuestionEntity> _questions = const [];
   List<int?> _selectedOptionIndexes = const [];
   bool _isLoadingQuestions = true;
 
@@ -47,6 +49,9 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
   @override
   void initState() {
     super.initState();
+    _controller = RiskAssessmentPageController(
+      GetRiskAssessmentQuestionsUseCase(RiskAssessmentRepository()),
+    );
     _loadQuestions();
     _unreadCount = _provider.unreadCount;
     _loadUnreadCount();
@@ -69,7 +74,7 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
 
   Future<void> _loadQuestions() async {
     try {
-      final items = await _repository.fetchQuestions();
+      final items = await _controller.loadQuestions();
       if (!mounted) return;
       setState(() {
         _questions = items;

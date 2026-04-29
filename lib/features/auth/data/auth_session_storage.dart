@@ -1,9 +1,9 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'auth_models.dart';
+import '../domain/entities/login_result_entity.dart';
 
 class AuthSessionStorage {
-  Future<void> saveLogin(LoginResult result) async {
+  Future<void> saveLogin(LoginResultEntity result) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLoggedIn', true);
     await prefs.setString('authToken', result.token);

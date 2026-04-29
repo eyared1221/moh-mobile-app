@@ -5,7 +5,9 @@ import '../../../notifications/data/app_notification_service.dart';
 import '../../../notifications/data/notification_provider.dart';
 import '../../../notifications/presentation/pages/notification_center_page.dart';
 import '../../data/learning_service.dart';
-import '../../models/learning_module.dart';
+import '../../domain/entities/learning_module_entity.dart';
+import '../../domain/usecases/get_learning_modules_use_case.dart';
+import '../controllers/learning_modules_controller.dart';
 import '../widgets/learning_module_card.dart';
 import 'learning_module_detail_page.dart';
 
@@ -24,9 +26,10 @@ class LearningModulesPage extends StatefulWidget {
 }
 
 class _LearningModulesPageState extends State<LearningModulesPage> {
+  late final LearningModulesController _controller;
   late final PageController _pageController;
   int _currentIndex = 0;
-  List<LearningModule> _learningModules = [];
+  List<LearningModuleEntity> _learningModules = [];
   bool _isLoading = true;
   String? _errorMessage;
   final AppNotificationService _notificationService = AppNotificationService.instance;
@@ -36,6 +39,9 @@ class _LearningModulesPageState extends State<LearningModulesPage> {
   @override
   void initState() {
     super.initState();
+    _controller = LearningModulesController(
+      GetLearningModulesUseCase(LearningService.instance),
+    );
     _pageController = PageController(viewportFraction: 0.96);
     _loadLearningModules();
     _unreadCount = _provider.unreadCount;
@@ -65,7 +71,7 @@ class _LearningModulesPageState extends State<LearningModulesPage> {
         _errorMessage = null;
       });
 
-      final modules = await LearningService.instance.getLearningModules();
+      final modules = await _controller.loadModules();
       
       setState(() {
         _learningModules = modules;

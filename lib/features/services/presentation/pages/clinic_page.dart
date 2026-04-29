@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:yegna_health/shared/widgets/app_bottom_nav.dart';
@@ -9,7 +7,11 @@ import '../../../notifications/data/app_notification_service.dart';
 import '../../../notifications/data/notification_provider.dart';
 import '../../../notifications/presentation/pages/notification_center_page.dart';
 import '../../data/clinic_repository.dart';
+import '../../domain/entities/clinic_entity.dart';
+import '../../domain/entities/lat_lng_entity.dart';
+import '../../domain/usecases/get_clinics_use_case.dart';
 import '../../models/clinic.dart';
+import '../controllers/clinic_page_controller.dart';
 import '../pages/clinic_detail_page.dart';
 import '../widgets/clinic_card.dart';
 
@@ -28,11 +30,11 @@ class ClinicPage extends StatefulWidget {
 }
 
 class _ClinicPageState extends State<ClinicPage> {
-  final ClinicRepository _repository = ClinicRepository();
+  late final ClinicPageController _controller;
   final TextEditingController _searchCtrl = TextEditingController();
   static const int _maxNearbyClinics = 4;
 
-  List<Clinic> _clinics = [];
+  List<ClinicEntity> _clinics = [];
   bool _isLoading = true;
   String? _error;
   bool _showNearby = true;
@@ -43,13 +45,16 @@ class _ClinicPageState extends State<ClinicPage> {
 
   static const double _maxAcceptedAccuracyMeters = 80;
 
-  LatLng? _userLocation;
+  LatLngEntity? _userLocation;
   bool _isResolvingLocation = false;
   String? _locationNotice;
 
   @override
   void initState() {
     super.initState();
+    _controller = ClinicPageController(
+      GetClinicsUseCase(ClinicRepository()),
+    );
     _loadClinics();
     _resolveUserLocation();
     _unreadCount = _provider.unreadCount;
@@ -79,7 +84,7 @@ class _ClinicPageState extends State<ClinicPage> {
     });
 
     try {
-      final data = await _repository.fetchClinics();
+      final data = await _controller.loadClinics();
       if (!mounted) return;
       setState(() {
         _clinics = data;
@@ -199,51 +204,24 @@ class _ClinicPageState extends State<ClinicPage> {
     await _resolveUserLocation();
   }
 
-  List<Clinic> _filteredClinics() {
-    final query = _searchQuery.trim().toLowerCase();
-    return _clinics.where((clinic) {
-      if (query.isEmpty) return true;
-      final inName = clinic.name.toLowerCase().contains(query);
-      final inAddress = clinic.address.toLowerCase().contains(query);
-      final inServices = clinic.services.any((s) => s.toLowerCase().contains(query));
-      return inName || inAddress || inServices;
-    }).toList();
+  List<ClinicEntity> _filteredClinics() {
+    return _controller.filterClinics(_clinics, _searchQuery);
   }
 
-  List<Clinic> _nearbyClinics() {
-    final filtered = _filteredClinics();
-    if (_userLocation == null) {
-      return filtered.take(_maxNearbyClinics).toList();
-    }
-    final sorted = [...filtered]..sort((a, b) => _distanceKm(a).compareTo(_distanceKm(b)));
-    return sorted.take(_maxNearbyClinics).toList();
-  }
-
-  double _distanceKm(Clinic clinic) {
-    final current = _userLocation;
-    if (current == null) return 0;
-    return _haversineKm(
-      current.latitude,
-      current.longitude,
-      clinic.location.latitude,
-      clinic.location.longitude,
+  List<ClinicEntity> _nearbyClinics() {
+    return _controller.nearbyClinics(
+      _clinics,
+      query: _searchQuery,
+      userLocation: _userLocation,
+      maxNearbyClinics: _maxNearbyClinics,
     );
   }
 
-  double _haversineKm(double lat1, double lon1, double lat2, double lon2) {
-    const earthRadiusKm = 6371.0;
-    final dLat = _degToRad(lat2 - lat1);
-    final dLon = _degToRad(lon2 - lon1);
-    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
-        math.cos(_degToRad(lat1)) *
-            math.cos(_degToRad(lat2)) *
-            math.sin(dLon / 2) *
-            math.sin(dLon / 2);
-    final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
-    return earthRadiusKm * c;
+  double _distanceKm(ClinicEntity clinic) {
+    final current = _userLocation;
+    if (current == null) return 0;
+    return _controller.distanceKm(clinic, current);
   }
-
-  double _degToRad(double deg) => deg * (math.pi / 180.0);
 
   String _locationHeaderText() {
     final nearbyCount = _nearbyClinics().length;
@@ -442,7 +420,7 @@ class _ClinicPageState extends State<ClinicPage> {
     );
   }
 
-  Widget _buildBody(BuildContext context, List<Clinic> clinics) {
+  Widget _buildBody(BuildContext context, List<ClinicEntity> clinics) {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }

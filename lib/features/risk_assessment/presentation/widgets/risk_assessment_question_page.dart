@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../models/risk_option.dart';
-import '../../models/risk_question.dart';
+import '../../domain/entities/risk_option_entity.dart';
+import '../../domain/entities/risk_question_entity.dart';
 
 class RiskAssessmentQuestionPage extends StatelessWidget {
-  final RiskQuestion question;
+  final RiskQuestionEntity question;
   final int currentQuestion;
   final int totalQuestions;
   final int? selectedIndex;
@@ -263,7 +263,7 @@ class RiskAssessmentQuestionPage extends StatelessWidget {
 
   Widget _buildOptionTile(
     BuildContext context, {
-    required RiskOption option,
+    required RiskOptionEntity option,
     required bool isSelected,
     required VoidCallback onTap,
   }) {

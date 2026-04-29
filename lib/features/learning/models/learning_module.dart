@@ -1,34 +1,20 @@
 import 'learning_section.dart';
+import '../domain/entities/learning_module_entity.dart';
 
-enum ModuleImagePosition { top, bottom }
-
-class LearningModule {
-  final String id;
-  final String title;
-  final String shortDescription;
-  final String ctaLabel;
-  final String introText;
-  final String definitionTitle;
-  final String note;
-  final String imageUrl;
-  final bool isAssetImage;
-  final ModuleImagePosition imagePosition;
-  final int displayOrder;
-  final List<LearningSection> sections;
-
+class LearningModule extends LearningModuleEntity {
   const LearningModule({
-    required this.id,
-    required this.title,
-    required this.shortDescription,
-    this.ctaLabel = 'More',
-    required this.introText,
-    this.definitionTitle = 'Note',
-    required this.note,
-    required this.imageUrl,
-    required this.isAssetImage,
-    required this.imagePosition,
-    this.displayOrder = 0,
-    required this.sections,
+    required super.id,
+    required super.title,
+    required super.shortDescription,
+    super.ctaLabel = 'More',
+    required super.introText,
+    super.definitionTitle = 'Note',
+    required super.note,
+    required super.imageUrl,
+    required super.isAssetImage,
+    required super.imagePosition,
+    super.displayOrder = 0,
+    required List<LearningSection> super.sections,
   });
 
   factory LearningModule.fromJson(Map<String, dynamic> json) {
@@ -70,7 +56,7 @@ class LearningModule {
       'isAssetImage': isAssetImage,
       'imagePosition': imagePosition == ModuleImagePosition.top ? 'top' : 'bottom',
       'displayOrder': displayOrder,
-      'sections': sections.map((e) => e.toJson()).toList(),
+      'sections': sections.map((e) => (e as LearningSection).toJson()).toList(),
     };
   }
 }

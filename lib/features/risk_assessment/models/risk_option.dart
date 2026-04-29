@@ -1,9 +1,8 @@
-class RiskOption {
-  final String label;
-  final int score;
+import '../domain/entities/risk_option_entity.dart';
 
+class RiskOption extends RiskOptionEntity {
   const RiskOption({
-    required this.label,
-    this.score = 0,
+    required super.label,
+    super.score = 0,
   });
 }

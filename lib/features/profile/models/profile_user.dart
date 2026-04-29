@@ -1,20 +1,16 @@
-class ProfileUser {
-  final String fullName;
-  final int age;
-  final String email;
-  final String phone;
-  final String language;
-  final String? avatarPath;
+import '../domain/entities/profile_user_entity.dart';
 
+class ProfileUser extends ProfileUserEntity {
   const ProfileUser({
-    required this.fullName,
-    required this.age,
-    required this.email,
-    required this.phone,
-    required this.language,
-    this.avatarPath,
+    required super.fullName,
+    required super.age,
+    required super.email,
+    required super.phone,
+    required super.language,
+    super.avatarPath,
   });
 
+  @override
   ProfileUser copyWith({
     String? fullName,
     int? age,

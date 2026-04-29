@@ -5,10 +5,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../models/mentor.dart';
+import '../../domain/entities/mentor_entity.dart';
 
 class MentorCard extends StatefulWidget {
-  final Mentor mentor;
+  final MentorEntity mentor;
 
   const MentorCard({super.key, required this.mentor});
 
@@ -127,7 +127,7 @@ class _MentorCardState extends State<MentorCard> {
     );
   }
 
-  String _displayName(Mentor mentor) {
+  String _displayName(MentorEntity mentor) {
     final name = mentor.fullName.trim();
     if (name.isEmpty) return 'Mentor';
     final role = mentor.role?.toLowerCase() ?? '';

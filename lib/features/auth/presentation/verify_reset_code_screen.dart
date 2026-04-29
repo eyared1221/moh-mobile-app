@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'reset_password_screen.dart';
 import 'auth_success_dialog.dart';
 import '../data/auth_models.dart';
-import '../data/auth_service.dart';
+import 'controllers/auth_controller.dart';
 
 class VerifyResetCodeScreen extends StatefulWidget {
   final String? language;
@@ -27,7 +27,7 @@ class _VerifyResetCodeScreenState extends State<VerifyResetCodeScreen> {
   final _digitFocusNodes = List.generate(6, (_) => FocusNode());
   bool _isLoading = false;
   bool _showCodeError = false;
-  final AuthService _authService = AuthService.instance;
+  final AuthController _authController = AuthController.standard();
 
   @override
   void dispose() {
@@ -123,7 +123,7 @@ class _VerifyResetCodeScreenState extends State<VerifyResetCodeScreen> {
 
     try {
       final code = _resetCode;
-      await _authService.verifyResetCode(contact: widget.contact, code: code);
+      await _authController.verifyResetCode(contact: widget.contact, code: code);
 
       if (!mounted) return;
       setState(() => _isLoading = false);

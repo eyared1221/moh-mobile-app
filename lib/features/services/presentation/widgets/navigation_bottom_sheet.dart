@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import '../../models/clinic.dart';
+import '../../domain/entities/lat_lng_entity.dart';
 
 // Only import webview for non-web platforms
 import 'package:webview_flutter/webview_flutter.dart' if (dart.library.html) 'navigation_web_stub.dart';
 
 class NavigationBottomSheet extends StatefulWidget {
   final Position userPosition;
-  final LatLng clinicPosition;
+  final LatLngEntity clinicPosition;
   final String clinicName;
 
   const NavigationBottomSheet({

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../models/learning_module.dart';
+import '../../domain/entities/learning_module_entity.dart';
 import '../widgets/learning_image.dart';
 import '../widgets/learning_section_tile.dart';
 
 class LearningModuleDetailPage extends StatelessWidget {
-  final LearningModule module;
+  final LearningModuleEntity module;
 
   const LearningModuleDetailPage({
     super.key,

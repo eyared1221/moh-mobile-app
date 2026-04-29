@@ -1,92 +1,88 @@
-import 'auth_api_client.dart';
-import 'auth_models.dart';
-import 'auth_session_storage.dart';
+import '../domain/entities/auth_action_result_entity.dart';
+import '../domain/entities/login_result_entity.dart';
+import '../domain/entities/register_result_entity.dart';
+import 'datasources/auth_device_data_source.dart';
+import 'datasources/auth_remote_data_source.dart';
+import 'datasources/auth_session_local_data_source.dart';
+import 'repositories/auth_repository_impl.dart';
 
-class AuthService {
+class AuthService extends AuthRepositoryImpl {
   AuthService({
-    AuthApiClient? apiClient,
-    AuthSessionStorage? sessionStorage,
-  })  : _apiClient = apiClient ?? AuthApiClient(),
-        _sessionStorage = sessionStorage ?? AuthSessionStorage();
-
-  final AuthApiClient _apiClient;
-  final AuthSessionStorage _sessionStorage;
+    super.remoteDataSource,
+    super.sessionLocalDataSource,
+    super.deviceDataSource,
+  });
 
   static final AuthService instance = AuthService();
 
-  Future<RegisterResult> register({
+  @override
+  Future<RegisterResultEntity> register({
     required String contact,
     required String username,
     required int age,
     required String password,
-  }) async {
-    final payload = await _apiClient.post('/register', {
-      'contact': contact,
-      'username': username,
-      'age': age,
-      'password': password,
-    });
-
-    return RegisterResult.fromJson(payload);
+  }) {
+    return super.register(
+      contact: contact,
+      username: username,
+      age: age,
+      password: password,
+    );
   }
 
-  Future<LoginResult> login({
+  @override
+  Future<LoginResultEntity> login({
     required String identifier,
     required String password,
-  }) async {
-    final payload = await _apiClient.post('/login', {
-      'identifier': identifier,
-      'password': password,
-    });
-
-    final result = LoginResult.fromJson(payload['data'] as Map<String, dynamic>? ?? const {});
-    await _sessionStorage.saveLogin(result);
-    return result;
+  }) {
+    return super.login(
+      identifier: identifier,
+      password: password,
+    );
   }
 
+  @override
   Future<void> verifyOtp({
     required String contact,
     required String otp,
-  }) async {
-    await _apiClient.post('/verification?action=verify-otp', {
-      'contact': contact,
-      'otp': otp,
-    });
+  }) {
+    return super.verifyOtp(
+      contact: contact,
+      otp: otp,
+    );
   }
 
-  Future<AuthActionResult> resendOtp({required String contact}) async {
-    final payload = await _apiClient.post('/verification?action=resend-otp', {
-      'contact': contact,
-    });
-    return AuthActionResult.fromJson(payload);
+  @override
+  Future<AuthActionResultEntity> resendOtp({required String contact}) {
+    return super.resendOtp(contact: contact);
   }
 
-  Future<AuthActionResult> forgotPassword({required String contact}) async {
-    final payload = await _apiClient.post('/password?action=forgot', {
-      'contact': contact,
-    });
-    return AuthActionResult.fromJson(payload);
+  @override
+  Future<AuthActionResultEntity> forgotPassword({required String contact}) {
+    return super.forgotPassword(contact: contact);
   }
 
+  @override
   Future<void> verifyResetCode({
     required String contact,
     required String code,
-  }) async {
-    await _apiClient.post('/password?action=verify-code', {
-      'contact': contact,
-      'code': code,
-    });
+  }) {
+    return super.verifyResetCode(
+      contact: contact,
+      code: code,
+    );
   }
 
+  @override
   Future<void> resetPassword({
     required String contact,
     required String code,
     required String password,
-  }) async {
-    await _apiClient.post('/password?action=reset', {
-      'contact': contact,
-      'code': code,
-      'password': password,
-    });
+  }) {
+    return super.resetPassword(
+      contact: contact,
+      code: code,
+      password: password,
+    );
   }
 }

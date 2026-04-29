@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'signin_screen.dart';
 import 'auth_success_dialog.dart';
 import '../data/auth_models.dart';
-import '../data/auth_service.dart';
+import 'controllers/auth_controller.dart';
 
 class VerifyEmailScreen extends StatefulWidget {
   final String? language;
@@ -31,7 +31,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   final _digitFocusNodes = List.generate(6, (_) => FocusNode());
   bool _isLoading = false;
   bool _showCodeError = false;
-  final AuthService _authService = AuthService.instance;
+  final AuthController _authController = AuthController.standard();
 
   bool get _isEmailContact => widget.contact.contains('@');
 
@@ -155,7 +155,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await _authService.verifyOtp(
+      await _authController.verifyOtp(
         contact: widget.contact,
         otp: _verificationCode,
       );
@@ -192,7 +192,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
 
   void _handleResend() async {
     try {
-      final result = await _authService.resendOtp(contact: widget.contact);
+      final result = await _authController.resendOtp(contact: widget.contact);
       if (!mounted) return;
       showAuthSuccessDialog(
         context,

@@ -1,3 +1,8 @@
+import '../domain/entities/auth_action_result_entity.dart';
+import '../domain/entities/auth_user_entity.dart';
+import '../domain/entities/login_result_entity.dart';
+import '../domain/entities/register_result_entity.dart';
+
 class AuthApiException implements Exception {
   final String message;
 
@@ -7,13 +12,10 @@ class AuthApiException implements Exception {
   String toString() => message;
 }
 
-class AuthActionResult {
-  final String message;
-  final String? debugCode;
-
+class AuthActionResult extends AuthActionResultEntity {
   const AuthActionResult({
-    required this.message,
-    this.debugCode,
+    required super.message,
+    super.debugCode,
   });
 
   factory AuthActionResult.fromJson(Map<String, dynamic> json) {
@@ -26,23 +28,15 @@ class AuthActionResult {
   }
 }
 
-class AuthUser {
-  final String id;
-  final String email;
-  final String? phone;
-  final String username;
-  final int age;
-  final String ageGroup;
-  final String role;
-
+class AuthUser extends AuthUserEntity {
   const AuthUser({
-    required this.id,
-    required this.email,
-    required this.phone,
-    required this.username,
-    required this.age,
-    required this.ageGroup,
-    required this.role,
+    required super.id,
+    required super.email,
+    required super.phone,
+    required super.username,
+    required super.age,
+    required super.ageGroup,
+    required super.role,
   });
 
   factory AuthUser.fromJson(Map<String, dynamic> json) {
@@ -58,13 +52,10 @@ class AuthUser {
   }
 }
 
-class LoginResult {
-  final String token;
-  final AuthUser user;
-
+class LoginResult extends LoginResultEntity {
   const LoginResult({
-    required this.token,
-    required this.user,
+    required super.token,
+    required AuthUser super.user,
   });
 
   factory LoginResult.fromJson(Map<String, dynamic> json) {
@@ -75,15 +66,11 @@ class LoginResult {
   }
 }
 
-class RegisterResult {
-  final AuthUser user;
-  final String message;
-  final String? debugCode;
-
+class RegisterResult extends RegisterResultEntity {
   const RegisterResult({
-    required this.user,
-    required this.message,
-    this.debugCode,
+    required AuthUser super.user,
+    required super.message,
+    super.debugCode,
   });
 
   factory RegisterResult.fromJson(Map<String, dynamic> json) {

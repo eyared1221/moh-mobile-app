@@ -1,29 +1,14 @@
-enum LearningContentType {
-  paragraph,
-  bullets,
-  image,
-  subtitle,
-  note,
-  alphabet,
-}
+import '../domain/entities/learning_content_block_entity.dart';
 
-class LearningContentBlock {
-  final String id;
-  final LearningContentType type;
-  final String text;
-  final List<String> items;
-  final String imageUrl;
-  final bool isAssetImage;
-  final int order;
-
+class LearningContentBlock extends LearningContentBlockEntity {
   const LearningContentBlock({
-    required this.id,
-    required this.type,
-    required this.text,
-    required this.items,
-    required this.imageUrl,
-    required this.isAssetImage,
-    required this.order,
+    required super.id,
+    required super.type,
+    required super.text,
+    required super.items,
+    required super.imageUrl,
+    required super.isAssetImage,
+    required super.order,
   });
 
   factory LearningContentBlock.fromJson(Map<String, dynamic> json) {

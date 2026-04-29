@@ -1,19 +1,15 @@
-class Mentor {
-  final String id;
-  final String fullName;
-  final String phone;
-  final String? imageUrl;
-  final String? role;
+import '../domain/entities/mentor_entity.dart';
 
-  const Mentor({
-    required this.id,
-    required this.fullName,
-    required this.phone,
-    this.imageUrl,
-    this.role,
+class MentorModel extends MentorEntity {
+  const MentorModel({
+    required super.id,
+    required super.fullName,
+    required super.phone,
+    super.imageUrl,
+    super.role,
   });
 
-  factory Mentor.fromJson(Map<String, dynamic> json) {
+  factory MentorModel.fromJson(Map<String, dynamic> json) {
     final fullName = (json['fullName'] ?? json['name'] ?? '').toString().trim();
     final phone = (json['phone'] ?? json['phoneNumber'] ?? '').toString().trim();
     final role = (json['professionalTitle'] ?? json['role'] ?? '').toString().trim();
@@ -25,7 +21,7 @@ class Mentor {
             .toString()
             .trim();
 
-    return Mentor(
+    return MentorModel(
       id: (json['id'] ?? json['_id'] ?? '').toString(),
       fullName: fullName.isEmpty ? 'Mentor' : fullName,
       phone: phone.isEmpty ? 'Phone not available' : phone,

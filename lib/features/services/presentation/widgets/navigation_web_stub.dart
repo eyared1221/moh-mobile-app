@@ -15,6 +15,8 @@ class WebViewController {
   Future<void> setNavigationDelegate(NavigationDelegate delegate) async {}
   
   Future<void> loadRequest(Uri uri) async {}
+
+  Future<void> loadHtmlString(String html, {String? baseUrl}) async {}
 }
 
 class JavaScriptMode {

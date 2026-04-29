@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
-import '../../data/profile_repository.dart';
+import '../../domain/entities/notification_preferences_entity.dart';
+import '../controllers/profile_controller.dart';
 
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
@@ -10,13 +12,18 @@ class NotificationsPage extends StatefulWidget {
 }
 
 class _NotificationsPageState extends State<NotificationsPage> {
-  final ProfileRepository _repository = ProfileRepository();
+  final ProfileController _controller = ProfileController.standard();
+
   bool _isLoading = true;
+  bool _isUpdatingPush = false;
+  bool _pushEnabled = true;
   bool _welcome = true;
   bool _inactivity = true;
   bool _riskAssessment = true;
   bool _learning = true;
   bool _security = true;
+
+  bool get _pushSupported => _controller.isPushSupported;
 
   @override
   void initState() {
@@ -25,20 +32,70 @@ class _NotificationsPageState extends State<NotificationsPage> {
   }
 
   Future<void> _load() async {
-    final prefs = await _repository.fetchNotificationPrefs();
+    final prefs = await _controller.loadNotificationPreferences();
     if (!mounted) return;
     setState(() {
-      _welcome = prefs[_repository.notifyWelcomeKey] ?? true;
-      _inactivity = prefs[_repository.notifyInactivityKey] ?? true;
-      _riskAssessment = prefs[_repository.notifyRiskAssessmentKey] ?? true;
-      _learning = prefs[_repository.notifyLearningKey] ?? true;
-      _security = prefs[_repository.notifySecurityKey] ?? true;
+      _pushEnabled = _pushSupported && prefs.pushEnabled;
+      _welcome = prefs.welcome;
+      _inactivity = prefs.inactivity;
+      _riskAssessment = prefs.riskAssessment;
+      _learning = prefs.learning;
+      _security = prefs.security;
       _isLoading = false;
     });
   }
 
   Future<void> _save(String key, bool value) async {
-    await _repository.setNotificationPref(key, value);
+    await _controller.setNotificationPreference(key, value);
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  String _unsupportedPushMessage() {
+    if (kIsWeb) {
+      return 'Push notifications are not available in the browser version yet. Use the Android or iPhone app.';
+    }
+
+    return 'Push notifications are only available on Android and iPhone.';
+  }
+
+  Future<void> _togglePushNotifications(bool value) async {
+    if (!_pushSupported) {
+      await _controller.setNotificationPreference(_controller.notifyPushKey, false);
+      if (!mounted) return;
+      setState(() => _pushEnabled = false);
+      _showMessage(_unsupportedPushMessage());
+      return;
+    }
+
+    setState(() => _isUpdatingPush = true);
+
+    bool enabled = false;
+    try {
+      enabled = await _controller.setPushEnabled(value);
+    } catch (error) {
+      enabled = false;
+      await _controller.setNotificationPreference(_controller.notifyPushKey, false);
+      if (mounted) {
+        _showMessage(error.toString().replaceFirst('Exception: ', ''));
+      }
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _pushEnabled = enabled;
+      _isUpdatingPush = false;
+    });
+
+    if (value && !enabled) {
+      _showMessage(
+        'Push notifications are still off. Allow notification permission and confirm Firebase is configured for this device.',
+      );
+    }
   }
 
   @override
@@ -68,12 +125,23 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 const SizedBox(height: 10),
                 _switchTile(
                   context,
+                  title: 'Push Notifications',
+                  subtitle: _pushSupported
+                      ? 'Receive reminders and updates even when the app is closed'
+                      : 'Available in the Android or iPhone app. The browser version does not support this yet.',
+                  value: _pushEnabled,
+                  enabled: !_isUpdatingPush,
+                  onChanged: _togglePushNotifications,
+                ),
+                const SizedBox(height: 12),
+                _switchTile(
+                  context,
                   title: 'Welcome Messages',
                   subtitle: 'Show an automatic welcome message after sign-in',
                   value: _welcome,
                   onChanged: (value) {
                     setState(() => _welcome = value);
-                    _save(_repository.notifyWelcomeKey, value);
+                    _save(_controller.notifyWelcomeKey, value);
                   },
                 ),
                 const SizedBox(height: 12),
@@ -93,7 +161,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   value: _inactivity,
                   onChanged: (value) {
                     setState(() => _inactivity = value);
-                    _save(_repository.notifyInactivityKey, value);
+                    _save(_controller.notifyInactivityKey, value);
                   },
                 ),
                 const SizedBox(height: 12),
@@ -104,7 +172,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   value: _riskAssessment,
                   onChanged: (value) {
                     setState(() => _riskAssessment = value);
-                    _save(_repository.notifyRiskAssessmentKey, value);
+                    _save(_controller.notifyRiskAssessmentKey, value);
                   },
                 ),
                 const SizedBox(height: 12),
@@ -115,7 +183,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   value: _learning,
                   onChanged: (value) {
                     setState(() => _learning = value);
-                    _save(_repository.notifyLearningKey, value);
+                    _save(_controller.notifyLearningKey, value);
                   },
                 ),
                 const SizedBox(height: 12),
@@ -135,7 +203,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   value: _security,
                   onChanged: (value) {
                     setState(() => _security = value);
-                    _save(_repository.notifySecurityKey, value);
+                    _save(_controller.notifySecurityKey, value);
                   },
                 ),
               ],
@@ -148,6 +216,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
     required String title,
     required String subtitle,
     required bool value,
+    bool enabled = true,
     required ValueChanged<bool> onChanged,
   }) {
     final theme = Theme.of(context);
@@ -183,7 +252,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
             ),
           ),
           const SizedBox(width: 10),
-          Switch.adaptive(value: value, onChanged: onChanged),
+          Switch.adaptive(
+            value: value,
+            onChanged: enabled ? onChanged : null,
+          ),
         ],
       ),
     );

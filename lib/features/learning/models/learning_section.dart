@@ -1,16 +1,12 @@
 import 'learning_content_block.dart';
+import '../domain/entities/learning_section_entity.dart';
 
-class LearningSection {
-  final String id;
-  final String title;
-  final int order;
-  final List<LearningContentBlock> blocks;
-
+class LearningSection extends LearningSectionEntity {
   const LearningSection({
-    required this.id,
-    required this.title,
-    required this.order,
-    required this.blocks,
+    required super.id,
+    required super.title,
+    required super.order,
+    required List<LearningContentBlock> super.blocks,
   });
 
   factory LearningSection.fromJson(Map<String, dynamic> json) {
@@ -34,7 +30,9 @@ class LearningSection {
       'id': id,
       'title': title,
       'order': order,
-      'blocks': blocks.map((e) => e.toJson()).toList(),
+      'blocks': blocks
+          .map((e) => (e as LearningContentBlock).toJson())
+          .toList(),
     };
   }
 }
