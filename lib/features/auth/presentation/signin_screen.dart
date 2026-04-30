@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'signup_screen.dart';
 import 'forgot_password_screen.dart';
 import 'auth_success_dialog.dart';
+import 'contact_validation.dart';
 import '../data/auth_models.dart';
 import 'controllers/auth_controller.dart';
 import 'package:yegna_health/features/home/presentation/pages/home_page.dart';
@@ -30,25 +31,8 @@ class _SignInScreenState extends State<SignInScreen> {
     super.dispose();
   }
 
-  bool _isValidEmail(String value) {
-    return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(value);
-  }
-
-  bool _isValidPhone(String value) {
-    final digits = value.replaceAll(RegExp(r'[^0-9]'), '');
-    return RegExp(r'^(09|07)\d{8}$').hasMatch(digits);
-  }
-
   String? _validateContact(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Email or phone is required';
-    }
-    final v = value.trim();
-    if (v.contains('@')) {
-      return _isValidEmail(v) ? null : 'Enter a valid email address';
-    }
-    if (_isValidPhone(v)) return null;
-    return 'Enter a valid email or a 10-digit phone number starting with 09 or 07';
+    return ContactValidation.validate(value);
   }
 
   // Simulate a network request
@@ -97,6 +81,7 @@ class _SignInScreenState extends State<SignInScreen> {
   InputDecoration _modernInput(String label, IconData icon, BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = const Color(0xFF005C8F);
+    final errorColor = Theme.of(context).colorScheme.error;
 
     return InputDecoration(
       labelText: label,
@@ -114,9 +99,14 @@ class _SignInScreenState extends State<SignInScreen> {
         borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide(color: primaryColor, width: 2),
       ),
+      errorStyle: TextStyle(color: errorColor),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Colors.redAccent, width: 1),
+        borderSide: BorderSide(color: errorColor, width: 1.5),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: errorColor, width: 2),
       ),
     );
   }
@@ -194,6 +184,7 @@ class _SignInScreenState extends State<SignInScreen> {
                       controller: _contactCtrl,
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
                       style: TextStyle(color: isDark ? Colors.white : Colors.black87),
                       decoration: _modernInput('Email or Phone Number', Icons.alternate_email, context),
                       validator: _validateContact,

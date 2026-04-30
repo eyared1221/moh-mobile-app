@@ -1,11 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../../shared/widgets/app_bottom_nav.dart';
-import '../../../../shared/widgets/notification_badge.dart';
-import '../../../notifications/data/app_notification_service.dart';
-import '../../../notifications/data/notification_provider.dart';
-import '../../../notifications/presentation/pages/notification_center_page.dart';
+import '../../../../shared/widgets/global_notification_bell.dart';
 import '../../../mentor/presentation/pages/mentor_page.dart';
+import '../../../notifications/data/notification_automation_service.dart';
 import '../../data/risk_assessment_repository.dart';
 import '../../domain/entities/risk_question_entity.dart';
 import '../../domain/usecases/get_risk_assessment_questions_use_case.dart';
@@ -42,9 +42,6 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
 
   _RiskStage _stage = _RiskStage.intro;
   int _currentIndex = 0;
-  final AppNotificationService _notificationService = AppNotificationService.instance;
-  final NotificationProvider _provider = NotificationProvider();
-  int _unreadCount = 0;
 
   @override
   void initState() {
@@ -53,23 +50,6 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
       GetRiskAssessmentQuestionsUseCase(RiskAssessmentRepository()),
     );
     _loadQuestions();
-    _unreadCount = _provider.unreadCount;
-    _loadUnreadCount();
-    _provider.addListener(_onNotificationCountChanged);
-  }
-
-  @override
-  void dispose() {
-    _provider.removeListener(_onNotificationCountChanged);
-    super.dispose();
-  }
-
-  void _onNotificationCountChanged() {
-    if (mounted) {
-      setState(() {
-        _unreadCount = _provider.unreadCount;
-      });
-    }
   }
 
   Future<void> _loadQuestions() async {
@@ -91,8 +71,31 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
     }
   }
 
-  Future<void> _loadUnreadCount() async {
-    await _notificationService.getUnreadCount();
+  Future<void> _syncQuestions() async {
+    final items = await _controller.loadQuestions();
+    if (!mounted) return;
+
+    final previousSelections = <String, int?>{};
+    for (var index = 0; index < _questions.length; index++) {
+      previousSelections[_questions[index].id] = _selectedOptionIndexes[index];
+    }
+
+    setState(() {
+      _questions = items;
+      _selectedOptionIndexes = items
+          .map((question) {
+            final selectedIndex = previousSelections[question.id];
+            if (selectedIndex == null) {
+              return null;
+            }
+            return selectedIndex < question.options.length ? selectedIndex : null;
+          })
+          .toList();
+      _currentIndex = items.isEmpty
+          ? 0
+          : _currentIndex.clamp(0, items.length - 1) as int;
+      _isLoadingQuestions = false;
+    });
   }
 
   @override
@@ -123,21 +126,9 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
               ),
         ),
         actions: [
-          NotificationBadge(
-            count: _unreadCount,
-            child: IconButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const NotificationCenterPage(),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.notifications_none),
-              color: colorScheme.primary,
-              tooltip: 'Notifications',
-            ),
+          GlobalTopBarActions(
+            color: colorScheme.primary,
+            onSyncPressed: _syncQuestions,
           ),
           const SizedBox(width: 6),
         ],
@@ -438,6 +429,12 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
         _currentIndex += 1;
       }
     });
+
+    if (isLast) {
+      unawaited(
+        NotificationAutomationService.instance.recordRiskAssessmentCompleted(),
+      );
+    }
   }
 
   void _openHealthService() {

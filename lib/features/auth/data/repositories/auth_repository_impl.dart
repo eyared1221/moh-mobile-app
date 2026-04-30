@@ -2,6 +2,7 @@ import '../../domain/entities/auth_action_result_entity.dart';
 import '../../domain/entities/login_result_entity.dart';
 import '../../domain/entities/register_result_entity.dart';
 import '../../domain/repositories/auth_repository.dart';
+import '../../../notifications/data/notification_automation_service.dart';
 import '../datasources/auth_device_data_source.dart';
 import '../datasources/auth_remote_data_source.dart';
 import '../datasources/auth_session_local_data_source.dart';
@@ -52,6 +53,10 @@ class AuthRepositoryImpl implements AuthRepository {
     } catch (_) {
       // Push registration should not block a successful sign-in.
     }
+
+    await NotificationAutomationService.instance.handleSuccessfulSignIn(
+      userName: result.user.username,
+    );
 
     return result;
   }

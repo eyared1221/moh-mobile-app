@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../shared/widgets/app_bottom_nav.dart';
-import '../../../../shared/widgets/notification_badge.dart';
-import '../../../notifications/data/app_notification_service.dart';
-import '../../../notifications/data/notification_provider.dart';
-import '../../../notifications/presentation/pages/notification_center_page.dart';
+import '../../../../shared/widgets/global_notification_bell.dart';
 import '../../data/mentor_repository.dart';
 import '../../domain/entities/mentor_entity.dart';
 import '../../domain/usecases/get_mentors_use_case.dart';
@@ -28,11 +25,8 @@ class MentorPage extends StatefulWidget {
 class _MentorPageState extends State<MentorPage> {
   late final MentorPageController _controller;
   late final TextEditingController _searchController;
-  late final Future<List<MentorEntity>> _mentorsFuture;
+  late Future<List<MentorEntity>> _mentorsFuture;
   String _query = '';
-  final AppNotificationService _notificationService = AppNotificationService.instance;
-  final NotificationProvider _provider = NotificationProvider();
-  int _unreadCount = 0;
 
   @override
   void initState() {
@@ -42,24 +36,20 @@ class _MentorPageState extends State<MentorPage> {
     );
     _searchController = TextEditingController();
     _mentorsFuture = _controller.loadMentors();
-    _unreadCount = _provider.unreadCount;
-    _loadUnreadCount();
-    _provider.addListener(_onNotificationCountChanged);
   }
 
   @override
   void dispose() {
     _searchController.dispose();
-    _provider.removeListener(_onNotificationCountChanged);
     super.dispose();
   }
 
-  void _onNotificationCountChanged() {
-    if (mounted) {
-      setState(() {
-        _unreadCount = _provider.unreadCount;
-      });
-    }
+  Future<void> _syncMentors() async {
+    final nextFuture = _controller.loadMentors();
+    setState(() {
+      _mentorsFuture = nextFuture;
+    });
+    await nextFuture;
   }
 
   @override
@@ -73,14 +63,7 @@ class _MentorPageState extends State<MentorPage> {
         centerTitle: true,
         title: const Text('Peer Mentors'),
         actions: [
-          NotificationBadge(
-            count: _unreadCount,
-            child: IconButton(
-              onPressed: _openNotifications,
-              icon: const Icon(Icons.notifications_none),
-              tooltip: 'Notifications',
-            ),
-          ),
+          GlobalTopBarActions(onSyncPressed: _syncMentors),
         ],
       ),
       body: Padding(
@@ -272,14 +255,4 @@ class _MentorPageState extends State<MentorPage> {
     );
   }
 
-  Future<void> _loadUnreadCount() async {
-    await _notificationService.getUnreadCount();
-  }
-
-  void _openNotifications() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const NotificationCenterPage()),
-    );
-  }
 }

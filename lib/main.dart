@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'features/notifications/data/notification_automation_service.dart';
 import 'features/notifications/data/push_notification_service.dart';
 import 'features/guest/presentation/guest_page.dart';
 import 'features/auth/presentation/signup_screen.dart';
@@ -16,6 +17,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await loadSavedTheme();
   await PushNotificationService.instance.initialize();
+  await NotificationAutomationService.instance.initialize();
   runApp(const MyApp());
 }
 

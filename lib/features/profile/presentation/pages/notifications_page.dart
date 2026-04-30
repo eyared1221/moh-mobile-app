@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 
+import '../../../notifications/data/notification_automation_service.dart';
 import '../../domain/entities/notification_preferences_entity.dart';
 import '../controllers/profile_controller.dart';
 
@@ -13,6 +14,8 @@ class NotificationsPage extends StatefulWidget {
 
 class _NotificationsPageState extends State<NotificationsPage> {
   final ProfileController _controller = ProfileController.standard();
+  final NotificationAutomationService _automationService =
+      NotificationAutomationService.instance;
 
   bool _isLoading = true;
   bool _isUpdatingPush = false;
@@ -139,9 +142,13 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   title: 'Welcome Messages',
                   subtitle: 'Show an automatic welcome message after sign-in',
                   value: _welcome,
-                  onChanged: (value) {
+                  onChanged: (value) async {
                     setState(() => _welcome = value);
-                    _save(_controller.notifyWelcomeKey, value);
+                    await _save(_controller.notifyWelcomeKey, value);
+                    await _automationService.handleNotificationPreferenceChanged(
+                      _controller.notifyWelcomeKey,
+                      value,
+                    );
                   },
                 ),
                 const SizedBox(height: 12),
@@ -159,9 +166,13 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   title: 'Last Login Reminders',
                   subtitle: 'Get an automatic reminder after a period of inactivity',
                   value: _inactivity,
-                  onChanged: (value) {
+                  onChanged: (value) async {
                     setState(() => _inactivity = value);
-                    _save(_controller.notifyInactivityKey, value);
+                    await _save(_controller.notifyInactivityKey, value);
+                    await _automationService.handleNotificationPreferenceChanged(
+                      _controller.notifyInactivityKey,
+                      value,
+                    );
                   },
                 ),
                 const SizedBox(height: 12),
@@ -170,9 +181,13 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   title: 'Risk Assessment Reminders',
                   subtitle: 'Get helpful reminders to assess regularly',
                   value: _riskAssessment,
-                  onChanged: (value) {
+                  onChanged: (value) async {
                     setState(() => _riskAssessment = value);
-                    _save(_controller.notifyRiskAssessmentKey, value);
+                    await _save(_controller.notifyRiskAssessmentKey, value);
+                    await _automationService.handleNotificationPreferenceChanged(
+                      _controller.notifyRiskAssessmentKey,
+                      value,
+                    );
                   },
                 ),
                 const SizedBox(height: 12),
@@ -181,9 +196,13 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   title: 'Learning Module Updates',
                   subtitle: 'Know when new health lessons and learning content are available',
                   value: _learning,
-                  onChanged: (value) {
+                  onChanged: (value) async {
                     setState(() => _learning = value);
-                    _save(_controller.notifyLearningKey, value);
+                    await _save(_controller.notifyLearningKey, value);
+                    await _automationService.handleNotificationPreferenceChanged(
+                      _controller.notifyLearningKey,
+                      value,
+                    );
                   },
                 ),
                 const SizedBox(height: 12),
@@ -201,9 +220,13 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   title: 'Account & Security Alerts',
                   subtitle: 'Stay informed about sign-in activity and important account changes',
                   value: _security,
-                  onChanged: (value) {
+                  onChanged: (value) async {
                     setState(() => _security = value);
-                    _save(_controller.notifySecurityKey, value);
+                    await _save(_controller.notifySecurityKey, value);
+                    await _automationService.handleNotificationPreferenceChanged(
+                      _controller.notifySecurityKey,
+                      value,
+                    );
                   },
                 ),
               ],

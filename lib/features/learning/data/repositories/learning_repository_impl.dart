@@ -1,5 +1,6 @@
 import '../../domain/entities/learning_module_entity.dart';
 import '../../domain/repositories/learning_repository.dart';
+import '../../../notifications/data/notification_automation_service.dart';
 import '../datasources/learning_local_data_source.dart';
 import '../datasources/learning_remote_data_source.dart';
 
@@ -18,6 +19,9 @@ class LearningRepositoryImpl implements LearningRepository {
     try {
       final payload = await _remoteDataSource.fetchModulesPayload();
       await _localDataSource.cacheModulesPayload(payload);
+      await NotificationAutomationService.instance.handleLearningModulesPayload(
+        payload,
+      );
       return _remoteDataSource.mapModulesPayload(payload);
     } catch (e) {
       final cachedPayload = await _localDataSource.getCachedModulesPayload();

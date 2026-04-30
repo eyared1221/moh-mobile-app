@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'signin_screen.dart';
 import 'verify_email_screen.dart';
 import 'auth_success_dialog.dart';
+import 'contact_validation.dart';
 import '../data/auth_models.dart';
 import 'controllers/auth_controller.dart';
 
@@ -48,25 +49,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
     super.dispose();
   }
 
-  bool _isValidEmail(String value) {
-    return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(value);
-  }
-
-  bool _isValidPhone(String value) {
-    final digits = value.replaceAll(RegExp(r'[^0-9]'), '');
-    return RegExp(r'^(09|07)\d{8}$').hasMatch(digits);
-  }
-
   String? _validateContact(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Email or phone is required';
-    }
-    final v = value.trim();
-    if (v.contains('@')) {
-      return _isValidEmail(v) ? null : 'Enter a valid email address';
-    }
-    if (_isValidPhone(v)) return null;
-    return 'Phone number must be 10 digits and start with 09 or 07';
+    return ContactValidation.validate(value);
   }
 
   String? _validateAge(String? value) {
@@ -141,6 +125,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   InputDecoration _buildInputDecoration(String label, IconData icon, BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = const Color(0xFF005C8F);
+    final errorColor = Theme.of(context).colorScheme.error;
 
     return InputDecoration(
       labelText: label,
@@ -158,9 +143,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
         borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide(color: primaryColor, width: 2),
       ),
+      errorStyle: TextStyle(color: errorColor),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Colors.redAccent, width: 1),
+        borderSide: BorderSide(color: errorColor, width: 1.5),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: errorColor, width: 2),
       ),
     );
   }
@@ -217,34 +207,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     controller: _contactCtrl,
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
-                    inputFormatters: [
-                      TextInputFormatter.withFunction((oldValue, newValue) {
-                        final text = newValue.text;
-                        if (text.isEmpty || text.contains('@')) {
-                          return newValue;
-                        }
-
-                        if (!RegExp(r'^\d*$').hasMatch(text)) {
-                          return oldValue;
-                        }
-
-                        if (text.length > 10) {
-                          return oldValue;
-                        }
-
-                        if (text.length >= 2 &&
-                            !text.startsWith('09') &&
-                            !text.startsWith('07')) {
-                          return oldValue;
-                        }
-
-                        if (text.length == 1 && text != '0') {
-                          return oldValue;
-                        }
-
-                        return newValue;
-                      }),
-                    ],
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
                     style: TextStyle(color: isDark ? Colors.white : Colors.black87),
                     decoration: _buildInputDecoration('Enter your email or phone number', Icons.contact_mail_outlined, context),
                     validator: _validateContact,

@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../shared/widgets/app_bottom_nav.dart';
-import '../../../../shared/widgets/notification_badge.dart';
-import '../../../notifications/data/app_notification_service.dart';
-import '../../../notifications/data/notification_provider.dart';
-import '../../../notifications/presentation/pages/notification_center_page.dart';
+import '../../../../shared/widgets/global_notification_bell.dart';
 import '../../data/learning_service.dart';
 import '../../domain/entities/learning_module_entity.dart';
 import '../../domain/usecases/get_learning_modules_use_case.dart';
@@ -32,9 +29,6 @@ class _LearningModulesPageState extends State<LearningModulesPage> {
   List<LearningModuleEntity> _learningModules = [];
   bool _isLoading = true;
   String? _errorMessage;
-  final AppNotificationService _notificationService = AppNotificationService.instance;
-  final NotificationProvider _provider = NotificationProvider();
-  int _unreadCount = 0;
 
   @override
   void initState() {
@@ -44,24 +38,12 @@ class _LearningModulesPageState extends State<LearningModulesPage> {
     );
     _pageController = PageController(viewportFraction: 0.96);
     _loadLearningModules();
-    _unreadCount = _provider.unreadCount;
-    _loadUnreadCount();
-    _provider.addListener(_onNotificationCountChanged);
   }
 
   @override
   void dispose() {
     _pageController.dispose();
-    _provider.removeListener(_onNotificationCountChanged);
     super.dispose();
-  }
-
-  void _onNotificationCountChanged() {
-    if (mounted) {
-      setState(() {
-        _unreadCount = _provider.unreadCount;
-      });
-    }
   }
 
   Future<void> _loadLearningModules() async {
@@ -85,6 +67,26 @@ class _LearningModulesPageState extends State<LearningModulesPage> {
     }
   }
 
+  Future<void> _syncLearningModules() async {
+    final modules = await _controller.loadModules();
+    if (!mounted) return;
+
+    final nextIndex = modules.isEmpty
+        ? 0
+        : _currentIndex.clamp(0, modules.length - 1) as int;
+
+    setState(() {
+      _learningModules = modules;
+      _currentIndex = nextIndex;
+      _errorMessage = null;
+      _isLoading = false;
+    });
+
+    if (_pageController.hasClients && modules.isNotEmpty) {
+      _pageController.jumpToPage(nextIndex);
+    }
+  }
+
   
   void _goNext() {
     if (_currentIndex < _learningModules.length - 1) {
@@ -104,17 +106,6 @@ class _LearningModulesPageState extends State<LearningModulesPage> {
     }
   }
 
-  Future<void> _loadUnreadCount() async {
-    await _notificationService.getUnreadCount();
-  }
-
-  void _openNotifications() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const NotificationCenterPage()),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -124,14 +115,7 @@ class _LearningModulesPageState extends State<LearningModulesPage> {
           centerTitle: true,
           title: const Text('Learning Modules'),
           actions: [
-            NotificationBadge(
-              count: _unreadCount,
-              child: IconButton(
-                onPressed: _openNotifications,
-                icon: const Icon(Icons.notifications_none),
-                tooltip: 'Notifications',
-              ),
-            ),
+            GlobalTopBarActions(onSyncPressed: _syncLearningModules),
           ],
         ),
         body: const Center(
@@ -152,14 +136,7 @@ class _LearningModulesPageState extends State<LearningModulesPage> {
           centerTitle: true,
           title: const Text('Learning Modules'),
           actions: [
-            NotificationBadge(
-              count: _unreadCount,
-              child: IconButton(
-                onPressed: _openNotifications,
-                icon: const Icon(Icons.notifications_none),
-                tooltip: 'Notifications',
-              ),
-            ),
+            GlobalTopBarActions(onSyncPressed: _syncLearningModules),
           ],
         ),
         body: Center(
@@ -203,14 +180,7 @@ class _LearningModulesPageState extends State<LearningModulesPage> {
           centerTitle: true,
           title: const Text('Learning Modules'),
           actions: [
-            NotificationBadge(
-              count: _unreadCount,
-              child: IconButton(
-                onPressed: _openNotifications,
-                icon: const Icon(Icons.notifications_none),
-                tooltip: 'Notifications',
-              ),
-            ),
+            GlobalTopBarActions(onSyncPressed: _syncLearningModules),
           ],
         ),
         body: Center(
@@ -252,11 +222,7 @@ class _LearningModulesPageState extends State<LearningModulesPage> {
         centerTitle: true,
         title: const Text('Learning Modules'),
         actions: [
-          IconButton(
-            onPressed: _openNotifications,
-            icon: const Icon(Icons.notifications_none),
-            tooltip: 'Notifications',
-          ),
+          GlobalTopBarActions(onSyncPressed: _syncLearningModules),
         ],
       ),
       body: SafeArea(

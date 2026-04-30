@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:yegna_health/shared/widgets/app_bottom_nav.dart';
-import 'package:yegna_health/shared/widgets/notification_badge.dart';
+import 'package:yegna_health/shared/widgets/global_notification_bell.dart';
 
-import '../../../notifications/data/app_notification_service.dart';
-import '../../../notifications/data/notification_provider.dart';
-import '../../../notifications/presentation/pages/notification_center_page.dart';
 import '../../data/clinic_repository.dart';
 import '../../domain/entities/clinic_entity.dart';
 import '../../domain/entities/lat_lng_entity.dart';
@@ -39,9 +36,6 @@ class _ClinicPageState extends State<ClinicPage> {
   String? _error;
   bool _showNearby = true;
   String _searchQuery = '';
-  final AppNotificationService _notificationService = AppNotificationService.instance;
-  final NotificationProvider _provider = NotificationProvider();
-  int _unreadCount = 0;
 
   static const double _maxAcceptedAccuracyMeters = 80;
 
@@ -57,24 +51,12 @@ class _ClinicPageState extends State<ClinicPage> {
     );
     _loadClinics();
     _resolveUserLocation();
-    _unreadCount = _provider.unreadCount;
-    _loadUnreadCount();
-    _provider.addListener(_onNotificationCountChanged);
   }
 
   @override
   void dispose() {
     _searchCtrl.dispose();
-    _provider.removeListener(_onNotificationCountChanged);
     super.dispose();
-  }
-
-  void _onNotificationCountChanged() {
-    if (mounted) {
-      setState(() {
-        _unreadCount = _provider.unreadCount;
-      });
-    }
   }
 
   Future<void> _loadClinics() async {
@@ -97,6 +79,19 @@ class _ClinicPageState extends State<ClinicPage> {
         _isLoading = false;
       });
     }
+  }
+
+  Future<void> _syncClinics() async {
+    final data = await _controller.loadClinics();
+    if (!mounted) return;
+
+    setState(() {
+      _clinics = data;
+      _error = null;
+      _isLoading = false;
+    });
+
+    await _resolveUserLocation();
   }
 
   Future<void> _resolveUserLocation() async {
@@ -252,14 +247,7 @@ class _ClinicPageState extends State<ClinicPage> {
         centerTitle: true,
         title: const Text('Health Services'),
         actions: [
-          NotificationBadge(
-            count: _unreadCount,
-            child: IconButton(
-              onPressed: _openNotifications,
-              icon: const Icon(Icons.notifications_none),
-              tooltip: 'Notifications',
-            ),
-          ),
+          GlobalTopBarActions(onSyncPressed: _syncClinics),
         ],
       ),
       body: Column(
@@ -468,16 +456,6 @@ class _ClinicPageState extends State<ClinicPage> {
     );
   }
 
-  Future<void> _loadUnreadCount() async {
-    await _notificationService.getUnreadCount();
-  }
-
-  void _openNotifications() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const NotificationCenterPage()),
-    );
-  }
 }
 
 class _TogglePill extends StatelessWidget {

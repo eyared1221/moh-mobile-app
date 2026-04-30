@@ -240,24 +240,11 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                 children: [
                   Center(
                     child: Image.asset(
-                      'assets/images/email-verify.png',
+                      'assets/images/verify-email-removebg-preview.png',
                       height: 168,
                       fit: BoxFit.contain,
                       errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          width: 88,
-                          height: 88,
-                          margin: const EdgeInsets.only(bottom: 24),
-                          decoration: BoxDecoration(
-                            color: primaryColor.withOpacity(isDark ? 0.18 : 0.12),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.mark_email_read_outlined,
-                            size: 42,
-                            color: primaryColor,
-                          ),
-                        );
+                        return const SizedBox.shrink();
                       },
                     ),
                   ),

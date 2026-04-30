@@ -49,4 +49,12 @@ class AppNotificationService extends AppNotificationRepositoryImpl {
   Future<void> clearAllNotifications() {
     return super.clearAllNotifications();
   }
+
+  Future<void> deleteNotificationsByTypes(Set<String> types) {
+    return super.deleteNotificationsByTypes(types);
+  }
+
+  Future<void> deleteNotificationsByIds(Set<String> ids) {
+    return super.deleteNotificationsByIds(ids);
+  }
 }

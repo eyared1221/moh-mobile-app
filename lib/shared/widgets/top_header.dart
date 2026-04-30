@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/theme_notifier.dart';
-import '../../features/notifications/data/app_notification_service.dart';
-import '../../features/notifications/data/notification_provider.dart';
-import 'notification_badge.dart';
+import 'global_notification_bell.dart';
 
-class TopHeader extends StatefulWidget {
+class TopHeader extends StatelessWidget {
   /// Optional tap for notification bell
   final VoidCallback? onBellTap;
+  final SyncActionCallback? onSyncPressed;
 
   /// Optional widget on the right side (overrides bell)
   final Widget? rightWidget;
@@ -19,52 +18,18 @@ class TopHeader extends StatefulWidget {
   const TopHeader({
     super.key,
     this.onBellTap,
+    this.onSyncPressed,
     this.rightWidget,
     this.showBack = false,
     this.showThemeToggle = false,
   });
 
   @override
-  State<TopHeader> createState() => _TopHeaderState();
-}
-
-class _TopHeaderState extends State<TopHeader> {
-  final AppNotificationService _notificationService = AppNotificationService.instance;
-  final NotificationProvider _provider = NotificationProvider();
-  int _unreadCount = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _unreadCount = _provider.unreadCount;
-    _loadUnreadCount();
-    _provider.addListener(_onNotificationCountChanged);
-  }
-
-  @override
-  void dispose() {
-    _provider.removeListener(_onNotificationCountChanged);
-    super.dispose();
-  }
-
-  void _onNotificationCountChanged() {
-    if (mounted) {
-      setState(() {
-        _unreadCount = _provider.unreadCount;
-      });
-    }
-  }
-
-  Future<void> _loadUnreadCount() async {
-    await _notificationService.getUnreadCount();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Row(
       children: [
         // ✅ Back button (only when enabled)
-        if (widget.showBack)
+        if (showBack)
           IconButton(
             icon: const Icon(Icons.arrow_back),
             color: const Color(0xFF005C8F),
@@ -94,7 +59,7 @@ class _TopHeaderState extends State<TopHeader> {
         const Spacer(),
 
         // Theme toggle (optional per screen)
-        if (widget.showThemeToggle)
+        if (showThemeToggle)
           ValueListenableBuilder<ThemeMode>(
             valueListenable: themeNotifier,
             builder: (context, mode, _) {
@@ -109,16 +74,12 @@ class _TopHeaderState extends State<TopHeader> {
           ),
 
         // Right side: bell OR custom widget
-        widget.rightWidget ??
-            NotificationBadge(
-              count: _unreadCount,
-              child: IconButton(
-                onPressed: widget.onBellTap,
-                icon: const Icon(Icons.notifications_none),
-                color: const Color(0xFF005C8F),
-                iconSize: 28,
-                tooltip: 'Notifications',
-              ),
+        rightWidget ??
+            GlobalTopBarActions(
+              onBellPressed: onBellTap,
+              onSyncPressed: onSyncPressed,
+              color: const Color(0xFF005C8F),
+              iconSize: 28,
             ),
       ],
     );
