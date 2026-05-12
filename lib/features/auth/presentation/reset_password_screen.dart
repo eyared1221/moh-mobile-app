@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'signin_screen.dart';
 import 'auth_success_dialog.dart';
+import 'auth_error_handler.dart';
+import 'auth_messages.dart';
 import '../data/auth_models.dart';
 import 'controllers/auth_controller.dart';
 
@@ -81,23 +83,19 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
       showAuthSuccessDialog(
         context,
-        message: 'Your password has been updated successfully.',
+        message: AuthMessages.passwordResetSuccess,
       );
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => SignInScreen(language: widget.language)),
         (route) => false,
       );
-    } on AuthApiException catch (error) {
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-      showAuthErrorDialog(context, message: error.message);
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
       setState(() => _isLoading = false);
       showAuthErrorDialog(
         context,
-        message: 'Failed to reset password. Please try again.',
+        message: AuthErrorHandler.getMessage(error),
       );
     }
   }
@@ -130,24 +128,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 children: [
                   Center(
                     child: Image.asset(
-                      'assets/images/reset-password.png',
+                      'assets/images/set-password.png',
                       height: 168,
                       fit: BoxFit.contain,
                       errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          width: 88,
-                          height: 88,
-                          margin: const EdgeInsets.only(bottom: 24),
-                          decoration: BoxDecoration(
-                            color: primaryColor.withOpacity(isDark ? 0.18 : 0.12),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.shield_outlined,
-                            size: 42,
-                            color: primaryColor,
-                          ),
-                        );
+                        return const SizedBox.shrink();
                       },
                     ),
                   ),
@@ -198,8 +183,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       ),
                     ),
                     validator: (value) {
-                      if (value == null || value.isEmpty) return 'Password is required';
-                      if (value.length < 8) return 'Password must be at least 8 characters';
+                      if (value == null || value.isEmpty) return AuthMessages.passwordRequired;
+                      if (value.length < 8) return AuthMessages.passwordMinLength;
                       return null;
                     },
                   ),
@@ -219,9 +204,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       ),
                     ),
                     validator: (value) {
-                      if (value == null || value.isEmpty) return 'Confirm password is required';
-                      if (value.length < 8) return 'Password must be at least 8 characters';
-                      if (value != _passwordCtrl.text) return 'Passwords do not match';
+                      if (value == null || value.isEmpty) return AuthMessages.confirmPasswordRequired;
+                      if (value.length < 8) return AuthMessages.passwordMinLength;
+                      if (value != _passwordCtrl.text) return AuthMessages.passwordsDoNotMatch;
                       return null;
                     },
                     onFieldSubmitted: (_) => _isLoading ? null : _handleResetPassword(),

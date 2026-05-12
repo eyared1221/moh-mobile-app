@@ -33,6 +33,17 @@ class ProfileRepository extends ProfileRepositoryImpl {
   }
 
   @override
+  Future<ProfileUserEntity?> fetchCachedProfile({
+    required int fallbackAge,
+    String? fallbackName,
+  }) {
+    return super.fetchCachedProfile(
+      fallbackAge: fallbackAge,
+      fallbackName: fallbackName,
+    );
+  }
+
+  @override
   Future<ProfileUserEntity> saveProfile(ProfileUserEntity user) {
     return super.saveProfile(user);
   }

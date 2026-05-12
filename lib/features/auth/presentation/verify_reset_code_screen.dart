@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'reset_password_screen.dart';
 import 'auth_success_dialog.dart';
+import 'auth_error_handler.dart';
+import 'auth_messages.dart';
 import '../data/auth_models.dart';
 import 'controllers/auth_controller.dart';
 
@@ -138,16 +140,12 @@ class _VerifyResetCodeScreenState extends State<VerifyResetCodeScreen> {
           ),
         ),
       );
-    } on AuthApiException catch (error) {
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-      showAuthErrorDialog(context, message: error.message);
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
       setState(() => _isLoading = false);
       showAuthErrorDialog(
         context,
-        message: 'Failed to verify reset code. Please try again.',
+        message: AuthErrorHandler.getMessage(error),
       );
     }
   }
@@ -180,24 +178,11 @@ class _VerifyResetCodeScreenState extends State<VerifyResetCodeScreen> {
                 children: [
                   Center(
                     child: Image.asset(
-                      'assets/images/email-verify.png',
+                      'assets/images/verify-email-removebg-preview.png',
                       height: 168,
                       fit: BoxFit.contain,
                       errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          width: 88,
-                          height: 88,
-                          margin: const EdgeInsets.only(bottom: 24),
-                          decoration: BoxDecoration(
-                            color: primaryColor.withOpacity(isDark ? 0.18 : 0.12),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.password_outlined,
-                            size: 42,
-                            color: primaryColor,
-                          ),
-                        );
+                        return const SizedBox.shrink();
                       },
                     ),
                   ),

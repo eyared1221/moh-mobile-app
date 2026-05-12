@@ -33,6 +33,22 @@ class ProfileRepositoryImpl implements ProfileRepository {
   }
 
   @override
+  Future<ProfileUserEntity?> fetchCachedProfile({
+    required int fallbackAge,
+    String? fallbackName,
+  }) async {
+    final hasUsableLocalProfile = await _localDataSource.hasUsableLocalProfile();
+    if (!hasUsableLocalProfile) {
+      return null;
+    }
+
+    return _localDataSource.getLocalProfile(
+      fallbackAge: fallbackAge,
+      fallbackName: fallbackName,
+    );
+  }
+
+  @override
   Future<ProfileUserEntity> fetchProfile({
     required int fallbackAge,
     String? fallbackName,

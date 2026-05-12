@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../auth/presentation/forgot_password_screen.dart';
+import 'change_password_page.dart';
+import 'delete_account_page.dart';
 import 'privacy_policy_page.dart';
 import 'two_factor_auth_page.dart';
 
@@ -53,7 +54,7 @@ class _PrivacySecurityPageState extends State<PrivacySecurityPage> {
             context,
             icon: Icons.vpn_key_rounded,
             title: 'Change Password',
-            subtitle: 'Last updated 3 months ago',
+            subtitle: 'Last updated just now',
             iconTint: colorScheme.primary,
             iconBg: colorScheme.primary.withOpacity(0.12),
             control: Icon(Icons.chevron_right_rounded, color: colorScheme.outline),
@@ -61,7 +62,7 @@ class _PrivacySecurityPageState extends State<PrivacySecurityPage> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => ForgotPasswordScreen(language: widget.language),
+                  builder: (_) => const ChangePasswordPage(),
                 ),
               );
             },
@@ -85,18 +86,18 @@ class _PrivacySecurityPageState extends State<PrivacySecurityPage> {
           const SizedBox(height: 10),
           _personalCard(
             context,
-            icon: Icons.download_rounded,
-            title: 'Request My Data',
-            subtitle: 'Download a complete archive of your health assessment history.',
-            accentColor: colorScheme.primary,
-          ),
-          const SizedBox(height: 10),
-          _personalCard(
-            context,
             icon: Icons.delete_forever_rounded,
             title: 'Delete Account',
             subtitle: 'Permanently remove your profile and all associated data records.',
             accentColor: Colors.red.shade700,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const DeleteAccountPage(),
+                ),
+              );
+            },
           ),
           const SizedBox(height: 16),
           _policyCard(context),
@@ -316,11 +317,15 @@ class _PrivacySecurityPageState extends State<PrivacySecurityPage> {
     required String title,
     required String subtitle,
     required Color accentColor,
+    VoidCallback? onTap,
   }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Container(
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
       decoration: BoxDecoration(
         color: theme.cardColor,
@@ -369,6 +374,7 @@ class _PrivacySecurityPageState extends State<PrivacySecurityPage> {
             color: accentColor.withOpacity(0.9),
           ),
         ],
+      ),
       ),
     );
   }

@@ -95,10 +95,9 @@ Widget _buildChatBubble(ForumPost post) {
       child: GestureDetector(
         onTapDown: (d) => _showMenu(context, post, d.globalPosition, isMine),
         child: Container(
-          constraints: BoxConstraints(
-            maxWidth: MediaQuery.of(context).size.width * 0.8,
-            // minWidth ensures "Hi" doesn't crush the emoji and time together
-            minWidth: 120, 
+          constraints: const BoxConstraints(
+            maxWidth: 300,
+            minWidth: 120,
           ),
           decoration: BoxDecoration(
             color: isMine ? const Color(0xFFDCF8C6) : Colors.white,

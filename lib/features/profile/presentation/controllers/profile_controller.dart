@@ -1,6 +1,7 @@
 import '../../data/profile_repository.dart';
 import '../../domain/entities/notification_preferences_entity.dart';
 import '../../domain/entities/profile_user_entity.dart';
+import '../../domain/usecases/fetch_cached_profile_use_case.dart';
 import '../../domain/usecases/fetch_notification_preferences_use_case.dart';
 import '../../domain/usecases/fetch_profile_use_case.dart';
 import '../../domain/usecases/is_logged_in_use_case.dart';
@@ -12,6 +13,7 @@ import '../../domain/usecases/set_push_enabled_use_case.dart';
 class ProfileController {
   const ProfileController({
     required IsLoggedInUseCase isLoggedInUseCase,
+    required FetchCachedProfileUseCase fetchCachedProfileUseCase,
     required FetchProfileUseCase fetchProfileUseCase,
     required SaveProfileUseCase saveProfileUseCase,
     required FetchNotificationPreferencesUseCase fetchNotificationPreferencesUseCase,
@@ -27,6 +29,7 @@ class ProfileController {
     required this.notifyLearningKey,
     required this.notifySecurityKey,
   }) : _isLoggedInUseCase = isLoggedInUseCase,
+       _fetchCachedProfileUseCase = fetchCachedProfileUseCase,
        _fetchProfileUseCase = fetchProfileUseCase,
        _saveProfileUseCase = saveProfileUseCase,
        _fetchNotificationPreferencesUseCase =
@@ -39,6 +42,7 @@ class ProfileController {
     final repository = ProfileRepository();
     return ProfileController(
       isLoggedInUseCase: IsLoggedInUseCase(repository),
+      fetchCachedProfileUseCase: FetchCachedProfileUseCase(repository),
       fetchProfileUseCase: FetchProfileUseCase(repository),
       saveProfileUseCase: SaveProfileUseCase(repository),
       fetchNotificationPreferencesUseCase:
@@ -59,6 +63,7 @@ class ProfileController {
   }
 
   final IsLoggedInUseCase _isLoggedInUseCase;
+  final FetchCachedProfileUseCase _fetchCachedProfileUseCase;
   final FetchProfileUseCase _fetchProfileUseCase;
   final SaveProfileUseCase _saveProfileUseCase;
   final FetchNotificationPreferencesUseCase
@@ -78,6 +83,16 @@ class ProfileController {
 
   Future<bool> isLoggedIn() {
     return _isLoggedInUseCase();
+  }
+
+  Future<ProfileUserEntity?> loadCachedProfile({
+    required int fallbackAge,
+    String? fallbackName,
+  }) {
+    return _fetchCachedProfileUseCase(
+      fallbackAge: fallbackAge,
+      fallbackName: fallbackName,
+    );
   }
 
   Future<ProfileUserEntity> loadProfile({

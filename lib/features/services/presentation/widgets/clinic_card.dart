@@ -31,6 +31,9 @@ class ClinicCard extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: onTap,
+        hoverColor: Colors.transparent,
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
           child: Column(
@@ -75,13 +78,34 @@ class ClinicCard extends StatelessWidget {
                 icon: Icons.call_outlined,
                 text: clinic.phone,
               ),
-              const SizedBox(height: 10),
-              const SizedBox(height: 6),
-              Text(
-                'View details',
-                style: TextStyle(
-                  color: colorScheme.primary,
-                  fontWeight: FontWeight.w700,
+              const SizedBox(height: 14),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: onTap,
+                  style: TextButton.styleFrom(
+                    foregroundColor: colorScheme.primary,
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                    overlayColor: Colors.transparent,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'View details',
+                        style: TextStyle(
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(width: 2),
+                      Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 14,
+                        color: colorScheme.primary,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],

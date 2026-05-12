@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'verify_reset_code_screen.dart';
 import 'auth_success_dialog.dart';
+import 'auth_error_handler.dart';
 import '../data/auth_models.dart';
 import 'controllers/auth_controller.dart';
 
@@ -37,6 +38,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   InputDecoration _buildInputDecoration(String label, IconData icon, BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = const Color(0xFF005C8F);
+    final errorColor = Theme.of(context).colorScheme.error;
 
     return InputDecoration(
       labelText: label,
@@ -54,9 +56,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide(color: primaryColor, width: 2),
       ),
+      errorStyle: TextStyle(color: errorColor),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Colors.redAccent, width: 1),
+        borderSide: BorderSide(color: errorColor, width: 1.5),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: errorColor, width: 2),
       ),
     );
   }
@@ -90,16 +97,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           ),
         ),
       );
-    } on AuthApiException catch (error) {
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-      showAuthErrorDialog(context, message: error.message);
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
       setState(() => _isLoading = false);
       showAuthErrorDialog(
         context,
-        message: 'Failed to start password reset. Please try again.',
+        message: AuthErrorHandler.getMessage(error),
       );
     }
   }
@@ -133,12 +136,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   Center(
                     child: Image.asset(
                       'assets/images/forgot-password.png',
-                      height: 168,
+                      height: 160,
                       fit: BoxFit.contain,
                       errorBuilder: (context, error, stackTrace) {
                         return Container(
-                          width: 88,
-                          height: 88,
+                          width: 80,
+                          height: 80,
                           margin: const EdgeInsets.only(bottom: 24),
                           decoration: BoxDecoration(
                             color: primaryColor.withOpacity(isDark ? 0.18 : 0.12),
@@ -146,7 +149,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           ),
                           child: Icon(
                             Icons.lock_reset_outlined,
-                            size: 42,
+                            size: 40,
                             color: primaryColor,
                           ),
                         );
@@ -158,18 +161,18 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     'Forgot Password?',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 26,
+                      fontSize: 24,
                       fontWeight: FontWeight.w900,
                       letterSpacing: -0.4,
                       color: isDark ? Colors.white : primaryColor,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   Text(
                     'Enter your email or phone number and we will generate a password reset code.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 14.5,
+                      fontSize: 14,
                       color: isDark ? Colors.grey[400] : Colors.grey[600],
                     ),
                   ),
@@ -194,7 +197,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   const SizedBox(height: 20),
                   SizedBox(
                     width: double.infinity,
-                    height: 54,
+                    height: 52,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryColor,
@@ -205,12 +208,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       ),
                       onPressed: _isLoading ? null : _handleReset,
                       child: _isLoading
-                          ? const SizedBox(
+                          ? SizedBox(
                               width: 24,
                               height: 24,
                               child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                             )
-                          : const Text('Send Reset Code', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          : const Text('Send Reset Code', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ],

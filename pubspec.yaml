@@ -57,4 +57,5 @@ flutter:
     - assets/images/
     - assets/icons/
     - assets/avatar/
-    - assets/avatars/
+    - android/app/src/main/res/drawable-nodpi/native_launch_light.png
+    - android/app/src/main/res/drawable-nodpi/native_launch_dark.png

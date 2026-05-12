@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'signin_screen.dart';
 import 'auth_success_dialog.dart';
+import 'auth_error_handler.dart';
+import 'auth_messages.dart';
+import 'signin_screen.dart';
 import '../data/auth_models.dart';
 import 'controllers/auth_controller.dart';
 
@@ -166,26 +168,20 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
       showAuthSuccessDialog(
         context,
         message: _isEmailContact
-            ? 'Your email has been verified successfully.'
-            : 'Your phone number has been verified successfully.',
+            ? AuthMessages.emailVerifiedSuccess
+            : AuthMessages.phoneVerifiedSuccess,
       );
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => SignInScreen(language: widget.language)),
         (route) => false,
       );
-    } on AuthApiException catch (error) {
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-      showAuthErrorDialog(context, message: error.message);
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
       setState(() => _isLoading = false);
       showAuthErrorDialog(
         context,
-        message: _isEmailContact
-            ? 'Failed to verify email. Please try again.'
-            : 'Failed to verify phone number. Please try again.',
+        message: AuthErrorHandler.getMessage(error),
       );
     }
   }
@@ -200,14 +196,11 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
             ? 'A new verification code was sent to ${widget.contact}.'
             : 'A new verification code was generated for ${widget.contact}. Use ${result.debugCode}.',
       );
-    } on AuthApiException catch (error) {
-      if (!mounted) return;
-      showAuthErrorDialog(context, message: error.message);
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
       showAuthErrorDialog(
         context,
-        message: 'Failed to resend code. Please try again.',
+        message: AuthErrorHandler.getMessage(error),
       );
     }
   }
@@ -241,7 +234,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                   Center(
                     child: Image.asset(
                       'assets/images/verify-email-removebg-preview.png',
-                      height: 168,
+                      height: 160,
                       fit: BoxFit.contain,
                       errorBuilder: (context, error, stackTrace) {
                         return const SizedBox.shrink();
@@ -253,20 +246,20 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                     _isEmailContact ? 'Verify Your Email' : 'Verify Your Phone',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 26,
+                      fontSize: 24,
                       fontWeight: FontWeight.w900,
                       letterSpacing: -0.4,
                       color: isDark ? Colors.white : primaryColor,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   Text(
                     _isEmailContact
                         ? 'We''ve sent a 6-digit code to ${widget.contact}. Enter it below to complete your sign up.'
                         : 'Enter the 6-digit code for ${widget.contact} to complete your sign up.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 14.5,
+                      fontSize: 14,
                       color: isDark ? Colors.grey[400] : Colors.grey[600],
                     ),
                   ),
@@ -321,7 +314,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                   const SizedBox(height: 20),
                   SizedBox(
                     width: double.infinity,
-                    height: 54,
+                    height: 52,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryColor,
@@ -332,14 +325,14 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                       ),
                       onPressed: _isLoading ? null : _handleVerify,
                       child: _isLoading
-                          ? const SizedBox(
+                          ? SizedBox(
                               width: 24,
                               height: 24,
                               child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                             )
                           : Text(
                               _isEmailContact ? 'Verify Email' : 'Verify Phone',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                             ),
                     ),
                   ),

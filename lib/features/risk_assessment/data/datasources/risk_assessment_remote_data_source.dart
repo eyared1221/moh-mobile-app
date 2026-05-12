@@ -12,6 +12,20 @@ class RiskAssessmentRemoteDataSource {
     return _apiClient.get('/questions');
   }
 
+  Future<void> submitLatestResult({
+    required String riskLevel,
+    required String resultLabel,
+    required int riskScore,
+    required DateTime takenAt,
+  }) async {
+    await _apiClient.postAuthorizedToMobileAuth('/risk-assessment', {
+      'riskLevel': riskLevel,
+      'resultLabel': resultLabel,
+      'riskScore': riskScore,
+      'takenAt': takenAt.toUtc().toIso8601String(),
+    });
+  }
+
   List<RiskQuestion> mapPayloadToQuestions(Map<String, dynamic> payload) {
     final rawItems = payload['data'];
 

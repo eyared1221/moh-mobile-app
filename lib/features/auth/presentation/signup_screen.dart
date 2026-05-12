@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'signin_screen.dart';
 import 'verify_email_screen.dart';
 import 'auth_success_dialog.dart';
+import 'auth_error_handler.dart';
+import 'auth_messages.dart';
 import 'contact_validation.dart';
 import '../data/auth_models.dart';
 import 'controllers/auth_controller.dart';
@@ -17,7 +19,7 @@ class SignUpScreen extends StatefulWidget {
 
 class _SignUpScreenState extends State<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
-  
+
   // Controllers
   final _contactCtrl = TextEditingController();
   final _usernameCtrl = TextEditingController();
@@ -29,15 +31,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool _obscureConfirm = true;
   bool _isLoading = false;
   final AuthController _authController = AuthController.standard();
-
-  @override
-  void initState() {
-    super.initState();
-    _ageCtrl.text = '10';
-    _ageCtrl.selection = TextSelection.fromPosition(
-      TextPosition(offset: _ageCtrl.text.length),
-    );
-  }
 
   @override
   void dispose() {
@@ -54,11 +47,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   String? _validateAge(String? value) {
-    if (value == null || value.trim().isEmpty) return 'Age is required';
+    if (value == null || value.trim().isEmpty) return AuthMessages.ageRequired;
     final age = int.tryParse(value.trim());
-    if (age == null) return 'Enter a valid age';
-    if (age < 10) return 'Age must be at least 10';
-    if (age > 24) return 'Age must be 24 or below';
+    if (age == null) return AuthMessages.invalidAge;
+    if (age < 10) return AuthMessages.ageMin;
     return null;
   }
 
@@ -83,7 +75,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         context,
         message: result.message.isNotEmpty
             ? result.message
-            : 'Your account has been created successfully.',
+            : AuthMessages.signUpSuccess,
       );
       Navigator.push(
         context,
@@ -97,23 +89,22 @@ class _SignUpScreenState extends State<SignUpScreen> {
           ),
         ),
       );
-    } on AuthApiException catch (error) {
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-      showAuthErrorDialog(context, message: error.message);
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
       setState(() => _isLoading = false);
       showAuthErrorDialog(
         context,
-        message: 'Failed to create account. Please try again.',
+        message: AuthErrorHandler.getMessage(error),
       );
     }
   }
 
   void _changeAge(int delta) {
-    final current = int.tryParse(_ageCtrl.text.trim()) ?? 10;
-    final next = (current + delta).clamp(10, 24);
+    final current = int.tryParse(_ageCtrl.text.trim());
+    final next = current == null ? 10 : current + delta;
+    if (next < 10) {
+      return;
+    }
     setState(() {
       _ageCtrl.text = next.toString();
       _ageCtrl.selection = TextSelection.fromPosition(
@@ -186,18 +177,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     'Create Account',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 26,
+                      fontSize: 24,
                       fontWeight: FontWeight.w900,
                       letterSpacing: -0.4,
                       color: isDark ? Colors.white : primaryColor,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   Text(
                     'Enter your details to create an account.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 14.5,
+                      fontSize: 14,
                       color: isDark ? Colors.grey[400] : Colors.grey[600],
                     ),
                   ),
@@ -207,7 +198,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     controller: _contactCtrl,
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
-                    autovalidateMode: AutovalidateMode.onUserInteraction,
                     style: TextStyle(color: isDark ? Colors.white : Colors.black87),
                     decoration: _buildInputDecoration('Enter your email or phone number', Icons.contact_mail_outlined, context),
                     validator: _validateContact,
@@ -220,7 +210,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     textInputAction: TextInputAction.next,
                     style: TextStyle(color: isDark ? Colors.white : Colors.black87),
                     decoration: _buildInputDecoration('Enter a username', Icons.person_outline_rounded, context),
-                    validator: (v) => v != null && v.trim().isNotEmpty ? null : 'Username is required',
+                    validator: (v) => v != null && v.trim().isNotEmpty ? null : AuthMessages.usernameRequired,
                   ),
                   const SizedBox(height: 16),
 
@@ -230,20 +220,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     textInputAction: TextInputAction.next,
                     inputFormatters: [
                       FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(2),
-                      TextInputFormatter.withFunction((oldValue, newValue) {
-                        final text = newValue.text;
-                        if (text.isEmpty) return newValue;
-                        final age = int.tryParse(text);
-                        if (age == null) return oldValue;
-                        if (text.length == 1) {
-                          return (text == '1' || text == '2') ? newValue : oldValue;
-                        }
-                        return (age >= 10 && age <= 24) ? newValue : oldValue;
-                      }),
+                      LengthLimitingTextInputFormatter(3),
                     ],
                     style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-                    decoration: _buildInputDecoration('Enter your age', Icons.cake_outlined, context).copyWith(
+                    decoration: _buildInputDecoration('Age', Icons.cake_outlined, context).copyWith(
+                      hintText: 'Enter you Age',
                       suffixIcon: SizedBox(
                         width: 44,
                         child: Column(
@@ -335,7 +316,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                   SizedBox(
                     width: double.infinity,
-                    height: 54,
+                    height: 52,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryColor,
@@ -347,11 +328,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       onPressed: _isLoading ? null : _handleSignUp,
                       child: _isLoading 
                         ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                        : const Text('Create Account', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        : const Text('Create Account', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
                     ),
                   ),
 
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 48),
                   
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -369,7 +350,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 50),
+                  const SizedBox(height: 48),
                 ],
               ),
             ),

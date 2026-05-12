@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../../../../shared/widgets/app_bottom_nav.dart';
 import '../../../../shared/widgets/global_notification_bell.dart';
@@ -37,7 +39,7 @@ class _LearningModulesPageState extends State<LearningModulesPage> {
       GetLearningModulesUseCase(LearningService.instance),
     );
     _pageController = PageController(viewportFraction: 0.96);
-    _loadLearningModules();
+    _bootstrapLearningModules();
   }
 
   @override
@@ -46,43 +48,71 @@ class _LearningModulesPageState extends State<LearningModulesPage> {
     super.dispose();
   }
 
-  Future<void> _loadLearningModules() async {
-    try {
+  Future<void> _bootstrapLearningModules() async {
+    final cachedModules = await _controller.loadCachedModules();
+    if (!mounted) return;
+
+    if (cachedModules.isNotEmpty) {
       setState(() {
-        _isLoading = true;
+        _learningModules = cachedModules;
+        _currentIndex = 0;
+        _isLoading = false;
         _errorMessage = null;
       });
+    }
+
+    unawaited(
+      _refreshLearningModules(showLoading: cachedModules.isEmpty),
+    );
+  }
+
+  Future<void> _refreshLearningModules({bool showLoading = false}) async {
+    try {
+      if (mounted && showLoading) {
+        setState(() {
+          _isLoading = true;
+          _errorMessage = null;
+        });
+      }
 
       final modules = await _controller.loadModules();
-      
+      if (!mounted) return;
+
+      final nextIndex = modules.isEmpty
+          ? 0
+          : _currentIndex.clamp(0, modules.length - 1) as int;
+
       setState(() {
         _learningModules = modules;
+        _currentIndex = nextIndex;
+        _errorMessage = null;
         _isLoading = false;
       });
-    } catch (e) {
+
+      if (_pageController.hasClients && modules.isNotEmpty) {
+        _pageController.jumpToPage(nextIndex);
+      }
+    } catch (_) {
+      if (!mounted) return;
       setState(() {
-        _errorMessage = 'Failed to load learning modules. Please try again.';
+        if (_learningModules.isEmpty) {
+          _errorMessage = 'Failed to load learning modules. Please try again.';
+        }
         _isLoading = false;
       });
     }
   }
 
   Future<void> _syncLearningModules() async {
-    final modules = await _controller.loadModules();
-    if (!mounted) return;
+    await _refreshLearningModules(
+      showLoading: _learningModules.isEmpty,
+    );
+  }
 
-    final nextIndex = modules.isEmpty
-        ? 0
-        : _currentIndex.clamp(0, modules.length - 1) as int;
-
-    setState(() {
-      _learningModules = modules;
-      _currentIndex = nextIndex;
-      _errorMessage = null;
-      _isLoading = false;
-    });
-
-    if (_pageController.hasClients && modules.isNotEmpty) {
+  Future<void> _retryLoadingModules() async {
+    await _refreshLearningModules(showLoading: true);
+    if (_pageController.hasClients && _learningModules.isNotEmpty) {
+      final nextIndex = _currentIndex.clamp(0, _learningModules.length - 1) as int;
       _pageController.jumpToPage(nextIndex);
     }
   }
@@ -158,7 +188,7 @@ class _LearningModulesPageState extends State<LearningModulesPage> {
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton(
-                  onPressed: _loadLearningModules,
+                  onPressed: _retryLoadingModules,
                   child: const Text('Retry'),
                 ),
               ],

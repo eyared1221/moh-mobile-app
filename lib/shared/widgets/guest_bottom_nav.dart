@@ -105,13 +105,13 @@ class _GuestBottomNavState extends State<GuestBottomNav> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (sheetContext) {
-        final isDark = Theme.of(sheetContext).brightness == Brightness.dark;
-        const primaryBlue = Color(0xFF005C8F);
+        final theme = Theme.of(sheetContext);
+        final colorScheme = theme.colorScheme;
 
         return Container(
           padding: const EdgeInsets.fromLTRB(18, 14, 18, 24),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF161D2C) : Colors.white,
+            color: theme.cardColor,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(
@@ -122,26 +122,24 @@ class _GuestBottomNavState extends State<GuestBottomNav> {
                 height: 4,
                 margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.white24 : Colors.black12,
+                  color: colorScheme.outlineVariant,
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
               Text(
-                "Sign in for full access",
-                style: TextStyle(
-                  fontSize: 16,
+                'Sign in for full access',
+                style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  color: colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 6),
               Text(
-                "Sign in to use risk assessment, find care, connect with support, and manage your profile.",
+                'Sign in to use risk assessment, access learning modules, get health services, and connect with peer mentors.',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 13.5,
+                style: theme.textTheme.bodyMedium?.copyWith(
                   height: 1.4,
-                  color: isDark ? Colors.white70 : Colors.black87,
+                  color: colorScheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: 16),
@@ -149,16 +147,21 @@ class _GuestBottomNavState extends State<GuestBottomNav> {
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryBlue,
-                    foregroundColor: Colors.white,
+                    backgroundColor: colorScheme.primary,
+                    foregroundColor: colorScheme.onPrimary,
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                   onPressed: () {
                     Navigator.pop(sheetContext);
                     Navigator.pushNamed(context, '/signin');
                   },
-                  child: const Text("Sign In", style: TextStyle(fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    'Sign In',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
             ],
@@ -170,16 +173,16 @@ class _GuestBottomNavState extends State<GuestBottomNav> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    const primaryBlue = Color(0xFF005C8F);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: theme.cardColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
+            color: Colors.black.withOpacity(theme.brightness == Brightness.dark ? 0.28 : 0.08),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -192,34 +195,38 @@ class _GuestBottomNavState extends State<GuestBottomNav> {
           children: [
             _GuestNavItem(
               icon: Icons.home_rounded,
-              label: "Home",
+              label: 'Home',
               active: widget.currentIndex == 0,
               onTap: () => _handleTap(0),
+              activeColor: colorScheme.primary,
             ),
             _GuestNavItem(
               icon: Icons.menu_book_rounded,
-              label: "Learn",
+              label: 'Learn',
               active: widget.currentIndex == 1,
               onTap: () => _handleTap(1),
+              activeColor: colorScheme.primary,
             ),
             _GuestCenterItem(
-              label: "Mentor",
+              label: 'Mentor',
               active: widget.currentIndex == 2,
               onTap: () => _handleTap(2),
-              color: primaryBlue,
+              color: colorScheme.primary,
               icon: Icons.people_alt_rounded,
             ),
             _GuestNavItem(
               icon: Icons.location_on_rounded,
-              label: "Clinic",
+              label: 'Clinic',
               active: widget.currentIndex == 3,
               onTap: () => _handleTap(3),
+              activeColor: colorScheme.primary,
             ),
             _GuestNavItem(
               icon: Icons.person_rounded,
-              label: "Profile",
+              label: 'Profile',
               active: widget.currentIndex == 4,
               onTap: () => _handleTap(4),
+              activeColor: colorScheme.primary,
             ),
           ],
         ),
@@ -233,25 +240,27 @@ class _GuestNavItem extends StatelessWidget {
   final String label;
   final bool active;
   final VoidCallback onTap;
+  final Color activeColor;
 
   const _GuestNavItem({
     required this.icon,
     required this.label,
     required this.active,
     required this.onTap,
+    required this.activeColor,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    const primaryBlue = Color(0xFF005C8F);
-    final color = active ? primaryBlue : (isDark ? Colors.blueGrey[300] : Colors.blueGrey[500]);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final color = active ? activeColor : colorScheme.onSurfaceVariant;
 
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
-      splashColor: primaryBlue.withOpacity(0.2),
-      highlightColor: primaryBlue.withOpacity(0.12),
+      splashColor: activeColor.withOpacity(0.2),
+      highlightColor: activeColor.withOpacity(0.12),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -262,8 +271,7 @@ class _GuestNavItem extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               label,
-              style: TextStyle(
-                fontSize: 11,
+              style: theme.textTheme.labelSmall?.copyWith(
                 fontWeight: active ? FontWeight.bold : FontWeight.w500,
                 color: color,
               ),
@@ -292,7 +300,8 @@ class _GuestCenterItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Transform.translate(
       offset: const Offset(0, -12),
@@ -309,21 +318,20 @@ class _GuestCenterItem extends StatelessWidget {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.4 : 0.2),
+                    color: Colors.black.withOpacity(theme.brightness == Brightness.dark ? 0.35 : 0.2),
                     blurRadius: 12,
                     offset: const Offset(0, 6),
                   ),
                 ],
               ),
-              child: Icon(icon, color: Colors.white, size: 26),
+              child: Icon(icon, color: colorScheme.onPrimary, size: 26),
             ),
             const SizedBox(height: 4),
             Text(
               label,
-              style: TextStyle(
-                fontSize: 11,
+              style: theme.textTheme.labelSmall?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : const Color(0xFF0F172A),
+                color: colorScheme.onSurface,
               ),
             ),
           ],

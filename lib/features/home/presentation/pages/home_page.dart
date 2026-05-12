@@ -66,7 +66,6 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final colorScheme = Theme.of(context).colorScheme;
-    final isCompactHeight = MediaQuery.sizeOf(context).height < 760;
     final navCards = _buildNavCards();
 
     return Scaffold(
@@ -92,17 +91,17 @@ class _HomePageState extends State<HomePage> {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.only(top: 8),
-                child: _buildSlantedHero(isDark, colorScheme, isCompactHeight),
+                child: _buildSlantedHero(isDark, colorScheme),
               ),
             ),
             SliverPadding(
-              padding: EdgeInsets.fromLTRB(12, 12, 12, isCompactHeight ? 20 : 28),
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 28),
               sliver: SliverGrid(
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   crossAxisSpacing: 10,
                   mainAxisSpacing: 10,
-                  childAspectRatio: isCompactHeight ? 0.92 : 0.96,
+                  childAspectRatio: 0.96,
                 ),
                 delegate: SliverChildBuilderDelegate((context, index) {
                   return _buildNavCard(
@@ -128,7 +127,6 @@ class _HomePageState extends State<HomePage> {
   Widget _buildSlantedHero(
     bool isDark,
     ColorScheme colorScheme,
-    bool isCompactHeight,
   ) {
     return Center(
       child: Transform(
@@ -138,11 +136,11 @@ class _HomePageState extends State<HomePage> {
           ..rotateY(0.03),
         alignment: Alignment.center,
         child: Container(
-          margin: EdgeInsets.symmetric(
+          margin: const EdgeInsets.symmetric(
             horizontal: 12,
-            vertical: isCompactHeight ? 2 : 4,
+            vertical: 4,
           ),
-          constraints: BoxConstraints(minHeight: isCompactHeight ? 78 : 95),
+          constraints: const BoxConstraints(minHeight: 95),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(30),
             gradient: LinearGradient(
@@ -257,7 +255,6 @@ class _HomePageState extends State<HomePage> {
     ColorScheme colorScheme,
   ) {
     final isPressed = _pressedNavIndex == index;
-    final isCompactHeight = MediaQuery.sizeOf(context).height < 760;
     const outerRadius = 22.0;
 
     return GestureDetector(
@@ -299,7 +296,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
               SizedBox(
-                height: isCompactHeight ? 42 : 46,
+                height: 46,
                 child: Padding(
                   padding: EdgeInsets.zero,
                   child: Center(
@@ -310,7 +307,7 @@ class _HomePageState extends State<HomePage> {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: colorScheme.primary,
-                        fontSize: isCompactHeight ? 14 : 15,
+                        fontSize: 15,
                         fontWeight: FontWeight.w900,
                         height: 1.0,
                       ),

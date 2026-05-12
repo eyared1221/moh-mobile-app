@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../../shared/widgets/app_bottom_nav.dart';
@@ -25,7 +27,9 @@ class MentorPage extends StatefulWidget {
 class _MentorPageState extends State<MentorPage> {
   late final MentorPageController _controller;
   late final TextEditingController _searchController;
-  late Future<List<MentorEntity>> _mentorsFuture;
+  List<MentorEntity> _mentors = const <MentorEntity>[];
+  bool _isLoading = true;
+  String? _errorMessage;
   String _query = '';
 
   @override
@@ -35,7 +39,7 @@ class _MentorPageState extends State<MentorPage> {
       GetMentorsUseCase(MentorRepository()),
     );
     _searchController = TextEditingController();
-    _mentorsFuture = _controller.loadMentors();
+    _bootstrapMentors();
   }
 
   @override
@@ -44,12 +48,53 @@ class _MentorPageState extends State<MentorPage> {
     super.dispose();
   }
 
+  Future<void> _bootstrapMentors() async {
+    final cachedMentors = await _controller.loadCachedMentors();
+    if (!mounted) return;
+
+    if (cachedMentors.isNotEmpty) {
+      setState(() {
+        _mentors = cachedMentors;
+        _isLoading = false;
+        _errorMessage = null;
+      });
+    }
+
+    unawaited(
+      _refreshMentors(showLoading: cachedMentors.isEmpty),
+    );
+  }
+
+  Future<void> _refreshMentors({bool showLoading = false}) async {
+    try {
+      if (mounted && showLoading) {
+        setState(() {
+          _isLoading = true;
+          _errorMessage = null;
+        });
+      }
+
+      final mentors = await _controller.loadMentors();
+      if (!mounted) return;
+
+      setState(() {
+        _mentors = mentors;
+        _isLoading = false;
+        _errorMessage = null;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        if (_mentors.isEmpty) {
+          _errorMessage = 'Failed to load mentors. Please try again.';
+        }
+        _isLoading = false;
+      });
+    }
+  }
+
   Future<void> _syncMentors() async {
-    final nextFuture = _controller.loadMentors();
-    setState(() {
-      _mentorsFuture = nextFuture;
-    });
-    await nextFuture;
+    await _refreshMentors(showLoading: _mentors.isEmpty);
   }
 
   @override
@@ -68,86 +113,102 @@ class _MentorPageState extends State<MentorPage> {
       ),
       body: Padding(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-        child: FutureBuilder<List<MentorEntity>>(
-          future: _mentorsFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return ListView.separated(
-                physics: const BouncingScrollPhysics(),
-                itemCount: 2 + 5,
-                separatorBuilder: (_, __) => const SizedBox(height: 10),
-                itemBuilder: (context, index) {
-                  if (index == 0) {
-                    return _buildSearchBar(colorScheme, textTheme);
-                  }
-                  if (index == 1) {
-                    return _buildSearchDivider(colorScheme);
-                  }
-                  return const MentorSkeletonCard();
-                },
-              );
-            }
-
-            final mentors = snapshot.data ?? const <MentorEntity>[];
-            if (mentors.isEmpty) {
-              return ListView(
-                physics: const BouncingScrollPhysics(),
-                children: [
-                  _buildSearchBar(colorScheme, textTheme),
-                  const SizedBox(height: 8),
-                  _buildSearchDivider(colorScheme),
-                  const SizedBox(height: 16),
-                  _buildEmptyState(
-                    colorScheme,
-                    textTheme,
-                    'No mentors available right now.',
-                    'Please check back later.',
-                  ),
-                ],
-              );
-            }
-
-            final filtered = _controller.filterMentors(mentors, _query);
-            if (filtered.isEmpty) {
-              return ListView(
-                physics: const BouncingScrollPhysics(),
-                children: [
-                  _buildSearchBar(colorScheme, textTheme),
-                  const SizedBox(height: 8),
-                  _buildSearchDivider(colorScheme),
-                  const SizedBox(height: 16),
-                  _buildEmptyState(
-                    colorScheme,
-                    textTheme,
-                    'No mentors match your search.',
-                    'Try a different name or number.',
-                  ),
-                ],
-              );
-            }
-
-            return ListView.separated(
-              physics: const BouncingScrollPhysics(),
-              itemCount: 2 + filtered.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
-              itemBuilder: (context, index) {
-                if (index == 0) {
-                  return _buildSearchBar(colorScheme, textTheme);
-                }
-                if (index == 1) {
-                  return _buildSearchDivider(colorScheme);
-                }
-                return MentorCard(mentor: filtered[index - 2]);
-              },
-            );
-          },
-        ),
+        child: _buildBody(colorScheme, textTheme),
       ),
       bottomNavigationBar: AppBottomNav(
         age: widget.age,
         currentIndex: 2,
         userName: widget.userName,
       ),
+    );
+  }
+
+  Widget _buildBody(ColorScheme colorScheme, TextTheme textTheme) {
+    if (_isLoading && _mentors.isEmpty) {
+      return ListView.separated(
+        physics: const BouncingScrollPhysics(),
+        itemCount: 2 + 5,
+        separatorBuilder: (_, __) => const SizedBox(height: 10),
+        itemBuilder: (context, index) {
+          if (index == 0) {
+            return _buildSearchBar(colorScheme, textTheme);
+          }
+          if (index == 1) {
+            return _buildSearchDivider(colorScheme);
+          }
+          return const MentorSkeletonCard();
+        },
+      );
+    }
+
+    if (_errorMessage != null && _mentors.isEmpty) {
+      return ListView(
+        physics: const BouncingScrollPhysics(),
+        children: [
+          _buildSearchBar(colorScheme, textTheme),
+          const SizedBox(height: 8),
+          _buildSearchDivider(colorScheme),
+          const SizedBox(height: 16),
+          _buildEmptyState(
+            colorScheme,
+            textTheme,
+            _errorMessage!,
+            'Please try again.',
+          ),
+        ],
+      );
+    }
+
+    if (_mentors.isEmpty) {
+      return ListView(
+        physics: const BouncingScrollPhysics(),
+        children: [
+          _buildSearchBar(colorScheme, textTheme),
+          const SizedBox(height: 8),
+          _buildSearchDivider(colorScheme),
+          const SizedBox(height: 16),
+          _buildEmptyState(
+            colorScheme,
+            textTheme,
+            'No mentors available right now.',
+            'Please check back later.',
+          ),
+        ],
+      );
+    }
+
+    final filtered = _controller.filterMentors(_mentors, _query);
+    if (filtered.isEmpty) {
+      return ListView(
+        physics: const BouncingScrollPhysics(),
+        children: [
+          _buildSearchBar(colorScheme, textTheme),
+          const SizedBox(height: 8),
+          _buildSearchDivider(colorScheme),
+          const SizedBox(height: 16),
+          _buildEmptyState(
+            colorScheme,
+            textTheme,
+            'No mentors match your search.',
+            'Try a different name or number.',
+          ),
+        ],
+      );
+    }
+
+    return ListView.separated(
+      physics: const BouncingScrollPhysics(),
+      itemCount: 2 + filtered.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          return _buildSearchBar(colorScheme, textTheme);
+        }
+        if (index == 1) {
+          return _buildSearchDivider(colorScheme);
+        }
+        return MentorCard(mentor: filtered[index - 2]);
+      },
     );
   }
 

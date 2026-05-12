@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'signup_screen.dart';
 import 'forgot_password_screen.dart';
 import 'auth_success_dialog.dart';
+import 'auth_error_handler.dart';
+import 'auth_messages.dart';
 import 'contact_validation.dart';
 import '../data/auth_models.dart';
 import 'controllers/auth_controller.dart';
@@ -53,7 +55,7 @@ class _SignInScreenState extends State<SignInScreen> {
 
       showAuthSuccessDialog(
         context,
-        message: 'You have signed in successfully.',
+        message: AuthMessages.signInSuccess,
       );
       Navigator.pushReplacement(
         context,
@@ -64,16 +66,12 @@ class _SignInScreenState extends State<SignInScreen> {
           ),
         ),
       );
-    } on AuthApiException catch (error) {
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-      showAuthErrorDialog(context, message: error.message);
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
       setState(() => _isLoading = false);
       showAuthErrorDialog(
         context,
-        message: 'Failed to sign in. Please try again.',
+        message: AuthErrorHandler.getMessage(error),
       );
     }
   }
@@ -152,41 +150,40 @@ class _SignInScreenState extends State<SignInScreen> {
                         height: 100,
                         errorBuilder: (context, error, stackTrace) {
                           // Fallback if image is missing
-                          return Icon(Icons.health_and_safety, size: 80, color: const Color(0xFF005C8F));
+                          return const Icon(Icons.health_and_safety, size: 80, color: Color(0xFF005C8F));
                         },
                       ),
                     ),
                     
-                    const SizedBox(height: 22),
+                    const SizedBox(height: 20),
                     Text(
                       'Welcome Back!',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 26,
+                        fontSize: 24,
                         fontWeight: FontWeight.w900,
                         letterSpacing: -0.5,
                         color: isDark ? Colors.white : const Color(0xFF005C8F),
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
                     Text(
                       'Sign in to your account',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 14.5,
+                        fontSize: 14,
                         color: isDark ? Colors.grey[400] : Colors.grey[600]
                       ),
                     ),
-                    const SizedBox(height: 26),
+                    const SizedBox(height: 24),
 
                     // Inputs
                     TextFormField(
                       controller: _contactCtrl,
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
-                      autovalidateMode: AutovalidateMode.onUserInteraction,
                       style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-                      decoration: _modernInput('Email or Phone Number', Icons.alternate_email, context),
+                      decoration: _modernInput('Email or Phone Number', Icons.contact_mail, context),
                       validator: _validateContact,
                     ),
                     const SizedBox(height: 20),
@@ -205,7 +202,7 @@ class _SignInScreenState extends State<SignInScreen> {
                           onPressed: () => setState(() => _obscure = !_obscure),
                         ),
                       ),
-                      validator: (value) => (value == null || value.isEmpty) ? 'Password is required' : null,
+                      validator: (value) => (value == null || value.isEmpty) ? AuthMessages.passwordRequired : null,
                     ),
 
                     Align(
@@ -216,7 +213,7 @@ class _SignInScreenState extends State<SignInScreen> {
                           MaterialPageRoute(builder: (_) => ForgotPasswordScreen(language: widget.language)),
                         ),
                         child: const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 8),
+                          padding: EdgeInsets.symmetric(vertical: 10),
                           child: Text('Forgot Password?', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF005C8F))),
                         ),
                       ),
@@ -227,7 +224,7 @@ class _SignInScreenState extends State<SignInScreen> {
                     // Loading Button
                     SizedBox(
                       width: double.infinity,
-                      height: 54,
+                      height: 52,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF005C8F),
@@ -239,11 +236,11 @@ class _SignInScreenState extends State<SignInScreen> {
                         onPressed: _isLoading ? null : _handleSignIn,
                         child: _isLoading 
                           ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                          : const Text('Sign In', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          : const Text('Sign In', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
                       ),
                     ),
                     
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 28),
                     
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -258,7 +255,7 @@ class _SignInScreenState extends State<SignInScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 26),
+                    const SizedBox(height: 24),
                   ],
                 ),
               ),

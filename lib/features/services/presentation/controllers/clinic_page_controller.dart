@@ -1,16 +1,38 @@
 import 'dart:math' as math;
 
+import '../../data/datasources/clinic_local_data_source.dart';
+import '../../data/datasources/clinic_remote_data_source.dart';
 import '../../domain/entities/clinic_entity.dart';
 import '../../domain/entities/lat_lng_entity.dart';
 import '../../domain/usecases/get_clinics_use_case.dart';
 
 class ClinicPageController {
-  const ClinicPageController(this._getClinicsUseCase);
+  ClinicPageController(
+    this._getClinicsUseCase, {
+    ClinicLocalDataSource? localDataSource,
+    ClinicRemoteDataSource? remoteDataSource,
+  }) : _localDataSource = localDataSource ?? ClinicLocalDataSource(),
+       _remoteDataSource = remoteDataSource ?? ClinicRemoteDataSource();
 
   final GetClinicsUseCase _getClinicsUseCase;
+  final ClinicLocalDataSource _localDataSource;
+  final ClinicRemoteDataSource _remoteDataSource;
 
   Future<List<ClinicEntity>> loadClinics() {
     return _getClinicsUseCase();
+  }
+
+  Future<List<ClinicEntity>> loadCachedClinics() async {
+    final cachedPayload = await _localDataSource.getCachedClinicsPayload();
+    if (cachedPayload == null) {
+      return const <ClinicEntity>[];
+    }
+
+    try {
+      return _remoteDataSource.mapPayloadToClinics(cachedPayload);
+    } catch (_) {
+      return const <ClinicEntity>[];
+    }
   }
 
   List<ClinicEntity> filterClinics(List<ClinicEntity> clinics, String query) {

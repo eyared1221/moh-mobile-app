@@ -49,53 +49,82 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
     _controller = RiskAssessmentPageController(
       GetRiskAssessmentQuestionsUseCase(RiskAssessmentRepository()),
     );
-    _loadQuestions();
+    _bootstrapQuestions();
   }
 
-  Future<void> _loadQuestions() async {
+  Future<void> _bootstrapQuestions() async {
+    final cachedQuestions = await _controller.loadCachedQuestions();
+    if (!mounted) return;
+
+    if (cachedQuestions.isNotEmpty) {
+      setState(() {
+        _applyQuestions(cachedQuestions, preserveSelections: false);
+      });
+    }
+
+    unawaited(
+      _refreshQuestions(showLoading: cachedQuestions.isEmpty),
+    );
+  }
+
+  Future<void> _refreshQuestions({bool showLoading = false}) async {
     try {
+      if (mounted && showLoading) {
+        setState(() {
+          _isLoadingQuestions = true;
+        });
+      }
+
       final items = await _controller.loadQuestions();
       if (!mounted) return;
+
       setState(() {
-        _questions = items;
-        _selectedOptionIndexes = List<int?>.filled(items.length, null);
-        _isLoadingQuestions = false;
+        _applyQuestions(items, preserveSelections: true);
       });
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _questions = const [];
-        _selectedOptionIndexes = const [];
+        if (_questions.isEmpty) {
+          _questions = const [];
+          _selectedOptionIndexes = const [];
+        }
         _isLoadingQuestions = false;
       });
     }
   }
 
   Future<void> _syncQuestions() async {
-    final items = await _controller.loadQuestions();
-    if (!mounted) return;
+    await _refreshQuestions(showLoading: _questions.isEmpty);
+  }
 
+  void _applyQuestions(
+    List<RiskQuestionEntity> items, {
+    required bool preserveSelections,
+  }) {
     final previousSelections = <String, int?>{};
-    for (var index = 0; index < _questions.length; index++) {
-      previousSelections[_questions[index].id] = _selectedOptionIndexes[index];
+    if (preserveSelections) {
+      for (var index = 0; index < _questions.length; index++) {
+        previousSelections[_questions[index].id] = _selectedOptionIndexes[index];
+      }
     }
 
-    setState(() {
-      _questions = items;
-      _selectedOptionIndexes = items
-          .map((question) {
-            final selectedIndex = previousSelections[question.id];
-            if (selectedIndex == null) {
-              return null;
-            }
-            return selectedIndex < question.options.length ? selectedIndex : null;
-          })
-          .toList();
-      _currentIndex = items.isEmpty
-          ? 0
-          : _currentIndex.clamp(0, items.length - 1) as int;
-      _isLoadingQuestions = false;
-    });
+    _questions = items;
+    _selectedOptionIndexes = items
+        .map((question) {
+          final selectedIndex = previousSelections[question.id];
+          if (selectedIndex == null) {
+            return null;
+          }
+          return selectedIndex < question.options.length ? selectedIndex : null;
+        })
+        .toList();
+    _currentIndex = items.isEmpty
+        ? 0
+        : _currentIndex.clamp(0, items.length - 1) as int;
+    if (items.isEmpty && _stage == _RiskStage.questions) {
+      _stage = _RiskStage.intro;
+    }
+    _isLoadingQuestions = false;
   }
 
   @override
@@ -431,6 +460,7 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
     });
 
     if (isLast) {
+      unawaited(_persistLatestAssessment());
       unawaited(
         NotificationAutomationService.instance.recordRiskAssessmentCompleted(),
       );
@@ -496,6 +526,18 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
     return count;
   }
 
+  int get _totalYesCount {
+    var count = 0;
+
+    for (var i = 0; i < _questions.length; i += 1) {
+      if (_isYesAnswerFor(i)) {
+        count += 1;
+      }
+    }
+
+    return count;
+  }
+
   _RiskLevel get _riskLevel {
     final hasYesInQuestionsOneToSix = _yesCountInRange(1, 6) >= 1;
     final hasThreeYesInQuestionsSevenToEleven = _yesCountInRange(7, 11) >= 3;
@@ -516,6 +558,21 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
   }
 
   String get _resultKeyMessage => _defaultRiskKeyMessage;
+
+  Future<void> _persistLatestAssessment() async {
+    try {
+      await _controller.submitLatestResult(
+        riskLevel: _riskLevel.name,
+        resultLabel: _resultStatusLabel,
+        riskScore: _totalYesCount,
+        takenAt: DateTime.now(),
+      );
+    } catch (e) {
+      // Saving latest assessment should not block the user from seeing the result page.
+      // Log error for debugging
+      print('Failed to save risk assessment: $e');
+    }
+  }
 }
 
 const List<String> _highRiskActions = [

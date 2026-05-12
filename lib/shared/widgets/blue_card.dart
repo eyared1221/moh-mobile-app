@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../core/constants.dart';
-
 class BlueCard extends StatelessWidget {
   final VoidCallback onSignUp;
   final VoidCallback? onSignIn;
@@ -15,7 +13,15 @@ class BlueCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final topPad = MediaQuery.of(context).padding.top;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final gradientStart = Color.lerp(colorScheme.primary, colorScheme.secondary, 0.18)!;
+    final gradientEnd = Color.lerp(
+      colorScheme.primary,
+      Colors.black,
+      isDark ? 0.34 : 0.22,
+    )!;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
@@ -23,18 +29,18 @@ class BlueCard extends StatelessWidget {
         width: double.infinity,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(34),
-          gradient: const LinearGradient(
+          gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color(0xFF0A6AA3),
-              kPrimary,
-              Color(0xFF00476E),
+              gradientStart,
+              colorScheme.primary,
+              gradientEnd,
             ],
           ),
           boxShadow: [
             BoxShadow(
-              color: kPrimary.withOpacity(0.26),
+              color: colorScheme.primary.withOpacity(0.26),
               blurRadius: 30,
               offset: const Offset(0, 14),
             ),
@@ -62,7 +68,7 @@ class BlueCard extends StatelessWidget {
                 height: 92,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: kPrimaryGlow.withOpacity(0.16),
+                  color: Colors.white.withOpacity(isDark ? 0.12 : 0.18),
                 ),
               ),
             ),
@@ -72,7 +78,7 @@ class BlueCard extends StatelessWidget {
               child: Opacity(
                 opacity: isDark ? 0.10 : 0.14,
                 child: Image.asset(
-                  "assets/images/logo.png",
+                  'assets/images/logo.png',
                   height: 146,
                 ),
               ),
@@ -100,7 +106,7 @@ class BlueCard extends StatelessWidget {
                           width: 54,
                           height: 54,
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: colorScheme.surface,
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
@@ -113,30 +119,28 @@ class BlueCard extends StatelessWidget {
                           child: Padding(
                             padding: const EdgeInsets.all(7),
                             child: Image.asset(
-                              "assets/images/logo.png",
+                              'assets/images/logo.png',
                               fit: BoxFit.contain,
                             ),
                           ),
                         ),
                         const SizedBox(width: 12),
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                "Yegna Health",
-                                style: TextStyle(
+                                'Yegna Health',
+                                style: theme.textTheme.titleLarge?.copyWith(
                                   color: Colors.white,
-                                  fontSize: 21,
                                   fontWeight: FontWeight.w900,
                                 ),
                               ),
-                              SizedBox(height: 4),
+                              const SizedBox(height: 4),
                               Text(
-                                "Together for Better Health",
-                                style: TextStyle(
+                                'Together for Better Health',
+                                style: theme.textTheme.bodySmall?.copyWith(
                                   color: Colors.white70,
-                                  fontSize: 12.5,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -147,21 +151,19 @@ class BlueCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 22),
-                  const Text(
-                    "Trusted Health Info for Young People",
-                    style: TextStyle(
+                  Text(
+                    'Trusted Health Info for Young People',
+                    style: theme.textTheme.headlineMedium?.copyWith(
                       color: Colors.white,
-                      fontSize: 26,
                       height: 1.15,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
                   const SizedBox(height: 12),
-                  const Text(
-                    "Youth-friendly guidance on HIV, STIs, SRH, GBV, hepatitis, and substance use.",
-                    style: TextStyle(
+                  Text(
+                    'Youth-friendly guidance on HIV, STIs, SRH, GBV, hepatitis, and substance use.',
+                    style: theme.textTheme.bodyMedium?.copyWith(
                       color: Colors.white,
-                      fontSize: 14.5,
                       height: 1.55,
                       fontWeight: FontWeight.w500,
                     ),
@@ -172,19 +174,20 @@ class BlueCard extends StatelessWidget {
                     child: ElevatedButton(
                       onPressed: onSignUp,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: kPrimary,
+                        backgroundColor: colorScheme.surface,
+                        foregroundColor: colorScheme.primary,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(18),
                         ),
                       ),
-                      child: const Text(
-                        "Sign In",
-                        style: TextStyle(
+                      child: Text(
+                        'Sign In',
+                        style: theme.textTheme.labelLarge?.copyWith(
                           fontWeight: FontWeight.bold,
                           fontSize: 15,
+                          color: colorScheme.primary,
                         ),
                       ),
                     ),

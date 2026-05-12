@@ -14,7 +14,8 @@ class HeroBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final isCompactHeight = MediaQuery.sizeOf(context).height < 760;
 
     return Container(
@@ -26,12 +27,12 @@ class HeroBanner extends StatelessWidget {
       alignment: Alignment.centerLeft,
       child: Text(
         title,
-        style: TextStyle(
+        style: theme.textTheme.headlineMedium?.copyWith(
           fontSize: isCompactHeight ? 22 : 26,
           height: 1.2,
           fontWeight: FontWeight.w900,
           letterSpacing: -0.5,
-          color: isDark ? Colors.white : const Color(0xFF1E293B),
+          color: colorScheme.onSurface,
         ),
       ),
     );

@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../../core/theme/theme_notifier.dart';
 import '../../../../shared/widgets/app_bottom_nav.dart';
 import '../../../auth/presentation/signin_screen.dart';
+import '../../../auth/presentation/auth_messages.dart';
 import '../../domain/entities/profile_user_entity.dart';
 import '../controllers/profile_controller.dart';
 import 'language_page.dart';
 import 'notifications_page.dart';
 import 'privacy_security_page.dart';
 import 'support_center_page.dart';
+import 'theme_settings_page.dart';
 
 class ProfilePage extends StatefulWidget {
   final String age;
@@ -43,19 +46,51 @@ class _ProfilePageState extends State<ProfilePage> {
       phone: '',
       language: widget.language ?? 'English',
     );
-    _loadProfile();
+    _bootstrapProfile();
   }
 
-  Future<void> _loadProfile() async {
-    final isLoggedIn = await _controller.isLoggedIn();
-    final profile = await _controller.loadProfile(
-      fallbackAge: int.tryParse(widget.age) ?? 24,
+  int get _fallbackAge => int.tryParse(widget.age) ?? 24;
+
+  Future<void> _bootstrapProfile() async {
+    final isLoggedInFuture = _controller.isLoggedIn();
+    final cachedProfileFuture = _controller.loadCachedProfile(
+      fallbackAge: _fallbackAge,
       fallbackName: widget.userName,
     );
+
+    final isLoggedIn = await isLoggedInFuture;
+    final cachedProfile = await cachedProfileFuture;
+
     if (!mounted) return;
+
+    if (cachedProfile != null) {
+      setState(() {
+        _isLoggedIn = isLoggedIn;
+        _profile = cachedProfile;
+        _isLoading = false;
+      });
+    } else if (!isLoggedIn) {
+      setState(() {
+        _isLoggedIn = false;
+        _isLoading = false;
+      });
+      return;
+    }
+
+    if (!isLoggedIn) {
+      return;
+    }
+
+    final refreshedProfile = await _controller.loadProfile(
+      fallbackAge: _fallbackAge,
+      fallbackName: widget.userName,
+    );
+
+    if (!mounted) return;
+
     setState(() {
-      _isLoggedIn = isLoggedIn;
-      _profile = profile;
+      _isLoggedIn = true;
+      _profile = refreshedProfile;
       _isLoading = false;
     });
   }
@@ -149,9 +184,10 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   String? _validateAge(String? value) {
-    if (value == null || value.trim().isEmpty) return 'Age is required';
+    if (value == null || value.trim().isEmpty) return AuthMessages.ageRequired;
     final age = int.tryParse(value.trim());
-    if (age == null) return 'Enter a valid age';
+    if (age == null) return AuthMessages.invalidAge;
+    if (age < 10) return AuthMessages.ageMin;
     return null;
   }
 
@@ -220,7 +256,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       label: 'Full Name',
                       icon: Icons.person_outline_rounded,
                       validator: (value) =>
-                          value != null && value.trim().isNotEmpty ? null : 'Username is required',
+                          value != null && value.trim().isNotEmpty ? null : AuthMessages.usernameRequired,
                     ),
                     const SizedBox(height: 10),
                     _field(
@@ -231,7 +267,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       validator: _validateAge,
                       inputFormatters: [
                         FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(2),
+                        LengthLimitingTextInputFormatter(3),
                         TextInputFormatter.withFunction((oldValue, newValue) {
                           final text = newValue.text;
                           if (text.isEmpty || !text.startsWith('0')) return newValue;
@@ -295,8 +331,17 @@ class _ProfilePageState extends State<ProfilePage> {
     if (updated != null) {
       setState(() => _profile = updated);
     } else {
-      await _loadProfile();
+      await _bootstrapProfile();
     }
+  }
+
+  Future<void> _openThemeSettingsPage() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ThemeSettingsPage()),
+    );
+    if (!mounted) return;
+    setState(() {});
   }
 
   Future<bool> _confirmLogout() async {
@@ -623,6 +668,14 @@ Widget _actionTile(
             title: 'App Language',
             trailingText: _profile.language,
             onTap: _openLanguagePage,
+          ),
+          Divider(height: 1, color: colorScheme.outlineVariant),
+          _settingsRow(
+            context,
+            icon: Icons.palette_outlined,
+            title: 'App Theme',
+            trailingText: themeModeLabel(themeNotifier.value),
+            onTap: _openThemeSettingsPage,
           ),
           Divider(height: 1, color: colorScheme.outlineVariant),
           _settingsRow(

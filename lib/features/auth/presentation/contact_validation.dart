@@ -1,3 +1,5 @@
+import 'auth_messages.dart';
+
 class ContactValidation {
   static final RegExp _emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
   static final RegExp _phonePattern = RegExp(r'^(09|07)\d{8}$');
@@ -18,16 +20,16 @@ class ContactValidation {
 
   static String? validate(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return 'Email or phone is required';
+      return AuthMessages.emailOrPhoneRequired;
     }
 
     final trimmed = value.trim();
     if (looksLikeEmail(trimmed)) {
-      return isValidEmail(trimmed) ? null : 'Enter a valid email address';
+      return isValidEmail(trimmed) ? null : AuthMessages.invalidEmail;
     }
 
     return isValidPhone(trimmed)
         ? null
-        : 'Phone number must be 10 digits and start with 09 or 07';
+        : AuthMessages.invalidPhone;
   }
 }

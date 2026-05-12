@@ -82,4 +82,16 @@ class AuthRemoteDataSource {
       'password': password,
     });
   }
+
+  Future<void> changePassword({
+    required String contact,
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    await _apiClient.post('/password?action=change', {
+      'contact': contact,
+      'oldPassword': oldPassword,
+      'newPassword': newPassword,
+    });
+  }
 }

@@ -49,19 +49,46 @@ class ProfileLocalDataSource {
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final safeAge = fallbackAge > 0 ? fallbackAge : 24;
+    final storedProfileName = prefs.getString(nameKey)?.trim() ?? '';
+    final storedSessionName = prefs.getString('userName')?.trim() ?? '';
     final storedProfileEmail = prefs.getString(emailKey)?.trim() ?? '';
     final storedSessionEmail = prefs.getString('userEmail')?.trim() ?? '';
+    final storedSessionAge = int.tryParse(prefs.getString('userAge') ?? '');
     final resolvedEmail =
         storedProfileEmail.isNotEmpty ? storedProfileEmail : storedSessionEmail;
+    final resolvedName = storedProfileName.isNotEmpty
+        ? storedProfileName
+        : storedSessionName.isNotEmpty
+            ? storedSessionName
+            : fallbackName ?? 'Alex Johnston';
 
     return ProfileUser(
-      fullName: prefs.getString(nameKey) ?? fallbackName ?? 'Alex Johnston',
-      age: prefs.getInt(ageKey) ?? safeAge,
+      fullName: resolvedName,
+      age: prefs.getInt(ageKey) ?? storedSessionAge ?? safeAge,
       email: resolvedEmail,
       phone: prefs.getString(phoneKey) ?? '',
       language: prefs.getString(languageKey) ?? 'English',
       avatarPath: prefs.getString(avatarPathKey),
     );
+  }
+
+  Future<bool> hasUsableLocalProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    final storedProfileName = prefs.getString(nameKey)?.trim() ?? '';
+    final storedSessionName = prefs.getString('userName')?.trim() ?? '';
+    final storedProfileEmail = prefs.getString(emailKey)?.trim() ?? '';
+    final storedSessionEmail = prefs.getString('userEmail')?.trim() ?? '';
+    final storedPhone = prefs.getString(phoneKey)?.trim() ?? '';
+    final storedAvatarPath = prefs.getString(avatarPathKey)?.trim() ?? '';
+
+    return storedProfileName.isNotEmpty ||
+        storedSessionName.isNotEmpty ||
+        storedProfileEmail.isNotEmpty ||
+        storedSessionEmail.isNotEmpty ||
+        storedPhone.isNotEmpty ||
+        storedAvatarPath.isNotEmpty ||
+        prefs.containsKey(ageKey) ||
+        prefs.containsKey('userAge');
   }
 
   Future<void> cacheProfile(ProfileUser user) async {

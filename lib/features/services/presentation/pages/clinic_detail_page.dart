@@ -53,7 +53,7 @@ class _ClinicDetailPageState extends State<ClinicDetailPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.clinic.name),
+        title: const Text('Healthcare Facility Detail'),
         backgroundColor: colorScheme.surface,
         foregroundColor: colorScheme.onSurface,
         elevation: 0,

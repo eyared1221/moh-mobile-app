@@ -2,6 +2,7 @@ import '../../data/auth_service.dart';
 import '../../domain/entities/auth_action_result_entity.dart';
 import '../../domain/entities/login_result_entity.dart';
 import '../../domain/entities/register_result_entity.dart';
+import '../../domain/usecases/change_password_use_case.dart';
 import '../../domain/usecases/forgot_password_use_case.dart';
 import '../../domain/usecases/login_use_case.dart';
 import '../../domain/usecases/register_use_case.dart';
@@ -19,13 +20,15 @@ class AuthController {
     required ForgotPasswordUseCase forgotPasswordUseCase,
     required VerifyResetCodeUseCase verifyResetCodeUseCase,
     required ResetPasswordUseCase resetPasswordUseCase,
+    required ChangePasswordUseCase changePasswordUseCase,
   }) : _registerUseCase = registerUseCase,
        _loginUseCase = loginUseCase,
        _verifyOtpUseCase = verifyOtpUseCase,
        _resendOtpUseCase = resendOtpUseCase,
        _forgotPasswordUseCase = forgotPasswordUseCase,
        _verifyResetCodeUseCase = verifyResetCodeUseCase,
-       _resetPasswordUseCase = resetPasswordUseCase;
+       _resetPasswordUseCase = resetPasswordUseCase,
+       _changePasswordUseCase = changePasswordUseCase;
 
   factory AuthController.standard() {
     final repository = AuthService.instance;
@@ -37,6 +40,7 @@ class AuthController {
       forgotPasswordUseCase: ForgotPasswordUseCase(repository),
       verifyResetCodeUseCase: VerifyResetCodeUseCase(repository),
       resetPasswordUseCase: ResetPasswordUseCase(repository),
+      changePasswordUseCase: ChangePasswordUseCase(repository),
     );
   }
 
@@ -47,6 +51,7 @@ class AuthController {
   final ForgotPasswordUseCase _forgotPasswordUseCase;
   final VerifyResetCodeUseCase _verifyResetCodeUseCase;
   final ResetPasswordUseCase _resetPasswordUseCase;
+  final ChangePasswordUseCase _changePasswordUseCase;
 
   Future<RegisterResultEntity> register({
     required String contact,
@@ -109,6 +114,16 @@ class AuthController {
       contact: contact,
       code: code,
       password: password,
+    );
+  }
+
+  Future<void> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) {
+    return _changePasswordUseCase(
+      oldPassword: oldPassword,
+      newPassword: newPassword,
     );
   }
 }

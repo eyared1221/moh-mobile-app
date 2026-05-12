@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'features/notifications/data/notification_automation_service.dart';
 import 'features/notifications/data/push_notification_service.dart';
-import 'features/guest/presentation/guest_page.dart';
+import 'core/startup/app_startup_screen.dart';
+import 'core/startup/app_startup_service.dart';
 import 'features/auth/presentation/signup_screen.dart';
 import 'features/auth/presentation/signin_screen.dart';
 import 'features/home/presentation/pages/home_page.dart';
@@ -10,7 +11,7 @@ import 'features/mentor/presentation/pages/mentor_page.dart';
 import 'features/profile/presentation/pages/profile_page.dart';
 import 'features/risk_assessment/presentation/pages/risk_assessment_page.dart';
 import 'features/services/presentation/pages/clinic_page.dart';
-import 'core/constants.dart';
+import 'core/theme/app_theme.dart';
 import 'core/theme/theme_notifier.dart';
 
 void main() async {
@@ -28,104 +29,39 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  final AppStartupService _startupService = AppStartupService();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      _startupService.recordLastActiveAt();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final light = ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.light,
-      primaryColor: kPrimary,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: kPrimary,
-        brightness: Brightness.light,
-        primary: kPrimary,
-      ),
-      scaffoldBackgroundColor: kBg,
-      cardColor: Colors.white,
-      appBarTheme: const AppBarTheme(
-        backgroundColor: kBg,
-        foregroundColor: kPrimary,
-        surfaceTintColor: Colors.transparent,
-        shadowColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        centerTitle: false,
-        titleTextStyle: TextStyle(
-          color: kPrimary,
-          fontSize: 18,
-          fontWeight: FontWeight.w500,
-        ),
-        iconTheme: IconThemeData(
-          color: kPrimary,
-          size: 24,
-        ),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: kPrimary,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-          elevation: 0,
-        ),
-      ),
-      textTheme: ThemeData.light().textTheme.apply(
-        bodyColor: Colors.black87,
-        displayColor: kPrimary,
-      ),
-    );
-
-    final dark = ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.dark,
-      primaryColor: kPrimary,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: kPrimary,
-        brightness: Brightness.dark,
-        primary: kPrimary,
-      ),
-      scaffoldBackgroundColor: const Color(0xFF0B1220),
-      cardColor: const Color(0xFF161D2C),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFF0B1220),
-        foregroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
-        shadowColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        centerTitle: false,
-        titleTextStyle: TextStyle(
-          color: Colors.white,
-          fontSize: 18,
-          fontWeight: FontWeight.w500,
-        ),
-        iconTheme: IconThemeData(
-          color: Colors.white,
-          size: 24,
-        ),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: kPrimary,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-          elevation: 0,
-        ),
-      ),
-      textTheme: ThemeData.dark().textTheme.apply(
-        bodyColor: Colors.white,
-        displayColor: Colors.white,
-      ),
-    );
-
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: themeNotifier,
       builder: (context, mode, _) {
         return MaterialApp(
           title: 'Yegna Health',
-          theme: light,
-          darkTheme: dark,
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
           themeMode: mode,
           debugShowCheckedModeBanner: false,
           initialRoute: '/',
@@ -136,7 +72,7 @@ class _MyAppState extends State<MyApp> {
 
             switch (settings.name) {
               case '/':
-                return MaterialPageRoute(builder: (_) => const GuestPage());
+                return MaterialPageRoute(builder: (_) => const AppStartupScreen());
               case '/signin':
                 return MaterialPageRoute(builder: (_) => const SignInScreen());
               case '/signup':
@@ -176,7 +112,7 @@ class _MyAppState extends State<MyApp> {
                   ),
                 );
               default:
-                return MaterialPageRoute(builder: (_) => const GuestPage());
+                return MaterialPageRoute(builder: (_) => const AppStartupScreen());
             }
           },
         );

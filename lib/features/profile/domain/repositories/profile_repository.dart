@@ -8,6 +8,11 @@ abstract class ProfileRepository {
 
   Future<void> setLoggedIn(bool value);
 
+  Future<ProfileUserEntity?> fetchCachedProfile({
+    required int fallbackAge,
+    String? fallbackName,
+  });
+
   Future<ProfileUserEntity> fetchProfile({
     required int fallbackAge,
     String? fallbackName,

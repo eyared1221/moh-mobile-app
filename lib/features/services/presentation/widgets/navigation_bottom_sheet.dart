@@ -86,7 +86,7 @@ class _NavigationBottomSheetState extends State<NavigationBottomSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
+      height: 600,
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.only(

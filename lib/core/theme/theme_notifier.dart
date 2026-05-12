@@ -3,6 +3,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.system);
 
+String themeModeLabel(ThemeMode mode) {
+  return switch (mode) {
+    ThemeMode.light => 'Light',
+    ThemeMode.dark => 'Dark',
+    ThemeMode.system => 'Use system default',
+  };
+}
+
 Future<void> loadSavedTheme() async {
   final prefs = await SharedPreferences.getInstance();
   final t = prefs.getString('themeMode') ?? 'system';

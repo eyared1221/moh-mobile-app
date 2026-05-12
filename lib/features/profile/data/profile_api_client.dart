@@ -81,6 +81,22 @@ class ProfileApiClient {
     return _decodeResponse(response);
   }
 
+  Future<Map<String, dynamic>> delete(
+    String path, {
+    Map<String, dynamic>? body,
+  }) async {
+    final request = http.Request('DELETE', _uri(path));
+    request.headers.addAll(await _authorizedHeaders());
+
+    if (body != null) {
+      request.body = jsonEncode(body);
+    }
+
+    final streamedResponse = await _httpClient.send(request);
+    final response = await http.Response.fromStream(streamedResponse);
+    return _decodeResponse(response);
+  }
+
   Map<String, dynamic> _decodeResponse(http.Response response) {
     final payload = response.body.isEmpty
         ? <String, dynamic>{}

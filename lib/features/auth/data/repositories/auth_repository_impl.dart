@@ -3,6 +3,7 @@ import '../../domain/entities/login_result_entity.dart';
 import '../../domain/entities/register_result_entity.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../../notifications/data/notification_automation_service.dart';
+import '../auth_session_storage.dart';
 import '../datasources/auth_device_data_source.dart';
 import '../datasources/auth_remote_data_source.dart';
 import '../datasources/auth_session_local_data_source.dart';
@@ -103,6 +104,22 @@ class AuthRepositoryImpl implements AuthRepository {
       contact: contact,
       code: code,
       password: password,
+    );
+  }
+
+  @override
+  Future<void> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    final contact = await AuthSessionStorage.getLoginContact();
+    if (contact == null || contact.isEmpty) {
+      throw Exception('User contact not found. Please log in again.');
+    }
+    return _remoteDataSource.changePassword(
+      contact: contact,
+      oldPassword: oldPassword,
+      newPassword: newPassword,
     );
   }
 }
