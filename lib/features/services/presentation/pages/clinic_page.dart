@@ -339,6 +339,20 @@ class _ClinicPageState extends State<ClinicPage> {
     await prefs.setString('selected_campus', campus);
   }
 
+  Future<void> _handleFindModeSelection(_ClinicListMode mode) async {
+    switch (mode) {
+      case _ClinicListMode.nearby:
+        await _handleLocationAction();
+        return;
+      case _ClinicListMode.recommended:
+      case _ClinicListMode.all:
+        if (!mounted) return;
+        setState(() {
+          _listMode = mode;
+        });
+    }
+  }
+
   List<ClinicEntity> _filteredClinics() {
     return _controller.filterClinics(_clinics, _searchQuery);
   }
@@ -509,11 +523,21 @@ class _ClinicPageState extends State<ClinicPage> {
     }
   }
 
+  String _findModeLabel(_ClinicListMode mode) {
+    switch (mode) {
+      case _ClinicListMode.nearby:
+        return 'Nearby';
+      case _ClinicListMode.recommended:
+        return 'By campus';
+      case _ClinicListMode.all:
+        return 'All';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
     final recommendedClinics = _recommendedClinics();
     final nearbyClinics = _nearbyClinics();
     final clinicsToShow = switch (_activeListMode) {
@@ -531,245 +555,7 @@ class _ClinicPageState extends State<ClinicPage> {
           GlobalTopBarActions(onSyncPressed: _syncClinics),
         ],
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            child: TextField(
-              controller: _searchCtrl,
-              onChanged: (value) => setState(() => _searchQuery = value),
-              style:
-                  theme.textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurface,
-                    fontWeight: FontWeight.w600,
-                  ) ??
-                  TextStyle(
-                    color: colorScheme.onSurface,
-                    fontWeight: FontWeight.w600,
-                  ),
-              decoration: InputDecoration(
-                hintText: 'Search clinics',
-                hintStyle:
-                    theme.textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ) ??
-                    TextStyle(color: colorScheme.onSurfaceVariant),
-                prefixIcon: Icon(Icons.search, color: colorScheme.onSurfaceVariant),
-                filled: true,
-                fillColor: colorScheme.surfaceVariant.withOpacity(0.4),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide.none,
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide.none,
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide(color: colorScheme.primary, width: 1.2),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: _ClinicQuickAction(
-                        icon: _isResolvingLocation
-                            ? null
-                            : Icons.location_on_rounded,
-                        leading: _isResolvingLocation
-                            ? SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: colorScheme.primary,
-                                ),
-                              )
-                            : null,
-                        label: 'Use my location',
-                        onTap: _isResolvingLocation ? null : _handleLocationAction,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _ClinicQuickAction(
-                        icon: Icons.account_balance_outlined,
-                        label: 'Select my campus',
-                        onTap: _handleCampusSelection,
-                      ),
-                    ),
-                  ],
-                ),
-                if (_locationNotice != null) ...[
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: Text(
-                      _locationNotice!,
-                      style: TextStyle(
-                        color: colorScheme.error,
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 12),
-                GestureDetector(
-                  onTap: () => setState(
-                    () => _listMode = _ClinicListMode.recommended,
-                  ),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 14,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isDark ? colorScheme.surface : Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: colorScheme.outlineVariant),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(isDark ? 0.2 : 0.06),
-                          blurRadius: 12,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.star_rounded,
-                          color: const Color(0xFFF4B400),
-                          size: 22,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Wrap(
-                            spacing: 10,
-                            runSpacing: 8,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: [
-                              Text(
-                                'University near your current location',
-                                style: TextStyle(
-                                  color: colorScheme.onSurface,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: colorScheme.primary.withOpacity(0.10),
-                                  borderRadius: BorderRadius.circular(999),
-                                ),
-                                child: Text(
-                                  _selectedCampusLabel,
-                                  style: TextStyle(
-                                    color: colorScheme.primary,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Icon(
-                          Icons.chevron_right_rounded,
-                          color: colorScheme.primary,
-                          size: 24,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: isDark ? colorScheme.surface : Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: colorScheme.outlineVariant),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(isDark ? 0.2 : 0.06),
-                        blurRadius: 12,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surfaceVariant,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: _TogglePill(
-                            label: 'Campus',
-                            icon: Icons.star_rounded,
-                            selected: _activeListMode == _ClinicListMode.recommended,
-                            onTap: () => setState(
-                              () => _listMode = _ClinicListMode.recommended,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: _TogglePill(
-                            label: 'Nearby',
-                            icon: Icons.near_me_rounded,
-                            selected: _activeListMode == _ClinicListMode.nearby,
-                            onTap: () => setState(
-                              () => _listMode = _ClinicListMode.nearby,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: _TogglePill(
-                            label: 'All Clinics',
-                            icon: Icons.local_hospital_outlined,
-                            selected: _activeListMode == _ClinicListMode.all,
-                            onTap: () => setState(
-                              () => _listMode = _ClinicListMode.all,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 6),
-          Expanded(
-            child: _buildBody(context, clinicsToShow),
-          ),
-        ],
-      ),
+      body: _buildBody(context, clinicsToShow),
       bottomNavigationBar: AppBottomNav(
         age: widget.age,
         currentIndex: 3,
@@ -817,8 +603,82 @@ class _ClinicPageState extends State<ClinicPage> {
     final colorScheme = theme.colorScheme;
     final clinicLabel = clinics.length == 1 ? 'clinic' : 'clinics';
 
-    return Column(
+    return ListView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.only(bottom: 16),
       children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          child: TextField(
+            controller: _searchCtrl,
+            onChanged: (value) => setState(() => _searchQuery = value),
+            style:
+                theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.w600,
+                ) ??
+                TextStyle(
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
+            decoration: InputDecoration(
+              hintText: 'Search clinics',
+              hintStyle:
+                  theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ) ??
+                  TextStyle(color: colorScheme.onSurfaceVariant),
+              prefixIcon: Icon(Icons.search, color: colorScheme.onSurfaceVariant),
+              filled: true,
+              fillColor: colorScheme.surfaceVariant.withOpacity(0.4),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(color: colorScheme.primary, width: 1.2),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _ClinicSupportSelectorCard(
+                isResolvingLocation: _isResolvingLocation,
+                onUseLocation: _isResolvingLocation ? null : _handleLocationAction,
+                onSelectCampus: _handleCampusSelection,
+              ),
+              if (_locationNotice != null) ...[
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Text(
+                    _locationNotice!,
+                    style: TextStyle(
+                      color: colorScheme.error,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 6),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 2, 16, 10),
           child: Row(
@@ -836,7 +696,7 @@ class _ClinicPageState extends State<ClinicPage> {
                 ),
               ),
               Text(
-                'Sort by:',
+                'Find:',
                 style: TextStyle(
                   color: colorScheme.onSurfaceVariant,
                   fontSize: 12.5,
@@ -844,95 +704,277 @@ class _ClinicPageState extends State<ClinicPage> {
                 ),
               ),
               const SizedBox(width: 6),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.swap_vert_rounded,
-                    size: 18,
-                    color: colorScheme.primary,
+              PopupMenuButton<_ClinicListMode>(
+                initialValue: _activeListMode,
+                onSelected: (mode) {
+                  unawaited(_handleFindModeSelection(mode));
+                },
+                color: theme.cardColor,
+                elevation: 6,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: _ClinicListMode.nearby,
+                    child: Text(_findModeLabel(_ClinicListMode.nearby)),
                   ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Distance',
-                    style: TextStyle(
-                      color: colorScheme.primary,
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w800,
-                    ),
+                  PopupMenuItem(
+                    value: _ClinicListMode.recommended,
+                    child: Text(_findModeLabel(_ClinicListMode.recommended)),
                   ),
-                  const SizedBox(width: 2),
-                  Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    color: colorScheme.primary,
+                  PopupMenuItem(
+                    value: _ClinicListMode.all,
+                    child: Text(_findModeLabel(_ClinicListMode.all)),
                   ),
                 ],
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.swap_vert_rounded,
+                      size: 18,
+                      color: colorScheme.primary,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      _findModeLabel(_activeListMode),
+                      style: TextStyle(
+                        color: colorScheme.primary,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(width: 2),
+                    Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: colorScheme.primary,
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
         ),
+        ListView.separated(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+          itemCount: clinics.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 10),
+          itemBuilder: (context, index) {
+            final clinic = clinics[index];
+            final distance = _userLocation == null ? null : _distanceKm(clinic);
+            return ClinicCard(
+              clinic: clinic,
+              distanceKm: distance,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ClinicDetailPage(clinic: clinic, distanceKm: distance),
+                  ),
+                );
+              },
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+enum _ClinicListMode { recommended, nearby, all }
+
+class _ClinicSupportSelectorCard extends StatelessWidget {
+  final bool isResolvingLocation;
+  final VoidCallback? onUseLocation;
+  final VoidCallback onSelectCampus;
+
+  const _ClinicSupportSelectorCard({
+    required this.isResolvingLocation,
+    required this.onUseLocation,
+    required this.onSelectCampus,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF162033) : Colors.white;
+    final borderColor = isDark
+        ? colorScheme.outlineVariant.withOpacity(0.38)
+        : colorScheme.outlineVariant;
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.18 : 0.05),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final useHorizontalLayout = constraints.maxWidth >= 430;
+          final actionColumnWidth = (constraints.maxWidth * 0.42).clamp(
+            196.0,
+            220.0,
+          );
+
+          if (!useHorizontalLayout) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildInfoBlock(context, colorScheme),
+                const SizedBox(height: 16),
+                _buildActionButtons(context, colorScheme),
+              ],
+            );
+          }
+
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 12, top: 4),
+                  child: _buildInfoBlock(context, colorScheme),
+                ),
+              ),
+              SizedBox(
+                width: actionColumnWidth,
+                child: _buildActionButtons(context, colorScheme),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildInfoBlock(BuildContext context, ColorScheme colorScheme) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          Icons.location_on_outlined,
+          color: colorScheme.primary,
+          size: 26,
+        ),
+        const SizedBox(width: 12),
         Expanded(
-          child: ListView.separated(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            itemCount: clinics.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 10),
-            itemBuilder: (context, index) {
-              final clinic = clinics[index];
-              final distance = _userLocation == null ? null : _distanceKm(clinic);
-              return ClinicCard(
-                clinic: clinic,
-                distanceKm: distance,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ClinicDetailPage(clinic: clinic, distanceKm: distance),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Find care near you',
+                style: textTheme.titleMedium?.copyWith(
+                      fontSize: 18,
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.w700,
+                    ) ??
+                    TextStyle(
+                      color: colorScheme.onSurface,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
                     ),
-                  );
-                },
-              );
-            },
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Use your location or select your campus to see recommended health facilities.',
+                style: textTheme.bodyMedium?.copyWith(
+                      fontSize: 14,
+                      color: colorScheme.onSurfaceVariant,
+                      height: 1.45,
+                      fontWeight: FontWeight.w500,
+                    ) ??
+                    TextStyle(
+                      fontSize: 14,
+                      color: colorScheme.onSurfaceVariant,
+                      height: 1.45,
+                      fontWeight: FontWeight.w500,
+                    ),
+              ),
+            ],
           ),
         ),
       ],
     );
   }
 
+  Widget _buildActionButtons(BuildContext context, ColorScheme colorScheme) {
+    return Column(
+      children: [
+        _ClinicActionButton(
+          icon: isResolvingLocation ? null : Icons.my_location_rounded,
+          leading: isResolvingLocation
+              ? SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: colorScheme.onPrimary,
+                  ),
+                )
+              : null,
+          label: 'Use my location',
+          onTap: onUseLocation,
+          filled: true,
+        ),
+        const SizedBox(height: 10),
+        _ClinicActionButton(
+          icon: Icons.school_outlined,
+          label: 'Select campus',
+          onTap: onSelectCampus,
+          filled: false,
+        ),
+      ],
+    );
+  }
 }
 
-enum _ClinicListMode { recommended, nearby, all }
-
-class _ClinicQuickAction extends StatelessWidget {
+class _ClinicActionButton extends StatelessWidget {
   final IconData? icon;
   final Widget? leading;
   final String label;
   final VoidCallback? onTap;
+  final bool filled;
 
-  const _ClinicQuickAction({
+  const _ClinicActionButton({
     required this.icon,
     required this.label,
     required this.onTap,
+    required this.filled,
     this.leading,
   });
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return GestureDetector(
+
+    return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: filled ? colorScheme.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: colorScheme.outlineVariant),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          border: Border.all(
+            color: colorScheme.primary,
+            width: 1.4,
+          ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -940,8 +982,8 @@ class _ClinicQuickAction extends StatelessWidget {
             leading ??
                 Icon(
                   icon,
-                  size: 20,
-                  color: colorScheme.primary,
+                  size: 18,
+                  color: filled ? colorScheme.onPrimary : colorScheme.primary,
                 ),
             const SizedBox(width: 10),
             Flexible(
@@ -950,67 +992,10 @@ class _ClinicQuickAction extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  color: colorScheme.primary,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
+                  color: filled ? colorScheme.onPrimary : colorScheme.primary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
                 ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _TogglePill extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _TogglePill({
-    required this.label,
-    required this.icon,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-        decoration: BoxDecoration(
-          color: selected ? Colors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(999),
-          boxShadow: selected
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 10,
-                    offset: const Offset(0, 6),
-                  ),
-                ]
-              : const [],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 15,
-              color: selected ? colorScheme.primary : colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(width: 5),
-            Text(
-              label,
-              style: TextStyle(
-                color: selected ? colorScheme.primary : colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w700,
-                fontSize: 12.5,
               ),
             ),
           ],

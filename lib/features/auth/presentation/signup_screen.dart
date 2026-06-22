@@ -5,6 +5,7 @@ import 'verify_email_screen.dart';
 import 'auth_success_dialog.dart';
 import 'auth_error_handler.dart';
 import 'auth_messages.dart';
+import 'password_validator.dart';
 import 'contact_validation.dart';
 import '../data/auth_models.dart';
 import 'controllers/auth_controller.dart';
@@ -266,7 +267,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                       ),
                     ),
-                    validator: (v) => (v != null && v.length >= 8) ? null : 'Min 8 characters required',
+                    validator: validatePassword,
                   ),
                   const SizedBox(height: 16),
 
@@ -285,9 +286,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                     ),
                     validator: (v) {
-                      if (v == null || v.isEmpty) return 'Please confirm password';
-                      if (v.length < 8) return 'Min 8 characters required';
-                      if (v != _passwordCtrl.text) return 'Passwords do not match';
+                      if (v == null || v.isEmpty) return AuthMessages.confirmPasswordRequired;
+                      final passwordError = validatePassword(v);
+                      if (passwordError != null) return passwordError;
+                      if (v != _passwordCtrl.text) return AuthMessages.passwordsDoNotMatch;
                       return null;
                     },
                   ),

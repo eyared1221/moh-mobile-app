@@ -24,8 +24,16 @@ class AuthMessages {
   static const String usernameRequired = 'Username is required';
   static const String passwordRequired = 'Password is required';
   static const String passwordMinLength = 'Password must be at least 8 characters';
+  static const String passwordNeedsNonSpaceCharacter =
+      'Password must include at least one non-space character';
+  static const String passwordNoLeadingOrTrailingSpaces =
+      'Password cannot start or end with spaces';
   static const String confirmPasswordRequired = 'Confirm password is required';
   static const String passwordsDoNotMatch = 'Passwords do not match';
+  static const String invalidCredentials = 'Invalid email/phone or password';
+  static const String verifyAccountRequired = 'Please verify your account';
+  static const String invalidOrExpiredResetCode = 'Invalid or expired reset code';
+  static const String resetCodeExpired = 'Reset code has expired';
   static const String ageRequired = 'Age is required';
   static const String invalidAge = 'Enter a valid age';
   static const String ageMin = 'Age must be 10 or above';

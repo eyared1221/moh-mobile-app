@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../domain/entities/learning_module_entity.dart';
-import '../widgets/learning_image.dart';
 import '../widgets/learning_section_tile.dart';
 
 class LearningModuleDetailPage extends StatelessWidget {
@@ -15,19 +14,22 @@ class LearningModuleDetailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
+        centerTitle: true,
         elevation: 0,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        foregroundColor: colorScheme.onSurface,
+        foregroundColor: colorScheme.primary,
         titleSpacing: 0,
         title: Text(
-          'Module Detail',
+          'Learning Modules',
           style: textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w500,
             fontSize: 18,
+            color: isDark ? Colors.white : colorScheme.primary,
           ),
         ),
       ),
@@ -110,32 +112,6 @@ class LearningModuleDetailPage extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceVariant,
-              borderRadius: BorderRadius.circular(18),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: module.imageUrl.isEmpty
-                ? Icon(
-                    Icons.favorite_outline,
-                    color: colorScheme.primary,
-                    size: 28,
-                  )
-                : LearningImage(
-                    imageUrl: module.imageUrl,
-                    isAssetImage: module.isAssetImage,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_) => Icon(
-                      Icons.image_not_supported_outlined,
-                      color: colorScheme.primary,
-                      size: 28,
-                    ),
-                  ),
-          ),
-          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

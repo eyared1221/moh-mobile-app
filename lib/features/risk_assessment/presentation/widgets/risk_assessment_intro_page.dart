@@ -15,7 +15,8 @@ class RiskAssessmentIntroPage extends StatefulWidget {
   });
 
   @override
-  State<RiskAssessmentIntroPage> createState() => _RiskAssessmentIntroPageState();
+  State<RiskAssessmentIntroPage> createState() =>
+      _RiskAssessmentIntroPageState();
 }
 
 class _RiskAssessmentIntroPageState extends State<RiskAssessmentIntroPage> {
@@ -36,29 +37,105 @@ class _RiskAssessmentIntroPageState extends State<RiskAssessmentIntroPage> {
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 430),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const SizedBox(height: 10),
-                    _buildHeader(colorScheme, textTheme),
-                    const SizedBox(height: 30),
-                    _buildParagraphBlock(
-                      'This risk assessment helps identify situations where extra support, testing, or prevention guidance may be useful.',
+                    Container(
+                      padding: const EdgeInsets.fromLTRB(14, 18, 14, 18),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardColor,
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(
+                          color: colorScheme.outlineVariant.withOpacity(0.45),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.04),
+                            blurRadius: 22,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _buildHeaderSection(colorScheme, textTheme),
+                          const SizedBox(height: 18),
+                          _buildInfoCard(
+                            colorScheme,
+                            textTheme,
+                            icon: Icons.volunteer_activism_outlined,
+                            content: TextSpan(
+                              children: [
+                                const TextSpan(
+                                  text:
+                                      'This risk assessment helps identify situations where ',
+                                ),
+                                _accentSpan(
+                                  'extra support, testing, or prevention',
+                                  colorScheme,
+                                ),
+                                const TextSpan(
+                                  text: ' guidance may be useful.',
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          _buildInfoCard(
+                            colorScheme,
+                            textTheme,
+                            icon: Icons.medical_services_outlined,
+                            content: TextSpan(
+                              children: [
+                                const TextSpan(text: 'The information is for '),
+                                _accentSpan('guidance only', colorScheme),
+                                const TextSpan(
+                                  text:
+                                      ' and does not replace professional medical advice, diagnosis, or treatment.',
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          _buildInfoCard(
+                            colorScheme,
+                            textTheme,
+                            icon: Icons.assignment_outlined,
+                            content: TextSpan(
+                              children: [
+                                const TextSpan(
+                                  text:
+                                      'Your answers are used to guide your next steps inside the app, and you should ',
+                                ),
+                                _accentSpan('respond honestly', colorScheme),
+                                const TextSpan(
+                                  text: ' for the most useful result.',
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          _buildInfoCard(
+                            colorScheme,
+                            textTheme,
+                            icon: Icons.lock_outline_rounded,
+                            content: TextSpan(
+                              children: [
+                                const TextSpan(
+                                  text:
+                                      'By sharing your responses, the app can provide more relevant support. Review how your data is handled in the ',
+                                ),
+                                _accentSpan('privacy policy.', colorScheme),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 18),
+                          _buildAgreementCard(colorScheme, textTheme),
+                          const SizedBox(height: 18),
+                          _buildContinueButton(colorScheme, textTheme),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 22),
-                    _buildParagraphBlock(
-                      'The information is for guidance only and does not replace professional medical advice, diagnosis, or treatment.',
-                    ),
-                    const SizedBox(height: 22),
-                    _buildParagraphBlock(
-                      'Your answers are used to guide your next steps inside the app, and you should respond honestly for the most useful result.',
-                    ),
-                    const SizedBox(height: 22),
-                    _buildParagraphBlock(
-                      'By sharing your responses, the app can provide more relevant support. Review how your data is handled in the privacy policy.',
-                    ),
-                    const SizedBox(height: 32),
-                    _buildAgreementRow(colorScheme, textTheme),
-                    const SizedBox(height: 34),
-                    _buildContinueButton(colorScheme, textTheme),
                   ],
                 ),
               ),
@@ -69,104 +146,83 @@ class _RiskAssessmentIntroPageState extends State<RiskAssessmentIntroPage> {
     );
   }
 
-  Widget _buildHeader(ColorScheme colorScheme, TextTheme textTheme) {
-    return Column(
-      children: [
-        Icon(
-          Icons.error_outline_rounded,
-          color: colorScheme.primary,
-          size: 40,
-        ),
-        const SizedBox(height: 14),
-        Text(
-          'Disclaimer',
-          textAlign: TextAlign.center,
-          style: textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w800,
-                color: colorScheme.primary,
-              ) ??
-              TextStyle(
-                fontSize: 30,
-                fontWeight: FontWeight.w800,
-                color: colorScheme.primary,
-              ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildParagraphBlock(String text) {
-    return Text(
-      text,
-      textAlign: TextAlign.justify,
-      style: widget.textTheme.bodyLarge?.copyWith(
-            height: 1.55,
-            fontWeight: FontWeight.w600,
-            color: widget.colorScheme.onSurface,
-          ) ??
-          TextStyle(
-            height: 1.55,
-            fontWeight: FontWeight.w600,
-            color: widget.colorScheme.onSurface,
-          ),
-    );
-  }
-
-  Widget _buildAgreementRow(ColorScheme colorScheme, TextTheme textTheme) {
+  Widget _buildHeaderSection(ColorScheme colorScheme, TextTheme textTheme) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 1),
-          child: SizedBox(
-            width: 24,
-            height: 24,
-            child: Checkbox(
-              value: _hasAcceptedDisclaimer,
-              onChanged: (value) {
-                setState(() {
-                  _hasAcceptedDisclaimer = value ?? false;
-                });
-              },
-              activeColor: colorScheme.primary,
-              side: BorderSide(color: colorScheme.outline, width: 1.3),
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
-            ),
+        Container(
+          width: 70,
+          height: 70,
+          decoration: BoxDecoration(
+            color: colorScheme.primary.withOpacity(0.08),
+            shape: BoxShape.circle,
           ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text.rich(
-            TextSpan(
-              style: textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                    height: 1.45,
-                    fontWeight: FontWeight.w500,
-                  ) ??
-                  TextStyle(
-                    color: colorScheme.onSurfaceVariant,
-                    height: 1.45,
-                    fontWeight: FontWeight.w500,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Icon(
+                Icons.health_and_safety_outlined,
+                color: colorScheme.primary,
+                size: 34,
+              ),
+              Positioned(
+                right: 10,
+                bottom: 10,
+                child: Container(
+                  width: 22,
+                  height: 22,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: colorScheme.primary.withOpacity(0.18),
+                    ),
                   ),
-              children: [
-                const TextSpan(text: 'I have read and agree to the '),
-                TextSpan(
-                  text: 'Terms and Conditions',
-                  style: TextStyle(
+                  child: Icon(
+                    Icons.info_outline,
                     color: colorScheme.primary,
-                    decoration: TextDecoration.underline,
-                    fontWeight: FontWeight.w600,
+                    size: 14,
                   ),
                 ),
-                const TextSpan(text: ' and '),
-                TextSpan(
-                  text: 'Privacy Policy.',
-                  style: TextStyle(
-                    color: colorScheme.primary,
-                    decoration: TextDecoration.underline,
-                    fontWeight: FontWeight.w600,
-                  ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Disclaimer',
+                  style: textTheme.titleLarge?.copyWith(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: colorScheme.onSurface,
+                      ) ??
+                      TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: colorScheme.onSurface,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Please read the following information before starting the assessment.',
+                  style: textTheme.bodyMedium?.copyWith(
+                        fontSize: 14,
+                        height: 1.45,
+                        color: colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
+                      ) ??
+                      TextStyle(
+                        fontSize: 14,
+                        height: 1.45,
+                        color: colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
+                      ),
                 ),
               ],
             ),
@@ -176,8 +232,156 @@ class _RiskAssessmentIntroPageState extends State<RiskAssessmentIntroPage> {
     );
   }
 
+  Widget _buildInfoCard(
+    ColorScheme colorScheme,
+    TextTheme textTheme, {
+    required IconData icon,
+    required TextSpan content,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF162033) : colorScheme.surface;
+    final borderColor = isDark
+        ? colorScheme.outlineVariant.withOpacity(0.38)
+        : colorScheme.outlineVariant.withOpacity(0.5);
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 14, 16, 14),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: borderColor,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: colorScheme.primary.withOpacity(0.08),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              icon,
+              color: colorScheme.primary,
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 3),
+              child: Text.rich(
+                content,
+                style: textTheme.bodyMedium?.copyWith(
+                      fontSize: 15,
+                      height: 1.55,
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.w500,
+                    ) ??
+                    TextStyle(
+                      fontSize: 15,
+                      height: 1.55,
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.w500,
+                    ),
+               ),
+             ),
+           ),
+        ],
+      ),
+    );
+  }
+
+  TextSpan _accentSpan(String text, ColorScheme colorScheme) {
+    return TextSpan(
+      text: text,
+      style: TextStyle(
+        color: colorScheme.primary,
+        fontWeight: FontWeight.w600,
+      ),
+    );
+  }
+
+  Widget _buildAgreementCard(ColorScheme colorScheme, TextTheme textTheme) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(8, 6, 8, 0),
+      decoration: BoxDecoration(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 3),
+            child: SizedBox(
+              width: 24,
+              height: 24,
+              child: Checkbox(
+                value: _hasAcceptedDisclaimer,
+                onChanged: (value) {
+                  setState(() {
+                    _hasAcceptedDisclaimer = value ?? false;
+                  });
+                },
+                activeColor: colorScheme.primary,
+                side: BorderSide(color: colorScheme.primary, width: 1.4),
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity:
+                    const VisualDensity(horizontal: -4, vertical: -4),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text.rich(
+              TextSpan(
+                style: textTheme.bodyMedium?.copyWith(
+                      fontSize: 14,
+                      color: colorScheme.onSurfaceVariant,
+                      height: 1.45,
+                      fontWeight: FontWeight.w500,
+                    ) ??
+                    TextStyle(
+                      fontSize: 14,
+                      color: colorScheme.onSurfaceVariant,
+                      height: 1.45,
+                      fontWeight: FontWeight.w500,
+                    ),
+                children: [
+                  const TextSpan(text: 'I have read and agree to the '),
+                  TextSpan(
+                    text: 'Terms and Conditions',
+                    style: TextStyle(
+                      color: colorScheme.primary,
+                      decoration: TextDecoration.underline,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const TextSpan(text: ' and '),
+                  TextSpan(
+                    text: 'Privacy Policy.',
+                    style: TextStyle(
+                      color: colorScheme.primary,
+                      decoration: TextDecoration.underline,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildContinueButton(ColorScheme colorScheme, TextTheme textTheme) {
     final canContinue = widget.hasQuestions && _hasAcceptedDisclaimer;
+    final disabledForeground = Colors.white.withOpacity(0.78);
 
     return SizedBox(
       width: double.infinity,
@@ -186,8 +390,8 @@ class _RiskAssessmentIntroPageState extends State<RiskAssessmentIntroPage> {
         style: ElevatedButton.styleFrom(
           minimumSize: const Size.fromHeight(58),
           elevation: 0,
-          disabledBackgroundColor: colorScheme.primary.withOpacity(0.35),
-          disabledForegroundColor: colorScheme.onPrimary.withOpacity(0.8),
+          disabledBackgroundColor: colorScheme.primary.withOpacity(0.48),
+          disabledForegroundColor: disabledForeground,
           backgroundColor: colorScheme.primary,
           foregroundColor: colorScheme.onPrimary,
           shape: RoundedRectangleBorder(
@@ -197,17 +401,18 @@ class _RiskAssessmentIntroPageState extends State<RiskAssessmentIntroPage> {
         child: Text(
           'Continue',
           style: textTheme.titleMedium?.copyWith(
+                fontSize: 16,
                 fontWeight: FontWeight.w700,
                 color: canContinue
                     ? colorScheme.onPrimary
-                    : colorScheme.onPrimary.withOpacity(0.8),
+                    : disabledForeground,
               ) ??
               TextStyle(
-                fontSize: 18,
+                fontSize: 16,
                 fontWeight: FontWeight.w700,
                 color: canContinue
                     ? colorScheme.onPrimary
-                    : colorScheme.onPrimary.withOpacity(0.8),
+                    : disabledForeground,
               ),
         ),
       ),

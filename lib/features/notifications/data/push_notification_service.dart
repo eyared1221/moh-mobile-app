@@ -3,12 +3,17 @@ import 'dart:convert';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:timezone/data/latest_all.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 
 import '../../../firebase_options.dart';
+import '../../profile/data/datasources/profile_local_data_source.dart';
+import '../domain/entities/app_notification_entity.dart';
 import '../models/app_notification.dart';
 import 'app_notification_service.dart';
 import 'push_notification_api_client.dart';
@@ -20,11 +25,33 @@ const AndroidNotificationChannel _notificationChannel = AndroidNotificationChann
   importance: Importance.max,
 );
 
+const AndroidNotificationChannel _silentNotificationChannel =
+    AndroidNotificationChannel(
+      'high_importance_silent_channel',
+      'High Importance Silent Notifications',
+      description: 'Used for silent local Health Minister notifications.',
+      importance: Importance.max,
+      playSound: false,
+    );
+
+class PushNotificationSetupException implements Exception {
+  final String message;
+
+  const PushNotificationSetupException(this.message);
+
+  @override
+  String toString() => message;
+}
+
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   final options = DefaultFirebaseOptions.currentPlatform;
-  if (options != null && Firebase.apps.isEmpty) {
-    await Firebase.initializeApp(options: options);
+  if (Firebase.apps.isEmpty) {
+    if (options != null) {
+      await Firebase.initializeApp(options: options);
+    } else {
+      await Firebase.initializeApp();
+    }
   }
 
   await PushNotificationService.persistRemoteMessage(message);
@@ -63,6 +90,9 @@ class PushNotificationService {
 
   static const String _pushEnabledKey = 'notify_push_notifications';
   static const String _registeredTokenKey = 'registered_push_token';
+  static const MethodChannel _deviceChannel = MethodChannel(
+    'com.yegna_health/device',
+  );
 
   static final PushNotificationService instance = PushNotificationService();
 
@@ -72,6 +102,8 @@ class PushNotificationService {
   final AppNotificationService _appNotificationService;
 
   bool _isInitialized = false;
+  bool _localNotificationsInitialized = false;
+  bool _timeZoneConfigured = false;
 
   static bool get isSupportedPlatform =>
       !kIsWeb &&
@@ -86,22 +118,30 @@ class PushNotificationService {
     }
 
     final options = DefaultFirebaseOptions.currentPlatform;
-    if (options == null) {
-      debugPrint(
-        'PushNotificationService: Firebase options were not provided, skipping FCM setup.',
-      );
-      return;
-    }
-
     if (Firebase.apps.isEmpty) {
-      await Firebase.initializeApp(options: options);
+      try {
+        if (options != null) {
+          await Firebase.initializeApp(options: options);
+        } else {
+          // Fall back to the native Android/iOS Firebase config files when
+          // dart-define values are not supplied for this build.
+          await Firebase.initializeApp();
+        }
+      } catch (error) {
+        debugPrint(
+          'PushNotificationService: Firebase initialization failed: $error',
+        );
+        return;
+      }
     }
 
     final messaging = _messagingInstance;
 
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-    await _initializeLocalNotifications();
+    await _ensureLocalNotificationsInitialized();
+    await _configureLocalTimeZone();
+    await _restoreNotificationFromLaunchDetails();
     await messaging.setForegroundNotificationPresentationOptions(
       alert: true,
       badge: true,
@@ -139,7 +179,10 @@ class PushNotificationService {
       return false;
     }
 
-    final registered = await syncRegistrationWithBackend(requestPermission: true);
+    final registered = await syncRegistrationWithBackend(
+      requestPermission: true,
+      throwOnFailure: true,
+    );
     if (!registered) {
       await prefs.setBool(_pushEnabledKey, false);
       return false;
@@ -150,14 +193,25 @@ class PushNotificationService {
 
   Future<bool> syncRegistrationWithBackend({
     required bool requestPermission,
+    bool throwOnFailure = false,
   }) async {
     if (!isSupportedPlatform) {
+      if (throwOnFailure) {
+        throw const PushNotificationSetupException(
+          'Push notifications are only available on Android and iPhone.',
+        );
+      }
       return false;
     }
 
     if (!_isInitialized) {
       await initialize();
       if (!_isInitialized) {
+        if (throwOnFailure) {
+          throw const PushNotificationSetupException(
+            'Push notifications are not configured for this app build yet.',
+          );
+        }
         return false;
       }
     }
@@ -166,7 +220,16 @@ class PushNotificationService {
     final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
     final pushEnabled = prefs.getBool(_pushEnabledKey) ?? true;
 
-    if (!isLoggedIn || !pushEnabled) {
+    if (!isLoggedIn) {
+      if (throwOnFailure) {
+        throw const PushNotificationSetupException(
+          'You need to sign in again before enabling push notifications.',
+        );
+      }
+      return false;
+    }
+
+    if (!pushEnabled) {
       return false;
     }
 
@@ -174,11 +237,21 @@ class PushNotificationService {
       requestPermission: requestPermission,
     );
     if (!isAuthorized) {
+      if (throwOnFailure) {
+        throw const PushNotificationSetupException(
+          'Notification permission was not granted for this device.',
+        );
+      }
       return false;
     }
 
     final token = await _messagingInstance.getToken();
     if (token == null || token.isEmpty) {
+      if (throwOnFailure) {
+        throw const PushNotificationSetupException(
+          'This device could not get a Firebase push token.',
+        );
+      }
       return false;
     }
 
@@ -187,6 +260,14 @@ class PushNotificationService {
       return true;
     } catch (error) {
       debugPrint('PushNotificationService: failed to register push token: $error');
+      if (throwOnFailure) {
+        if (error is Exception) {
+          throw error;
+        }
+        throw const PushNotificationSetupException(
+          'Failed to register this device for push notifications.',
+        );
+      }
       return false;
     }
   }
@@ -219,6 +300,157 @@ class PushNotificationService {
     await AppNotificationService.instance.addNotification(_toAppNotification(message));
   }
 
+  Future<void> showLocalAppNotification(
+    AppNotificationEntity notification, {
+    bool requestPermission = false,
+  }) async {
+    if (!_isInitialized) {
+      await initialize();
+      if (!_isInitialized) {
+        return;
+      }
+    }
+
+    if (!isSupportedPlatform) {
+      return;
+    }
+
+    if (!await _canPresentLocalDeviceNotifications(
+      requestPermission: requestPermission,
+    )) {
+      return;
+    }
+
+    final notificationPrefs = await ProfileLocalDataSource()
+        .getNotificationPreferences();
+
+    final appNotification =
+        notification is AppNotification
+            ? notification
+            : AppNotification(
+                id: notification.id,
+                type: notification.type,
+                title: notification.title,
+                message: notification.message,
+                createdAt: notification.createdAt,
+                readAt: notification.readAt,
+              );
+
+    await _localNotifications.show(
+      id: _notificationIdFor(appNotification.id),
+      title: appNotification.title,
+      body: appNotification.message,
+      notificationDetails: NotificationDetails(
+        android: AndroidNotificationDetails(
+          notificationPrefs.sound
+              ? _notificationChannel.id
+              : _silentNotificationChannel.id,
+          notificationPrefs.sound
+              ? _notificationChannel.name
+              : _silentNotificationChannel.name,
+          channelDescription: notificationPrefs.sound
+              ? _notificationChannel.description
+              : _silentNotificationChannel.description,
+          importance: Importance.max,
+          priority: Priority.high,
+          playSound: notificationPrefs.sound,
+        ),
+        iOS: DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: notificationPrefs.sound,
+        ),
+      ),
+      payload: jsonEncode({
+        'notificationId': appNotification.id,
+        'type': appNotification.type,
+        'title': appNotification.title,
+        'body': appNotification.message,
+        'createdAt': appNotification.createdAt.toIso8601String(),
+      }),
+    );
+  }
+
+  Future<void> scheduleLocalAppNotification(
+    AppNotificationEntity notification, {
+    required DateTime scheduledAt,
+    bool requestPermission = false,
+  }) async {
+    if (!_isInitialized) {
+      await initialize();
+      if (!_isInitialized) {
+        return;
+      }
+    }
+
+    if (!isSupportedPlatform) {
+      return;
+    }
+
+    if (!await _canPresentLocalDeviceNotifications(
+      requestPermission: requestPermission,
+    )) {
+      return;
+    }
+
+    await _configureLocalTimeZone();
+
+    final notificationPrefs = await ProfileLocalDataSource()
+        .getNotificationPreferences();
+    final appNotification =
+        notification is AppNotification
+            ? notification
+            : AppNotification(
+                id: notification.id,
+                type: notification.type,
+                title: notification.title,
+                message: notification.message,
+                createdAt: notification.createdAt,
+                readAt: notification.readAt,
+              );
+    final zonedScheduledAt = tz.TZDateTime.from(scheduledAt, tz.local);
+
+    if (!zonedScheduledAt.isAfter(tz.TZDateTime.now(tz.local))) {
+      return;
+    }
+
+    await _localNotifications.zonedSchedule(
+      id: _notificationIdFor(appNotification.id),
+      scheduledDate: zonedScheduledAt,
+      notificationDetails: _notificationDetailsForSound(
+        notificationPrefs.sound,
+      ),
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      title: appNotification.title,
+      body: appNotification.message,
+      payload: jsonEncode({
+        'notificationId': appNotification.id,
+        'type': appNotification.type,
+        'title': appNotification.title,
+        'body': appNotification.message,
+        'createdAt': appNotification.createdAt.toIso8601String(),
+      }),
+    );
+  }
+
+  Future<void> cancelLocalAppNotification(String notificationId) async {
+    if (!isSupportedPlatform) {
+      return;
+    }
+
+    await _ensureLocalNotificationsInitialized();
+    await _localNotifications.cancel(id: _notificationIdFor(notificationId));
+  }
+
+  Future<void> _ensureLocalNotificationsInitialized() async {
+    if (_localNotificationsInitialized || !isSupportedPlatform) {
+      return;
+    }
+
+    await _initializeLocalNotifications();
+    _localNotificationsInitialized = true;
+  }
+
   Future<void> _initializeLocalNotifications() async {
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosSettings = DarwinInitializationSettings();
@@ -229,25 +461,7 @@ class PushNotificationService {
         iOS: iosSettings,
       ),
       onDidReceiveNotificationResponse: (details) async {
-        if (details.payload == null || details.payload!.isEmpty) {
-          return;
-        }
-
-        try {
-          final payload = jsonDecode(details.payload!) as Map<String, dynamic>;
-          await _appNotificationService.addNotification(
-            AppNotification(
-              id: payload['messageId']?.toString() ??
-                  '${DateTime.now().millisecondsSinceEpoch}',
-              type: payload['type']?.toString() ?? 'general',
-              title: payload['title']?.toString() ?? 'New notification',
-              message: payload['body']?.toString() ?? '',
-              createdAt: DateTime.now(),
-            ),
-          );
-        } catch (_) {
-          // Keep notification taps non-fatal even if the payload is malformed.
-        }
+        await _restoreNotificationFromPayload(details.payload);
       },
     );
 
@@ -255,6 +469,7 @@ class PushNotificationService {
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
     await androidPlugin?.createNotificationChannel(_notificationChannel);
+    await androidPlugin?.createNotificationChannel(_silentNotificationChannel);
   }
 
   Future<bool> _ensurePermission({
@@ -277,8 +492,23 @@ class PushNotificationService {
         settings.authorizationStatus == AuthorizationStatus.provisional;
   }
 
+  Future<bool> _canPresentLocalDeviceNotifications({
+    required bool requestPermission,
+  }) async {
+    await _ensureLocalNotificationsInitialized();
+
+    final prefs = await SharedPreferences.getInstance();
+    final pushEnabled = prefs.getBool(_pushEnabledKey) ?? true;
+    if (!pushEnabled) {
+      return false;
+    }
+
+    return _ensurePermission(requestPermission: requestPermission);
+  }
+
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
-    await persistRemoteMessage(message);
+    final appNotification = _toAppNotification(message);
+    await _appNotificationService.addNotification(appNotification);
 
     final notification = message.notification;
     if (notification == null) {
@@ -307,10 +537,12 @@ class PushNotificationService {
         ),
       ),
       payload: jsonEncode({
+        'notificationId': appNotification.id,
         'messageId': message.messageId,
         'type': message.data['type'] ?? 'general',
         'title': notification.title,
         'body': notification.body,
+        'createdAt': appNotification.createdAt.toIso8601String(),
       }),
     );
   }
@@ -357,5 +589,94 @@ class PushNotificationService {
     });
 
     await prefs.setString(_registeredTokenKey, token);
+  }
+
+  Future<void> _configureLocalTimeZone() async {
+    if (_timeZoneConfigured || !isSupportedPlatform) {
+      return;
+    }
+
+    tz.initializeTimeZones();
+
+    try {
+      final timeZoneName = await _deviceChannel.invokeMethod<String>(
+        'getLocalTimeZone',
+      );
+      if (timeZoneName != null && timeZoneName.isNotEmpty) {
+        tz.setLocalLocation(tz.getLocation(timeZoneName));
+      } else {
+        tz.setLocalLocation(tz.UTC);
+      }
+    } catch (_) {
+      tz.setLocalLocation(tz.UTC);
+    }
+
+    _timeZoneConfigured = true;
+  }
+
+  Future<void> _restoreNotificationFromLaunchDetails() async {
+    final launchDetails = await _localNotifications
+        .getNotificationAppLaunchDetails();
+    if (!(launchDetails?.didNotificationLaunchApp ?? false)) {
+      return;
+    }
+
+    await _restoreNotificationFromPayload(
+      launchDetails?.notificationResponse?.payload,
+    );
+  }
+
+  Future<void> _restoreNotificationFromPayload(String? payload) async {
+    if (payload == null || payload.isEmpty) {
+      return;
+    }
+
+    try {
+      final decoded = jsonDecode(payload) as Map<String, dynamic>;
+      final createdAt = DateTime.tryParse(
+            decoded['createdAt']?.toString() ?? '',
+          ) ??
+          DateTime.now();
+
+      await _appNotificationService.addNotification(
+        AppNotification(
+          id: decoded['notificationId']?.toString() ??
+              decoded['messageId']?.toString() ??
+              '${DateTime.now().millisecondsSinceEpoch}',
+          type: decoded['type']?.toString() ?? 'general',
+          title: decoded['title']?.toString() ?? 'New notification',
+          message: decoded['body']?.toString() ?? '',
+          createdAt: createdAt,
+        ),
+      );
+    } catch (_) {
+      // Keep notification taps non-fatal even if the payload is malformed.
+    }
+  }
+
+  NotificationDetails _notificationDetailsForSound(bool soundEnabled) {
+    return NotificationDetails(
+      android: AndroidNotificationDetails(
+        soundEnabled ? _notificationChannel.id : _silentNotificationChannel.id,
+        soundEnabled
+            ? _notificationChannel.name
+            : _silentNotificationChannel.name,
+        channelDescription: soundEnabled
+            ? _notificationChannel.description
+            : _silentNotificationChannel.description,
+        importance: Importance.max,
+        priority: Priority.high,
+        playSound: soundEnabled,
+      ),
+      iOS: DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: soundEnabled,
+      ),
+    );
+  }
+
+  int _notificationIdFor(String notificationId) {
+    return notificationId.hashCode & 0x7fffffff;
   }
 }

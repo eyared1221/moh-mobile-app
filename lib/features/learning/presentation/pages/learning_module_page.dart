@@ -1,6 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../../../../core/responsive/responsive_container.dart';
+import '../../../../core/responsive/responsive_spacing.dart';
+import '../../../../core/responsive/responsive_text.dart';
 import '../../../../shared/widgets/app_bottom_nav.dart';
 import '../../../../shared/widgets/global_notification_bell.dart';
 import '../../data/learning_service.dart';
@@ -138,7 +141,7 @@ class _LearningModulesPageState extends State<LearningModulesPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
+    if (_isLoading && _learningModules.isEmpty) {
       return Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
@@ -255,7 +258,7 @@ class _LearningModulesPageState extends State<LearningModulesPage> {
           GlobalTopBarActions(onSyncPressed: _syncLearningModules),
         ],
       ),
-      body: SafeArea(
+      body: ResponsiveContainer.safe(
         child: Column(
           children: [
             Expanded(
@@ -268,7 +271,10 @@ class _LearningModulesPageState extends State<LearningModulesPage> {
                 itemBuilder: (context, index) {
                   final module = _learningModules[index];
                   return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: ResponsiveSpacing.xsSpacing(context),
+                      vertical: ResponsiveSpacing.xsSpacing(context),
+                    ),
                     child: LearningModuleCard(
                       module: module,
                       moduleNumber: index + 1,
@@ -287,14 +293,19 @@ class _LearningModulesPageState extends State<LearningModulesPage> {
             ),
 
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 2, 16, 10),
+              padding: EdgeInsets.fromLTRB(
+                ResponsiveSpacing.mdSpacing(context),
+                ResponsiveSpacing.xsSpacing(context),
+                ResponsiveSpacing.mdSpacing(context),
+                ResponsiveSpacing.smSpacing(context),
+              ),
               child: Row(
                 children: [
                   _NavCircleButton(
                     icon: Icons.arrow_back_ios_new,
                     onTap: _currentIndex == 0 ? null : _goPrevious,
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: ResponsiveSpacing.smSpacing(context)),
                   Expanded(
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -302,7 +313,7 @@ class _LearningModulesPageState extends State<LearningModulesPage> {
                         _learningModules.length,
                         (index) => AnimatedContainer(
                           duration: const Duration(milliseconds: 220),
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          margin: EdgeInsets.symmetric(horizontal: ResponsiveSpacing.xsSpacing(context)),
                           width: _currentIndex == index ? 22 : 8,
                           height: 8,
                           decoration: BoxDecoration(
@@ -315,7 +326,7 @@ class _LearningModulesPageState extends State<LearningModulesPage> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: ResponsiveSpacing.smSpacing(context)),
                   _NavCircleButton(
                     icon: Icons.arrow_forward_ios,
                     onTap: _currentIndex == _learningModules.length - 1
@@ -327,13 +338,13 @@ class _LearningModulesPageState extends State<LearningModulesPage> {
             ),
 
             Padding(
-              padding: const EdgeInsets.only(bottom: 6),
+              padding: EdgeInsets.only(bottom: ResponsiveSpacing.xsSpacing(context)),
               child: Text(
                 '${_currentIndex + 1} / ${_learningModules.length}  •  ${currentModule.title}',
                 textAlign: TextAlign.center,
-                style: textTheme.bodySmall?.copyWith(
+                style: ResponsiveText.bodyStyle(
+                  context,
                   color: colorScheme.onSurfaceVariant,
-                  fontSize: 13,
                   fontWeight: FontWeight.w500,
                 ),
               ),

@@ -17,5 +17,15 @@ class MainActivity : FlutterActivity() {
                 else -> result.notImplemented()
             }
         }
+
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "com.yegna_health/device"
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "getLocalTimeZone" -> result.success(java.util.TimeZone.getDefault().id)
+                else -> result.notImplemented()
+            }
+        }
     }
 }

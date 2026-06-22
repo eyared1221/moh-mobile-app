@@ -5,6 +5,39 @@ import '../../../../shared/widgets/ministry_section.dart';
 class PrivacyPolicyPage extends StatelessWidget {
   const PrivacyPolicyPage({super.key});
 
+  static const List<_PolicyItem> _policyItems = [
+    _PolicyItem(
+      icon: Icons.info_outline_rounded,
+      title: 'Overview',
+      body: 'We protect your personal and health information securely.',
+    ),
+    _PolicyItem(
+      icon: Icons.folder_copy_outlined,
+      title: 'Data We Collect',
+      body: 'We may collect profile, contact, and assessment information needed for app services.',
+    ),
+    _PolicyItem(
+      icon: Icons.manage_accounts_outlined,
+      title: 'How We Use Data',
+      body: 'Your data helps provide guidance, reminders, security, and app improvements.',
+      ),
+    _PolicyItem(
+      icon: Icons.verified_user_outlined,
+      title: 'Your Rights',
+      body: 'You can access, update, or request deletion of your account data.', 
+      ),
+    _PolicyItem(
+      icon: Icons.lock_outline_rounded,
+      title: 'Data Protection & Security',
+      body: 'We use secure systems and encryption to protect your information.',
+      ),
+    _PolicyItem(
+      icon: Icons.support_agent_rounded,
+      title: 'Contact',
+      body: 'Contact us through the Support Center for privacy-related concerns.',
+      ),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -13,123 +46,159 @@ class PrivacyPolicyPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
+        centerTitle: true,
         elevation: 0,
         backgroundColor: theme.scaffoldBackgroundColor,
         foregroundColor: colorScheme.primary,
-        title: const Text('Privacy Policy'),
+        title: const Text(
+          'Privacy Policy',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(18, 14, 18, 20),
+        padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
         children: [
           const MinistrySection(),
-          const SizedBox(height: 12),
-          _section(
+
+
+          const SizedBox(height: 30),
+
+          _sectionTitle(context, 'Policy Details'),
+          const SizedBox(height: 10),
+
+          _policySection(
             context,
-            title: 'Overview',
-            body:
-                'Yegna Health protects your privacy and handles your personal '
-                'and health information securely. This policy explains what '
-                'we collect, how we use it, and your rights.',
-          ),
-          _section(
-            context,
-            title: 'Data We Collect',
-            body:
-                'We may collect the following types of information:\n\n'
-                '• Personal Information: such as name, phone number, or email '
-                '(if provided)\n'
-                '• Profile Information: such as age group, preferences, and settings\n'
-                '• Health Assessment Data: responses from risk assessments '
-                '(e.g., HIV, STI, or wellbeing questionnaires)\n'
-                '• Usage Data: how you interact with the app to improve performance '
-                'and services\n\n'
-                'We do NOT collect unnecessary personal data beyond what is '
-                'required for providing health services.',
-          ),
-          _section(
-            context,
-            title: 'How We Use Data',
-            body:
-                'Your data is used to:\n\n'
-                '• Provide personalized health guidance and recommendations\n'
-                '• Improve the quality and accuracy of health information\n'
-                '• Send reminders (e.g., risk assessments, learning modules)\n'
-                '• Ensure account security and prevent misuse\n'
-                '• Support public health insights in an anonymized and aggregated '
-                'manner\n\n'
-                'We do NOT sell or share your personal data for commercial purposes.',
-          ),
-          _section(
-            context,
-            title: 'Your Rights',
-            body:
-                'You have the right to:\n\n'
-                '• Access your personal data\n'
-                '• Request correction of inaccurate information\n'
-                '• Request deletion of your account and associated data\n'
-                '• Control notification and privacy preferences within the app\n\n'
-                'Requests can be made through the app settings or support channels.',
-          ),
-          _section(
-            context,
-            title: 'Data Protection & Security',
-            body:
-                'We use industry-standard security measures to protect your data, '
-                'including encryption and secure authentication systems.\n\n'
-                'Only authorized systems and personnel can access your data. '
-                'We continuously monitor and improve our security practices to '
-                'ensure your information remains safe.',
-          ),
-          _section(
-            context,
-            title: 'Contact',
-            body:
-                'If you have questions or concerns about your privacy, please '
-                'contact us through the Support Center in the app or the Ministry '
-                'of Health official communication channels.',
+            children: [
+              for (int i = 0; i < _policyItems.length; i++) ...[
+                _policyTile(
+                  context,
+                  item: _policyItems[i],
+                ),
+                if (i != _policyItems.length - 1) _sectionDivider(colorScheme),
+              ],
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _section(
+  Widget _sectionTitle(BuildContext context, String text) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Text(
+      text,
+      style: theme.textTheme.labelLarge?.copyWith(
+        letterSpacing: 0.4,
+        fontSize: 13,
+        fontWeight: FontWeight.w500,
+        color: colorScheme.onSurfaceVariant,
+      ),
+    );
+  }
+
+  Widget _policySection(
     BuildContext context, {
-    required String title,
-    required String body,
+    required List<Widget> children,
   }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
       decoration: BoxDecoration(
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: colorScheme.outlineVariant),
       ),
-      child: Column(
+      child: Column(children: children),
+    );
+  }
+
+  Widget _sectionDivider(ColorScheme colorScheme) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 76, right: 18),
+      child: Divider(
+        height: 1,
+        thickness: 1,
+        color: colorScheme.outlineVariant.withOpacity(0.75),
+      ),
+    );
+  }
+
+  Widget _policyTile(
+    BuildContext context, {
+    required _PolicyItem item,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w800,
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: colorScheme.primary.withOpacity(0.10),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              item.icon,
               color: colorScheme.primary,
+              size: 22,
             ),
           ),
-          const SizedBox(height: 6),
-          Text(
-            body,
-            textAlign: TextAlign.justify,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              height: 1.45,
+
+          const SizedBox(width: 14),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.title,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.w500,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+
+                const SizedBox(height: 4),
+
+                Text(
+                  item.body,
+                  textAlign: TextAlign.left,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontSize: 13,
+                    color: colorScheme.onSurfaceVariant,
+                    height: 1.35,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
       ),
     );
   }
+}
+
+class _PolicyItem {
+  const _PolicyItem({
+    required this.icon,
+    required this.title,
+    required this.body,
+  });
+
+  final IconData icon;
+  final String title;
+  final String body;
 }

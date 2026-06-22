@@ -19,14 +19,23 @@ class ClinicCard extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF1A2232) : Colors.white;
+    final titleColor = isDark ? Colors.white : colorScheme.onSurface;
+    final metaColor = isDark ? Colors.white70 : colorScheme.onSurfaceVariant;
+    final borderColor = isDark
+        ? colorScheme.outlineVariant.withOpacity(0.35)
+        : colorScheme.outlineVariant;
+    final distanceBackground = isDark
+        ? colorScheme.primary.withOpacity(0.18)
+        : colorScheme.primary.withOpacity(0.10);
 
     return Card(
-      color: isDark ? colorScheme.surfaceVariant : Colors.white,
+      color: cardColor,
       elevation: isDark ? 0.6 : 1.5,
       shadowColor: Colors.black.withOpacity(isDark ? 0.35 : 0.12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: colorScheme.outlineVariant),
+        side: BorderSide(color: borderColor),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
@@ -44,9 +53,11 @@ class ClinicCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       clinic.name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
+                        color: titleColor,
+                        height: 1.2,
                       ),
                     ),
                   ),
@@ -54,7 +65,7 @@ class ClinicCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: colorScheme.primary.withOpacity(0.1),
+                        color: distanceBackground,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
@@ -72,11 +83,13 @@ class ClinicCard extends StatelessWidget {
               _IconText(
                 icon: Icons.location_on_outlined,
                 text: clinic.address,
+                color: metaColor,
               ),
               const SizedBox(height: 4),
               _IconText(
                 icon: Icons.call_outlined,
                 text: clinic.phone,
+                color: metaColor,
               ),
               const SizedBox(height: 14),
               Align(
@@ -119,25 +132,26 @@ class ClinicCard extends StatelessWidget {
 class _IconText extends StatelessWidget {
   final IconData icon;
   final String text;
+  final Color color;
 
   const _IconText({
     required this.icon,
     required this.text,
+    required this.color,
   });
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 16, color: colorScheme.onSurfaceVariant),
+        Icon(icon, size: 16, color: color),
         const SizedBox(width: 6),
         Expanded(
           child: Text(
             text,
             style: TextStyle(
-              color: colorScheme.onSurfaceVariant,
+              color: color,
               fontSize: 12.5,
               fontWeight: FontWeight.w500,
             ),

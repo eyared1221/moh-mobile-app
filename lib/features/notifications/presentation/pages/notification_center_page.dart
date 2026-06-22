@@ -103,7 +103,8 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
         elevation: 0,
         backgroundColor: theme.scaffoldBackgroundColor,
         foregroundColor: colorScheme.primary,
-        title: const Text('Notification Center'),
+        centerTitle: true,
+        title: const Text('Notifications'),
         actions: [
           if (_notifications.isNotEmpty)
             TextButton(
@@ -131,14 +132,6 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
                           'No notifications yet',
                           style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Automatic alerts will appear here when there is something important to show.',
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],

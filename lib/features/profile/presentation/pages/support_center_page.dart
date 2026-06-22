@@ -11,6 +11,7 @@ class SupportCenterPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
+        centerTitle: true,
         elevation: 0,
         backgroundColor: theme.scaffoldBackgroundColor,
         foregroundColor: colorScheme.primary,
@@ -19,46 +20,45 @@ class SupportCenterPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
         children: [
-          _heroCard(context),
           const SizedBox(height: 24),
+
           Text(
             'Get Support',
             style: theme.textTheme.labelLarge?.copyWith(
               color: colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.7,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              letterSpacing: 0.4,
             ),
           ),
           const SizedBox(height: 10),
-          _card(
+
+          _supportSection(
             context,
-            icon: Icons.call_outlined,
-            title: 'Call Support',
-            subtitle: '+251 900 000 000',
-            iconTint: colorScheme.primary,
-            iconBg: colorScheme.primary.withOpacity(0.12),
-            highlight: 'Quickest option',
+            children: [
+              _supportTile(
+                context,
+                icon: Icons.call_outlined,
+                title: 'Call Support',
+                subtitle: '+251 900 000 000',
+              ),
+              _sectionDivider(colorScheme),
+              _supportTile(
+                context,
+                icon: Icons.mail_outline_rounded,
+                title: 'Email',
+                subtitle: 'support@yegnahealth.org',
+              ),
+              _sectionDivider(colorScheme),
+              _supportTile(
+                context,
+                icon: Icons.forum_outlined,
+                title: 'In-App Help',
+                subtitle: 'Get help from a counselor or mentor',
+              ),
+            ],
           ),
-          const SizedBox(height: 10),
-          _card(
-            context,
-            icon: Icons.mail_outline_rounded,
-            title: 'Email',
-            subtitle: 'support@yegnahealth.org',
-            iconTint: const Color(0xFF0A7C8E),
-            iconBg: const Color(0xFFD9F1F4),
-            highlight: 'Best for detailed questions',
-          ),
-          const SizedBox(height: 10),
-          _card(
-            context,
-            icon: Icons.forum_outlined,
-            title: 'In-App Help',
-            subtitle: 'Get help from a counselor or mentor',
-            iconTint: const Color(0xFF9C4DCC),
-            iconBg: const Color(0xFFF1E4FB),
-            highlight: 'Private in-app guidance',
-          ),
+
           const SizedBox(height: 16),
           _responseCard(context),
         ],
@@ -66,134 +66,84 @@ class SupportCenterPage extends StatelessWidget {
     );
   }
 
-  Widget _heroCard(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            colorScheme.primary.withOpacity(0.96),
-            colorScheme.primary.withOpacity(0.82),
-          ],
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.16),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: const Icon(
-              Icons.support_agent_rounded,
-              color: Colors.white,
-              size: 24,
-            ),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'We are here when you need guidance',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 26,
-              fontWeight: FontWeight.w800,
-              height: 1.12,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            'Reach out for trusted help, answers, and support through the channel that feels most comfortable for you.',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.9),
-              fontSize: 15.5,
-              height: 1.45,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _card(
+  Widget _supportSection(
     BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color iconTint,
-    required Color iconBg,
-    required String highlight,
+    required List<Widget> children,
   }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
       decoration: BoxDecoration(
         color: theme.cardColor,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: colorScheme.outlineVariant),
       ),
+      child: Column(children: children),
+    );
+  }
+
+  Widget _sectionDivider(ColorScheme colorScheme) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 78, right: 18),
+      child: Divider(
+        height: 1,
+        thickness: 1,
+        color: colorScheme.outlineVariant.withOpacity(0.75),
+      ),
+    );
+  }
+
+  Widget _supportTile(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
-            width: 48,
-            height: 48,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
-              color: iconBg,
-              borderRadius: BorderRadius.circular(14),
+              color: colorScheme.primary.withOpacity(0.10),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: iconTint),
+            child: Icon(
+              icon,
+              color: colorScheme.primary,
+              size: 22,
+            ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.w500,
                     color: colorScheme.onSurface,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 3),
                 Text(
                   subtitle,
-                  style: theme.textTheme.bodyMedium?.copyWith(
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontSize: 13,
                     color: colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: iconTint.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    highlight,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: iconTint,
-                      fontWeight: FontWeight.w700,
-                    ),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 10),
-          Icon(Icons.chevron_right_rounded, color: colorScheme.outline),
         ],
       ),
     );
@@ -231,7 +181,7 @@ class SupportCenterPage extends StatelessWidget {
               'We usually reply within 24 hours.',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurface,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),

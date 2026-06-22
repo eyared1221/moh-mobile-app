@@ -38,155 +38,117 @@ class _PrivacySecurityPageState extends State<PrivacySecurityPage> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
+        centerTitle: true,
         elevation: 0,
         backgroundColor: theme.scaffoldBackgroundColor,
         foregroundColor: colorScheme.primary,
         title: const Text('Privacy & Security'),
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+        padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
         children: [
-          _heroCard(context),
-          const SizedBox(height: 24),
           _sectionTitle(context, 'Access Control'),
           const SizedBox(height: 10),
-          _accessCard(
-            context,
-            icon: Icons.vpn_key_rounded,
-            title: 'Change Password',
-            subtitle: 'Last updated just now',
-            iconTint: colorScheme.primary,
-            iconBg: colorScheme.primary.withOpacity(0.12),
-            control: Icon(Icons.chevron_right_rounded, color: colorScheme.outline),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const ChangePasswordPage(),
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 10),
-          _accessCard(
-            context,
-            icon: Icons.verified_user_outlined,
-            title: 'Two-Factor Auth',
-            subtitle: 'Secure your account via SMS/Email',
-            iconTint: const Color(0xFFB85C38),
-            iconBg: const Color(0xFFF8D9CF),
-            control: Switch.adaptive(
-              value: _twoFactor,
-              onChanged: (_) => _openTwoFactorSetup(),
-            ),
-            onTap: _openTwoFactorSetup,
-          ),
-          const SizedBox(height: 24),
-          _sectionTitle(context, 'Personal Data'),
-          const SizedBox(height: 10),
-          _personalCard(
-            context,
-            icon: Icons.delete_forever_rounded,
-            title: 'Delete Account',
-            subtitle: 'Permanently remove your profile and all associated data records.',
-            accentColor: Colors.red.shade700,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const DeleteAccountPage(),
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 16),
-          _policyCard(context),
-        ],
-      ),
-    );
-  }
 
-  Widget _heroCard(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(30),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            colorScheme.primary.withOpacity(0.96),
-            colorScheme.primary.withOpacity(0.84),
-          ],
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.14),
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.verified_user_rounded,
-                  color: Colors.white,
-                  size: 17,
+          _settingsSection(
+            context,
+            children: [
+              _settingsTile(
+                context,
+                icon: Icons.vpn_key_rounded,
+                title: 'Change Password',
+                subtitle: 'Password • Privacy • Security',
+                control: Icon(
+                  Icons.chevron_right_rounded,
+                  color: colorScheme.outline,
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  'Account protection is active',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.95),
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w700,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ChangePasswordPage(),
+                    ),
+                  );
+                },
+              ),
+
+              _sectionDivider(colorScheme),
+
+              _settingsTile(
+                context,
+                icon: Icons.verified_user_outlined,
+                title: 'Two-Factor Auth',
+                subtitle: 'Verification • Login • Protection',
+                control: SizedBox(
+                  width: 50,
+                  height: 30,
+                  child: FittedBox(
+                    fit: BoxFit.fill,
+                    child: Switch(
+                      value: _twoFactor,
+                      onChanged: (_) => _openTwoFactorSetup(),
+                      activeColor: Colors.white,
+                      activeTrackColor: const Color(0xFF005F99),
+                      inactiveThumbColor: Colors.white,
+                      inactiveTrackColor: Colors.grey.shade400,
+                      materialTapTargetSize:
+                          MaterialTapTargetSize.shrinkWrap,
+                    ),
                   ),
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 18),
-          const Text(
-            'Your Data\nSanctuary',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 28,
-              fontWeight: FontWeight.w800,
-              height: 1.08,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            'Ministry of Health uses industry-standard encryption to ensure your '
-            'health journey remains private and secure.',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.9),
-              fontSize: 16,
-              height: 1.5,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _heroStat(
-                  label: 'Password',
-                  value: 'Recently updated',
-                ),
+                onTap: _openTwoFactorSetup,
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _heroStat(
-                  label: 'Two-Factor',
-                  value: _twoFactor ? 'Enabled' : 'Disabled',
+            ],
+          ),
+
+          const SizedBox(height: 18),
+
+          _sectionTitle(context, 'Personal Data'),
+          const SizedBox(height: 10),
+
+          _settingsSection(
+            context,
+            children: [
+              _settingsTile(
+                context,
+                icon: Icons.delete_forever_rounded,
+                title: 'Delete Account',
+                subtitle: 'Account • Data • Removal',
+                iconColor: Colors.red.shade700,
+                iconBg: Colors.red.shade700.withOpacity(0.10),
+                control: Icon(
+                  Icons.chevron_right_rounded,
+                  color: Colors.red.shade700,
                 ),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const DeleteAccountPage(),
+                    ),
+                  );
+                },
+              ),
+
+              _sectionDivider(colorScheme),
+
+              _settingsTile(
+                context,
+                icon: Icons.security_rounded,
+                title: 'Privacy Policy',
+                subtitle: 'Privacy • Terms • Data Use',
+                control: Icon(
+                  Icons.chevron_right_rounded,
+                  color: colorScheme.outline,
+                ),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const PrivacyPolicyPage(),
+                    ),
+                  );
+                },
               ),
             ],
           ),
@@ -195,63 +157,57 @@ class _PrivacySecurityPageState extends State<PrivacySecurityPage> {
     );
   }
 
-  Widget _heroStat({
-    required String label,
-    required String value,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.8),
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 13.5,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _sectionTitle(BuildContext context, String text) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Text(
       text,
-      style: TextStyle(
+      style: theme.textTheme.labelLarge?.copyWith(
+        letterSpacing: 0.4,
+        fontSize: 13,
+        fontWeight: FontWeight.w500,
         color: colorScheme.onSurfaceVariant,
-        fontWeight: FontWeight.w800,
-        letterSpacing: 0.7,
-        fontSize: 16,
       ),
     );
   }
 
-  Widget _accessCard(
+  Widget _settingsSection(
+    BuildContext context, {
+    required List<Widget> children,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.outlineVariant),
+      ),
+      child: Column(children: children),
+    );
+  }
+
+  Widget _sectionDivider(ColorScheme colorScheme) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 76, right: 18),
+      child: Divider(
+        height: 1,
+        thickness: 1,
+        color: colorScheme.outlineVariant.withOpacity(0.75),
+      ),
+    );
+  }
+
+  Widget _settingsTile(
     BuildContext context, {
     required IconData icon,
     required String title,
     required String subtitle,
-    required Color iconBg,
-    required Color iconTint,
     required Widget control,
+    Color? iconColor,
+    Color? iconBg,
     VoidCallback? onTap,
   }) {
     final theme = Theme.of(context);
@@ -259,189 +215,56 @@ class _PrivacySecurityPageState extends State<PrivacySecurityPage> {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-        decoration: BoxDecoration(
-          color: theme.cardColor,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: colorScheme.outlineVariant),
-        ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
         child: Row(
           children: [
             Container(
-              width: 48,
-              height: 48,
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
-                color: iconBg,
-                borderRadius: BorderRadius.circular(14),
+                color: iconBg ?? colorScheme.primary.withOpacity(0.10),
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: iconTint),
+              child: Icon(
+                icon,
+                color: iconColor ?? colorScheme.primary,
+                size: 22,
+              ),
             ),
-            const SizedBox(width: 12),
+
+            const SizedBox(width: 14),
+
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w800,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontSize: 15.5,
+                      fontWeight: FontWeight.w500,
                       color: colorScheme.onSurface,
-                      fontSize: 17,
                     ),
                   ),
+
                   const SizedBox(height: 3),
+
                   Text(
                     subtitle,
-                    style: TextStyle(
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontSize: 13,
                       color: colorScheme.onSurfaceVariant,
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w500,
+                      height: 1.25,
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: 8),
+
+            const SizedBox(width: 10),
+
             control,
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _personalCard(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color accentColor,
-    VoidCallback? onTap,
-  }) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
-      child: Container(
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: colorScheme.outlineVariant),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: accentColor.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(icon, color: accentColor),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: colorScheme.onSurface,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 17,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    color: colorScheme.onSurfaceVariant,
-                    fontSize: 13.5,
-                    height: 1.35,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          Icon(
-            Icons.chevron_right_rounded,
-            color: accentColor.withOpacity(0.9),
-          ),
-        ],
-      ),
-      ),
-    );
-  }
-
-  Widget _policyCard(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(20),
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const PrivacyPolicyPage()),
-        );
-      },
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-        decoration: BoxDecoration(
-          color: Colors.teal.withOpacity(0.16),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.teal.withOpacity(0.16)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.security_rounded, color: Colors.teal),
-                const SizedBox(width: 8),
-                Text(
-                  'Privacy Policy',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: Colors.teal.shade800,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Understand how we protect and process your health information.',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-                height: 1.4,
-              ),
-            ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Text(
-                  'Read our full policy',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    decoration: TextDecoration.underline,
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Icon(
-                  Icons.arrow_forward_rounded,
-                  size: 18,
-                  color: colorScheme.primary,
-                ),
-              ],
-            ),
           ],
         ),
       ),

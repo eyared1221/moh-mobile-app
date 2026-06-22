@@ -5,21 +5,24 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../profile/data/datasources/profile_local_data_source.dart';
 import '../models/app_notification.dart';
 import 'app_notification_service.dart';
+import 'push_notification_service.dart';
 
 class NotificationAutomationService {
   NotificationAutomationService({
     AppNotificationService? notificationService,
     ProfileLocalDataSource? profileLocalDataSource,
+    PushNotificationService? pushNotificationService,
   }) : _notificationService =
            notificationService ?? AppNotificationService.instance,
        _profileLocalDataSource =
-           profileLocalDataSource ?? ProfileLocalDataSource();
+           profileLocalDataSource ?? ProfileLocalDataSource(),
+       _pushNotificationService =
+           pushNotificationService ?? PushNotificationService.instance;
 
   static final NotificationAutomationService instance =
       NotificationAutomationService();
 
   static const Duration inactivityReminderDelay = Duration(days: 3);
-  static const Duration riskAssessmentReminderDelay = Duration(days: 7);
 
   static const String _migrationKey = 'notifications_live_behavior_v2';
   static const String _lastActiveAtKey = 'notifications_last_active_at';
@@ -28,11 +31,11 @@ class NotificationAutomationService {
       'notifications_last_risk_assessment_at';
   static const String _riskReminderStartAtKey =
       'notifications_risk_reminder_start_at';
-  static const String _lastRiskReminderAtKey =
-      'notifications_last_risk_reminder_at';
   static const String _lastInactivityReminderSourceKey =
       'notifications_last_inactivity_reminder_source';
   static const String _learningSignatureKey = 'notifications_learning_signature';
+  static const String _riskLevelKey = 'notifications_risk_level';
+  static const String _learningModulesDataKey = 'notifications_learning_modules_data';
 
   static const Set<String> _legacySeededNotificationIds = {
     'welcome-message',
@@ -42,8 +45,30 @@ class NotificationAutomationService {
     'inactivity-reminder',
   };
 
+  static const List<_RiskReminderTemplate> _riskReminderTemplates = [
+    _RiskReminderTemplate(
+      dayOffset: 7,
+      title: 'Health Check-In',
+      message:
+          'It has been 7 days since your HIV assessment. Review your results anytime.',
+    ),
+    _RiskReminderTemplate(
+      dayOffset: 14,
+      title: 'Stay Informed',
+      message:
+          'It has been 14 days since your HIV assessment. Take a quick reassessment if needed.',
+    ),
+    _RiskReminderTemplate(
+      dayOffset: 30,
+      title: 'Time to Reassess',
+      message:
+          'It has been 30 days since your HIV assessment. Retake it for updated guidance.',
+    ),
+  ];
+
   final AppNotificationService _notificationService;
   final ProfileLocalDataSource _profileLocalDataSource;
+  final PushNotificationService _pushNotificationService;
 
   Future<void> initialize() async {
     await _migrateLegacySeededNotifications();
@@ -75,7 +100,7 @@ class NotificationAutomationService {
     await _migrateLegacySeededNotifications();
     await _reconcileNotificationPreferences();
 
-    await _notificationService.addNotification(
+    await _addAutomatedNotification(
       AppNotification(
         id: 'welcome-${now.millisecondsSinceEpoch}',
         type: 'welcome',
@@ -93,44 +118,82 @@ class NotificationAutomationService {
       return;
     }
 
-    final prefs = await SharedPreferences.getInstance();
-    final previousSignature = prefs.getString(_learningSignatureKey);
-    final currentSignature = _buildLearningSignature(payload);
-
-    await prefs.setString(_learningSignatureKey, currentSignature);
-
-    if (previousSignature == null || previousSignature == currentSignature) {
+    final notificationPrefs =
+        await _profileLocalDataSource.getNotificationPreferences();
+    if (!notificationPrefs.learning) {
       return;
     }
 
-    final previousIds = _extractLearningModuleIds(previousSignature);
-    final currentIds = _extractLearningModuleIds(currentSignature);
-    final newModuleCount = currentIds.difference(previousIds).length;
-    final now = DateTime.now();
+    final prefs = await SharedPreferences.getInstance();
+    final previousData = prefs.getString(_learningModulesDataKey);
+    final currentData = jsonEncode(payload);
 
-    await _notificationService.addNotification(
+    await prefs.setString(_learningModulesDataKey, currentData);
+
+    if (previousData == null || previousData == currentData) {
+      return;
+    }
+
+    final previousModules = _parseLearningModules(previousData);
+    final currentModules = _parseLearningModules(currentData);
+
+    final changeType = _detectLearningChangeType(
+      previousModules,
+      currentModules,
+    );
+
+    if (changeType == null) {
+      return;
+    }
+
+    final now = DateTime.now();
+    String title;
+    String message;
+
+    switch (changeType) {
+      case _LearningChangeType.newModule:
+        title = 'New Learning Module';
+        message = 'New health learning content is available for you.';
+        break;
+      case _LearningChangeType.updatedModule:
+        title = 'Learning Content Updated';
+        message = 'One of your health lessons has been updated.';
+        break;
+      case _LearningChangeType.newHIVContent:
+        title = 'New HIV Learning Content';
+        message = 'New HIV prevention resources are available.';
+        break;
+    }
+
+    await _addAutomatedNotification(
       AppNotification(
-        id: 'learning-${currentSignature.hashCode}',
+        id: 'learning-${now.millisecondsSinceEpoch}',
         type: 'learning',
-        title: 'Learning modules updated',
-        message: newModuleCount > 0
-            ? '$newModuleCount new learning module${newModuleCount == 1 ? '' : 's'} are available now.'
-            : 'Learning content has been updated. Open Learning Modules to see what changed.',
+        title: title,
+        message: message,
         createdAt: now,
       ),
     );
   }
 
-  Future<void> recordRiskAssessmentCompleted() async {
+  Future<void> recordRiskAssessmentCompleted({required String riskLevel}) async {
     final prefs = await SharedPreferences.getInstance();
-    final nowIso = DateTime.now().toIso8601String();
+    final previousBaseline = _riskReminderBaselineFromPrefs(prefs);
+    final now = DateTime.now();
+    final nowIso = now.toIso8601String();
+
+    await _cancelRiskAssessmentSchedulesForBaseline(previousBaseline);
 
     await prefs.setString(_lastRiskAssessmentAtKey, nowIso);
     await prefs.setString(_riskReminderStartAtKey, nowIso);
-    await prefs.remove(_lastRiskReminderAtKey);
+    await prefs.setString(_riskLevelKey, riskLevel);
     await _notificationService.deleteNotificationsByTypes({
       'risk_assessment',
     });
+    await _syncRiskAssessmentReminderNotifications(
+      prefs: prefs,
+      now: now,
+    );
   }
 
   Future<void> handleNotificationPreferenceChanged(
@@ -142,16 +205,72 @@ class NotificationAutomationService {
       if (types.isNotEmpty) {
         await _notificationService.deleteNotificationsByTypes(types);
       }
+      if (types.contains('risk_assessment')) {
+        final prefs = await SharedPreferences.getInstance();
+        await _cancelRiskAssessmentSchedulesForBaseline(
+          _riskReminderBaselineFromPrefs(prefs),
+        );
+      }
       return;
     }
 
     await refreshAutomatedNotifications(markAppActive: false);
   }
 
+  Future<void> notifyPasswordChanged() async {
+    if (!await _isLoggedIn()) {
+      return;
+    }
+
+    final notificationPrefs =
+        await _profileLocalDataSource.getNotificationPreferences();
+    if (!notificationPrefs.security) {
+      return;
+    }
+
+    final now = DateTime.now();
+    await _addAutomatedNotification(
+      AppNotification(
+        id: 'security-password-${now.millisecondsSinceEpoch}',
+        type: 'security',
+        title: 'Password Updated',
+        message: 'Your account password was changed successfully.',
+        createdAt: now,
+      ),
+    );
+  }
+
+  Future<void> notifyAccountDetailsUpdated() async {
+    if (!await _isLoggedIn()) {
+      return;
+    }
+
+    final notificationPrefs =
+        await _profileLocalDataSource.getNotificationPreferences();
+    if (!notificationPrefs.security) {
+      return;
+    }
+
+    final now = DateTime.now();
+    await _addAutomatedNotification(
+      AppNotification(
+        id: 'security-account-${now.millisecondsSinceEpoch}',
+        type: 'security',
+        title: 'Account Details Updated',
+        message: 'Your account contact information was updated.',
+        createdAt: now,
+      ),
+    );
+  }
+
   Future<void> refreshAutomatedNotifications({
     required bool markAppActive,
   }) async {
     if (!await _isLoggedIn()) {
+      final prefs = await SharedPreferences.getInstance();
+      await _cancelRiskAssessmentSchedulesForBaseline(
+        _riskReminderBaselineFromPrefs(prefs),
+      );
       return;
     }
 
@@ -167,7 +286,7 @@ class NotificationAutomationService {
       now: now,
       lastActiveAt: lastActiveAt,
     );
-    await _maybeCreateRiskAssessmentReminder(
+    await _syncRiskAssessmentReminderNotifications(
       prefs: prefs,
       now: now,
     );
@@ -196,7 +315,7 @@ class NotificationAutomationService {
       return;
     }
 
-    await _notificationService.addNotification(
+    await _addAutomatedNotification(
       AppNotification(
         id: 'inactivity-${lastActiveAt.millisecondsSinceEpoch}',
         type: 'reminder',
@@ -209,44 +328,83 @@ class NotificationAutomationService {
     await prefs.setString(_lastInactivityReminderSourceKey, currentSource);
   }
 
-  Future<void> _maybeCreateRiskAssessmentReminder({
+  Future<void> _syncRiskAssessmentReminderNotifications({
     required SharedPreferences prefs,
     required DateTime now,
   }) async {
-    final lastAssessmentAt = _parseDateTime(
-      prefs.getString(_lastRiskAssessmentAtKey),
-    );
-    final lastRiskReminderAt = _parseDateTime(
-      prefs.getString(_lastRiskReminderAtKey),
-    );
-    final riskReminderStartAt = _parseDateTime(
-      prefs.getString(_riskReminderStartAtKey),
-    );
-
-    final baseline = lastAssessmentAt ?? riskReminderStartAt;
+    final baseline = _riskReminderBaselineFromPrefs(prefs);
     if (baseline == null) {
       return;
     }
 
-    final comparisonPoint = lastRiskReminderAt != null &&
-            lastRiskReminderAt.isAfter(baseline)
-        ? lastRiskReminderAt
-        : baseline;
-    if (now.difference(comparisonPoint) < riskAssessmentReminderDelay) {
+    final notificationPrefs =
+        await _profileLocalDataSource.getNotificationPreferences();
+    if (!notificationPrefs.riskAssessment) {
+      await _cancelRiskAssessmentSchedulesForBaseline(baseline);
       return;
     }
 
-    await _notificationService.addNotification(
-      AppNotification(
-        id: 'risk-${comparisonPoint.millisecondsSinceEpoch}',
-        type: 'risk_assessment',
-        title: 'Risk assessment reminder',
-        message:
-            'It is time for another quick risk assessment to keep your guidance up to date.',
-        createdAt: now,
-      ),
+    final reminders = _buildRiskAssessmentReminders(baseline);
+    for (final reminder in reminders) {
+      if (reminder.scheduledAt.isAfter(now)) {
+        await _pushNotificationService.scheduleLocalAppNotification(
+          reminder.notification,
+          scheduledAt: reminder.scheduledAt,
+        );
+        continue;
+      }
+
+      await _notificationService.addNotificationIfNew(reminder.notification);
+    }
+  }
+
+  Future<void> _cancelRiskAssessmentSchedulesForBaseline(
+    DateTime? baseline,
+  ) async {
+    if (baseline == null) {
+      return;
+    }
+
+    final reminders = _buildRiskAssessmentReminders(baseline);
+    for (final reminder in reminders) {
+      await _pushNotificationService.cancelLocalAppNotification(
+        reminder.notification.id,
+      );
+    }
+  }
+
+  Future<void> _addAutomatedNotification(AppNotification notification) async {
+    final storedNotification = await _notificationService.addNotificationIfNew(
+      notification,
     );
-    await prefs.setString(_lastRiskReminderAtKey, now.toIso8601String());
+    if (storedNotification == null) {
+      return;
+    }
+
+    await _pushNotificationService.showLocalAppNotification(storedNotification);
+  }
+
+  DateTime? _riskReminderBaselineFromPrefs(SharedPreferences prefs) {
+    return _parseDateTime(prefs.getString(_lastRiskAssessmentAtKey)) ??
+        _parseDateTime(prefs.getString(_riskReminderStartAtKey));
+  }
+
+  List<_ScheduledRiskReminder> _buildRiskAssessmentReminders(
+    DateTime baseline,
+  ) {
+    return _riskReminderTemplates.map((template) {
+      final scheduledAt = baseline.add(Duration(days: template.dayOffset));
+      return _ScheduledRiskReminder(
+        scheduledAt: scheduledAt,
+        notification: AppNotification(
+          id: 'risk-${baseline.millisecondsSinceEpoch}-day-${template.dayOffset}',
+          type: 'risk_assessment',
+          title: template.title,
+          message: template.message,
+          createdAt: scheduledAt,
+        ),
+      );
+    }).toList();
   }
 
   Future<void> _reconcileNotificationPreferences() async {
@@ -395,4 +553,129 @@ class NotificationAutomationService {
     }
     return DateTime.tryParse(raw);
   }
+
+  List<Map<String, dynamic>> _parseLearningModules(String jsonData) {
+    try {
+      final decoded = jsonDecode(jsonData);
+      if (decoded is! Map<String, dynamic>) {
+        return const [];
+      }
+
+      final data = decoded['data'];
+      if (data is! List) {
+        return const [];
+      }
+
+      return data
+          .whereType<Map<String, dynamic>>()
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  _LearningChangeType? _detectLearningChangeType(
+    List<Map<String, dynamic>> previousModules,
+    List<Map<String, dynamic>> currentModules,
+  ) {
+    final previousSlugs = previousModules
+        .map((m) => m['slug']?.toString() ?? '')
+        .where((s) => s.isNotEmpty)
+        .toSet();
+
+    final currentSlugs = currentModules
+        .map((m) => m['slug']?.toString() ?? '')
+        .where((s) => s.isNotEmpty)
+        .toSet();
+
+    final newSlugs = currentSlugs.difference(previousSlugs);
+    final commonSlugs = currentSlugs.intersection(previousSlugs);
+
+    if (newSlugs.isNotEmpty) {
+      final hasHIVContent = newSlugs.any((slug) =>
+          slug.toLowerCase().contains('hiv') ||
+          previousModules.any((m) => m['slug'] == slug &&
+              (m['title']?.toString().toLowerCase().contains('hiv') ?? false)));
+
+      return hasHIVContent
+          ? _LearningChangeType.newHIVContent
+          : _LearningChangeType.newModule;
+    }
+
+    for (final slug in commonSlugs) {
+      final previousModule = previousModules.firstWhere(
+        (m) => m['slug'] == slug,
+        orElse: () => <String, dynamic>{},
+      );
+      final currentModule = currentModules.firstWhere(
+        (m) => m['slug'] == slug,
+        orElse: () => <String, dynamic>{},
+      );
+
+      final previousSections = previousModule['sections'] as List? ?? [];
+      final currentSections = currentModule['sections'] as List? ?? [];
+
+      if (previousSections.length != currentSections.length) {
+        return _LearningChangeType.updatedModule;
+      }
+
+      final previousUpdatedAt = previousModule['updatedAt']?.toString();
+      final currentUpdatedAt = currentModule['updatedAt']?.toString();
+
+      if (previousUpdatedAt != null &&
+          currentUpdatedAt != null &&
+          previousUpdatedAt != currentUpdatedAt) {
+        return _LearningChangeType.updatedModule;
+      }
+
+      for (final section in currentSections) {
+        if (section is! Map<String, dynamic>) continue;
+        final previousSection = previousSections.firstWhere(
+          (s) => s is Map && s['id'] == section['id'],
+          orElse: () => null,
+        );
+
+        if (previousSection == null) {
+          return _LearningChangeType.updatedModule;
+        }
+
+        final previousBlocks = previousSection['blocks'] as List? ?? [];
+        final currentBlocks = section['blocks'] as List? ?? [];
+
+        if (previousBlocks.length != currentBlocks.length) {
+          return _LearningChangeType.updatedModule;
+        }
+      }
+    }
+
+    return null;
+  }
+}
+
+enum _LearningChangeType {
+  newModule,
+  updatedModule,
+  newHIVContent,
+}
+
+class _RiskReminderTemplate {
+  final int dayOffset;
+  final String title;
+  final String message;
+
+  const _RiskReminderTemplate({
+    required this.dayOffset,
+    required this.title,
+    required this.message,
+  });
+}
+
+class _ScheduledRiskReminder {
+  final DateTime scheduledAt;
+  final AppNotification notification;
+
+  const _ScheduledRiskReminder({
+    required this.scheduledAt,
+    required this.notification,
+  });
 }

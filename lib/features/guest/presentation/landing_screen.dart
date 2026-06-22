@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../core/startup/app_startup_service.dart';
@@ -16,6 +18,7 @@ class LandingScreen extends StatefulWidget {
 class _LandingScreenState extends State<LandingScreen> {
   final PageController _pageController = PageController();
   final AppStartupService _startupService = AppStartupService();
+  Timer? _autoSlideTimer;
 
   static const List<_OnboardingSlide> _slides = [
     _OnboardingSlide(
@@ -47,25 +50,45 @@ class _LandingScreenState extends State<LandingScreen> {
   int _currentIndex = 0;
 
   @override
+  void initState() {
+    super.initState();
+    _startAutoSlide();
+  }
+
+  @override
   void dispose() {
+    _stopAutoSlide();
     _pageController.dispose();
     super.dispose();
   }
 
-  Future<void> _handleNext() async {
-    if (_currentIndex == _slides.length - 1) {
-      await _startupService.markOnboardingCompleted();
-      if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const GuestPage()),
-      );
-      return;
-    }
+  void _startAutoSlide() {
+    _stopAutoSlide();
+    _autoSlideTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (!mounted || !_pageController.hasClients) {
+        return;
+      }
 
-    await _pageController.nextPage(
-      duration: const Duration(milliseconds: 320),
-      curve: Curves.easeOutCubic,
+      final nextPage = (_currentIndex + 1) % _slides.length;
+      _pageController.animateToPage(
+        nextPage,
+        duration: const Duration(milliseconds: 420),
+        curve: Curves.easeInOut,
+      );
+    });
+  }
+
+  void _stopAutoSlide() {
+    _autoSlideTimer?.cancel();
+    _autoSlideTimer = null;
+  }
+
+  Future<void> _handleGetStarted() async {
+    await _startupService.markOnboardingCompleted();
+    if (!mounted) return;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const GuestPage()),
     );
   }
 
@@ -75,39 +98,51 @@ class _LandingScreenState extends State<LandingScreen> {
     final textColor = isDark ? Colors.white : const Color(0xFF123A59);
     final subTextColor = isDark ? Colors.white70 : const Color(0xFF3C627D);
     final surfaceColor = isDark ? const Color(0xFF0B1220) : Colors.white;
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(22, 18, 22, 28),
+          padding: EdgeInsets.fromLTRB(
+            isLandscape ? 32 : 22,
+            isLandscape ? 12 : 18,
+            isLandscape ? 32 : 22,
+            isLandscape ? 16 : 28,
+          ),
           child: Column(
             children: [
               Expanded(
-                child: PageView.builder(
-                  controller: _pageController,
-                  itemCount: _slides.length,
-                  onPageChanged: (index) {
-                    setState(() => _currentIndex = index);
-                  },
-                  itemBuilder: (context, index) {
-                    final slide = _slides[index];
-                    return _WelcomeSlide(
-                      slide: slide,
-                      currentIndex: _currentIndex,
-                      slideCount: _slides.length,
-                      isDark: isDark,
-                      surfaceColor: surfaceColor,
-                      textColor: textColor,
-                      subTextColor: subTextColor,
-                    );
-                  },
+                child: Listener(
+                  onPointerDown: (_) => _stopAutoSlide(),
+                  onPointerUp: (_) => _startAutoSlide(),
+                  onPointerCancel: (_) => _startAutoSlide(),
+                  child: PageView.builder(
+                    controller: _pageController,
+                    itemCount: _slides.length,
+                    onPageChanged: (index) {
+                      setState(() => _currentIndex = index);
+                    },
+                    itemBuilder: (context, index) {
+                      final slide = _slides[index];
+                      return _WelcomeSlide(
+                        slide: slide,
+                        currentIndex: _currentIndex,
+                        slideCount: _slides.length,
+                        isDark: isDark,
+                        surfaceColor: surfaceColor,
+                        textColor: textColor,
+                        subTextColor: subTextColor,
+                        isLandscape: isLandscape,
+                      );
+                    },
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
               _PrimaryCta(
-                label: _currentIndex == _slides.length - 1 ? 'Get Started' : 'Next',
-                onPressed: _handleNext,
+                label: 'Get Started',
+                onPressed: _handleGetStarted,
               ),
             ],
           ),
@@ -125,6 +160,7 @@ class _WelcomeSlide extends StatelessWidget {
   final Color surfaceColor;
   final Color textColor;
   final Color subTextColor;
+  final bool isLandscape;
 
   const _WelcomeSlide({
     required this.slide,
@@ -134,20 +170,23 @@ class _WelcomeSlide extends StatelessWidget {
     required this.surfaceColor,
     required this.textColor,
     required this.subTextColor,
+    required this.isLandscape,
   });
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final imageBoxHeight =
-            (constraints.maxHeight - 120).clamp(220.0, 350.0).toDouble();
-        final imageHeight =
-            (imageBoxHeight - 28).clamp(210.0, _onboardingImageHeight).toDouble();
-        final imageTop = imageBoxHeight > 300 ? 42.0 : 18.0;
+        final imageBoxHeight = isLandscape
+            ? (constraints.maxHeight * 0.5).clamp(150.0, 200.0)
+            : (constraints.maxHeight - 120).clamp(220.0, 350.0);
+        final imageHeight = isLandscape
+            ? (imageBoxHeight - 20).clamp(130.0, 180.0)
+            : (imageBoxHeight - 28).clamp(210.0, _onboardingImageHeight);
+        final imageTop = isLandscape ? 10.0 : (imageBoxHeight > 300 ? 42.0 : 18.0);
 
-        return Column(
-          mainAxisAlignment: MainAxisAlignment.start,
+        final content = Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             SizedBox(
               height: imageBoxHeight,
@@ -214,7 +253,7 @@ class _WelcomeSlide extends StatelessWidget {
               slide.title,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 26,
+                fontSize: isLandscape ? 20 : 26,
                 fontWeight: FontWeight.w900,
                 letterSpacing: -0.8,
                 color: textColor,
@@ -225,7 +264,7 @@ class _WelcomeSlide extends StatelessWidget {
               slide.lineOne,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 15,
+                fontSize: isLandscape ? 13 : 15,
                 height: 1.35,
                 color: subTextColor,
                 fontWeight: FontWeight.w500,
@@ -236,7 +275,7 @@ class _WelcomeSlide extends StatelessWidget {
               slide.lineTwo,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 15,
+                fontSize: isLandscape ? 13 : 15,
                 height: 1.35,
                 color: subTextColor,
                 fontWeight: FontWeight.w500,
@@ -271,6 +310,18 @@ class _WelcomeSlide extends StatelessWidget {
               ),
             ),
           ],
+        );
+
+        return SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: content,
+              ),
+            ),
+          ),
         );
       },
     );

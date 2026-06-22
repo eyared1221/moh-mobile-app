@@ -1,30 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.system);
+final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.light);
 
 String themeModeLabel(ThemeMode mode) {
   return switch (mode) {
     ThemeMode.light => 'Light',
     ThemeMode.dark => 'Dark',
-    ThemeMode.system => 'Use system default',
+    ThemeMode.system => 'Light',
   };
 }
 
 Future<void> loadSavedTheme() async {
   final prefs = await SharedPreferences.getInstance();
-  final t = prefs.getString('themeMode') ?? 'system';
+  final t = prefs.getString('themeMode') ?? 'light';
   themeNotifier.value = switch (t) {
     'light' => ThemeMode.light,
     'dark' => ThemeMode.dark,
-    _ => ThemeMode.system,
+    _ => ThemeMode.light,
   };
 }
 
 Future<void> setSavedTheme(ThemeMode mode) async {
   final prefs = await SharedPreferences.getInstance();
-  await prefs.setString('themeMode', mode == ThemeMode.light ? 'light' : (mode == ThemeMode.dark ? 'dark' : 'system'));
-  themeNotifier.value = mode;
+  final resolvedMode = mode == ThemeMode.dark ? ThemeMode.dark : ThemeMode.light;
+  await prefs.setString(
+    'themeMode',
+    resolvedMode == ThemeMode.dark ? 'dark' : 'light',
+  );
+  themeNotifier.value = resolvedMode;
 }
 
 Future<void> toggleTheme() async {

@@ -9,7 +9,9 @@ class TwoFactorAuthPage extends StatelessWidget {
   void _showHelp(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Use SMS or an authenticator app to add an extra sign-in step.'),
+        content: Text(
+          'Use SMS or an authenticator app to add an extra sign-in step.',
+        ),
       ),
     );
   }
@@ -35,124 +37,111 @@ class TwoFactorAuthPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
+        centerTitle: true,
         backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
-        foregroundColor: colorScheme.onSurface,
-        titleSpacing: 0,
+        foregroundColor: colorScheme.primary,
         title: const Text(
-          'Two-factor authentication',
-          style: TextStyle(fontWeight: FontWeight.w700),
+          'Two-Factor Auth',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         actions: [
           IconButton(
             onPressed: () => _showHelp(context),
-            icon: const Icon(Icons.help_rounded),
+            icon: const Icon(Icons.help_outline_rounded),
             tooltip: 'Help',
           ),
         ],
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Secure your account with two-factor authentication (2FA).',
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  height: 1.25,
-                ),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          children: [
+            Text(
+              'Protect Your Account',
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontSize: 24,
+                fontWeight: FontWeight.w600,
+                height: 1.25,
+                color: colorScheme.onSurface,
               ),
-              const SizedBox(height: 26),
-              _InfoRow(
-                icon: Icons.lock_outline_rounded,
-                accentColor: const Color(0xFFF59B8F),
-                child: RichText(
-                  text: TextSpan(
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: colorScheme.onSurface,
-                      height: 1.45,
-                    ),
-                    children: [
-                      const TextSpan(
-                        text:
-                            'This provides additional security by requiring an authentication '
-                            'code whenever you sign in with a new device. ',
-                      ),
-                      TextSpan(
-                        text: 'Learn more',
-                        style: TextStyle(
-                          color: colorScheme.primary,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Add an extra verification step when signing in from a new device.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontSize: 14,
+                color: colorScheme.onSurfaceVariant,
+                height: 1.45,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            _sectionTitle(context, 'Security Details'),
+            const SizedBox(height: 10),
+
+            _infoSection(
+              context,
+              children: [
+                _infoTile(
+                  context,
+                  icon: Icons.lock_outline_rounded,
+                  title: 'Extra Verification',
+                  subtitle:
+                      'A security code is required when signing in from a new device.',
+                ),
+                _sectionDivider(colorScheme),
+                _infoTile(
+                  context,
+                  icon: Icons.smartphone_rounded,
+                  title: 'Verification Method',
+                  subtitle:
+                      'Use SMS or an authenticator app to protect your account.',
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 28),
+
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => _openMethodSelection(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colorScheme.primary,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+                child: const Text(
+                  'Continue Setup',
+                  style: TextStyle(
+                    fontSize: 16.5,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
-              const SizedBox(height: 28),
-              _InfoRow(
-                icon: Icons.smartphone_rounded,
-                accentColor: const Color(0xFF91A4B8),
-                child: RichText(
-                  text: TextSpan(
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: colorScheme.onSurface,
-                      height: 1.45,
-                    ),
-                    children: [
-                      const TextSpan(
-                        text:
-                            'Your phone number or authenticator app helps keep your account '
-                            'secure by adding an additional layer of protection. You always '
-                            'decide how your phone number will be used. ',
-                      ),
-                      TextSpan(
-                        text: 'Learn more',
-                        style: TextStyle(
-                          color: colorScheme.primary,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+            ),
+
+            const SizedBox(height: 14),
+
+            Text(
+              'Your current sessions will stay active. You will enter a second factor the next time you sign in.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontSize: 13,
+                color: colorScheme.onSurfaceVariant,
+                height: 1.45,
               ),
-              const SizedBox(height: 42),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => _openMethodSelection(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: colorScheme.primary,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                  ),
-                  child: const Text(
-                    'Set up',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 18),
-              Text(
-                'Note: Your current sessions will stay active, but you will need to '
-                'enter a second factor the next time you sign in.',
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                  height: 1.45,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -209,123 +198,142 @@ class _TwoFactorMethodPageState extends State<TwoFactorMethodPage> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
+        centerTitle: true,
         backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
-        foregroundColor: colorScheme.onSurface,
-        titleSpacing: 0,
+        foregroundColor: colorScheme.primary,
         title: const Text(
-          'Two-factor authentication',
-          style: TextStyle(fontWeight: FontWeight.w700),
+          'Two-Factor Auth',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         actions: [
           IconButton(
             onPressed: () => _showHelp(context),
-            icon: const Icon(Icons.help_rounded),
+            icon: const Icon(Icons.help_outline_rounded),
             tooltip: 'Help',
           ),
         ],
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Secure your account with two-factor authentication (2FA).',
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  height: 1.25,
-                ),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          children: [
+            Text(
+              'Choose Verification Method',
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontSize: 24,
+                fontWeight: FontWeight.w600,
+                height: 1.25,
+                color: colorScheme.onSurface,
               ),
-              const SizedBox(height: 36),
-              Text(
-                'Choose your authentication method:',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w500,
-                ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Select how you want to receive your security code.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontSize: 14,
+                color: colorScheme.onSurfaceVariant,
+                height: 1.45,
+                fontWeight: FontWeight.w400,
               ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: _selectedMethod,
-                items: _methods
-                    .map(
-                      (method) => DropdownMenuItem<String>(
-                        value: method,
-                        child: Text(method),
+            ),
+
+            const SizedBox(height: 24),
+
+            _sectionTitle(context, 'Method'),
+            const SizedBox(height: 10),
+
+            DropdownButtonFormField<String>(
+              initialValue: _selectedMethod,
+              items: _methods
+                  .map(
+                    (method) => DropdownMenuItem<String>(
+                      value: method,
+                      child: Text(
+                        method,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontSize: 15.5,
+                          fontWeight: FontWeight.w500,
+                          color: colorScheme.onSurface,
+                        ),
                       ),
-                    )
-                    .toList(),
-                onChanged: (value) {
-                  if (value == null) return;
-                  setState(() => _selectedMethod = value);
-                },
-                decoration: InputDecoration(
-                  isDense: true,
-                  filled: true,
-                  fillColor: theme.cardColor,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 14,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(color: colorScheme.outline),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(color: colorScheme.outline),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(
-                      color: colorScheme.primary,
-                      width: 1.5,
                     ),
-                  ),
+                  )
+                  .toList(),
+              onChanged: (value) {
+                if (value == null) return;
+                setState(() => _selectedMethod = value);
+              },
+              decoration: InputDecoration(
+                isDense: true,
+                filled: true,
+                fillColor: theme.cardColor,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
                 ),
-                icon: Icon(Icons.arrow_drop_down_rounded, color: colorScheme.onSurfaceVariant),
-                style: theme.textTheme.titleLarge?.copyWith(
-                  color: colorScheme.onSurface,
-                  fontWeight: FontWeight.w500,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: colorScheme.outlineVariant),
                 ),
-                dropdownColor: theme.cardColor,
-              ),
-              const SizedBox(height: 38),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _continueSetup,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: colorScheme.primary,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                  ),
-                  child: const Text(
-                    'Continue',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                    ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: colorScheme.outlineVariant),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(
+                    color: colorScheme.primary,
+                    width: 1.4,
                   ),
                 ),
               ),
-              const SizedBox(height: 18),
-              Text(
-                'Note: Your current sessions will stay active, but you will need to '
-                'enter a second factor (SMS or Authenticator) whenever you sign in again.',
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                  height: 1.45,
+              icon: Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: colorScheme.onSurfaceVariant,
+              ),
+              dropdownColor: theme.cardColor,
+            ),
+
+            const SizedBox(height: 28),
+
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _continueSetup,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colorScheme.primary,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+                child: const Text(
+                  'Continue',
+                  style: TextStyle(
+                    fontSize: 16.5,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
-            ],
-          ),
+            ),
+
+            const SizedBox(height: 14),
+
+            Text(
+              'You will need this verification method when signing in again.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontSize: 13,
+                color: colorScheme.onSurfaceVariant,
+                height: 1.45,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -338,10 +346,12 @@ class AuthenticatorVerificationPage extends StatefulWidget {
   final String? email;
 
   @override
-  State<AuthenticatorVerificationPage> createState() => _AuthenticatorVerificationPageState();
+  State<AuthenticatorVerificationPage> createState() =>
+      _AuthenticatorVerificationPageState();
 }
 
-class _AuthenticatorVerificationPageState extends State<AuthenticatorVerificationPage> {
+class _AuthenticatorVerificationPageState
+    extends State<AuthenticatorVerificationPage> {
   final TextEditingController _codeController = TextEditingController();
   String? _destinationEmail;
 
@@ -398,114 +408,132 @@ class _AuthenticatorVerificationPageState extends State<AuthenticatorVerificatio
       child: Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
         appBar: AppBar(
+          centerTitle: true,
           backgroundColor: theme.scaffoldBackgroundColor,
           elevation: 0,
-          foregroundColor: colorScheme.onSurface,
-          titleSpacing: 0,
+          foregroundColor: colorScheme.primary,
           title: const Text(
-            'Authenticator App',
-            style: TextStyle(fontWeight: FontWeight.w700),
+            'Verify Code',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           actions: [
             IconButton(
               onPressed: () => _showHelp(context),
-              icon: const Icon(Icons.help_rounded),
+              icon: const Icon(Icons.help_outline_rounded),
               tooltip: 'Help',
             ),
           ],
         ),
         body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'We sent a code to your email',
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: colorScheme.onSurface,
-                  ),
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            children: [
+              Text(
+                'Check Your Email',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurface,
+                  height: 1.25,
                 ),
-                const SizedBox(height: 10),
-                Text(
-                  _destinationEmail == null || _destinationEmail!.isEmpty
-                      ? 'Enter the 6-digit code sent to'
-                      : 'Enter the 6-digit code sent to\n$_destinationEmail',
-                  style: theme.textTheme.titleLarge?.copyWith(
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _destinationEmail == null || _destinationEmail!.isEmpty
+                    ? 'Enter the 6-digit code sent to your email.'
+                    : 'Enter the 6-digit code sent to $_destinationEmail.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontSize: 14,
+                  color: colorScheme.onSurfaceVariant,
+                  height: 1.45,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              _sectionTitle(context, 'Verification Code'),
+              const SizedBox(height: 10),
+
+              TextField(
+                controller: _codeController,
+                keyboardType: TextInputType.number,
+                maxLength: 6,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurface,
+                ),
+                decoration: InputDecoration(
+                  counterText: '',
+                  hintText: '6-digit code',
+                  hintStyle: theme.textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSurfaceVariant,
-                    height: 1.35,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w400,
                   ),
-                ),
-                const SizedBox(height: 18),
-                SizedBox(
-                  width: 335,
-                  child: TextField(
-                    controller: _codeController,
-                    keyboardType: TextInputType.number,
-                    maxLength: 6,
-                    decoration: InputDecoration(
-                      counterText: '',
-                      hintText: '6-digit code',
-                      filled: true,
-                      fillColor: theme.cardColor,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 14,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: colorScheme.outline),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: colorScheme.outline),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(
-                          color: colorScheme.primary,
-                          width: 1.5,
-                        ),
-                      ),
+                  filled: true,
+                  fillColor: theme.cardColor,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: colorScheme.outlineVariant),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: colorScheme.outlineVariant),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(
+                      color: colorScheme.primary,
+                      width: 1.4,
                     ),
                   ),
                 ),
-                const SizedBox(height: 18),
-                ElevatedButton(
+              ),
+
+              const SizedBox(height: 22),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
                   onPressed: _submitCode,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: colorScheme.primary,
                     foregroundColor: Colors.white,
                     elevation: 0,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 28,
-                      vertical: 14,
-                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 15),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
+                      borderRadius: BorderRadius.circular(999),
                     ),
                   ),
                   child: const Text(
-                    'Submit',
+                    'Verify Code',
                     style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 16.5,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
-                const SizedBox(height: 22),
-                Text(
-                  'If you don’t see the email in your inbox, check your spam folder.',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                    height: 1.35,
-                    fontWeight: FontWeight.w500,
-                  ),
+              ),
+
+              const SizedBox(height: 14),
+
+              Text(
+                'If you don’t see the email in your inbox, check your spam folder.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontSize: 13,
+                  color: colorScheme.onSurfaceVariant,
+                  height: 1.45,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -513,38 +541,101 @@ class _AuthenticatorVerificationPageState extends State<AuthenticatorVerificatio
   }
 }
 
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({
-    required this.icon,
-    required this.accentColor,
-    required this.child,
-  });
+Widget _sectionTitle(BuildContext context, String text) {
+  final theme = Theme.of(context);
+  final colorScheme = theme.colorScheme;
 
-  final IconData icon;
-  final Color accentColor;
-  final Widget child;
+  return Text(
+    text,
+    style: theme.textTheme.labelLarge?.copyWith(
+      letterSpacing: 0.4,
+      fontSize: 13,
+      fontWeight: FontWeight.w500,
+      color: colorScheme.onSurfaceVariant,
+    ),
+  );
+}
 
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+Widget _infoSection(
+  BuildContext context, {
+  required List<Widget> children,
+}) {
+  final theme = Theme.of(context);
+  final colorScheme = theme.colorScheme;
+
+  return Container(
+    decoration: BoxDecoration(
+      color: theme.cardColor,
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: colorScheme.outlineVariant),
+    ),
+    child: Column(children: children),
+  );
+}
+
+Widget _sectionDivider(ColorScheme colorScheme) {
+  return Padding(
+    padding: const EdgeInsets.only(left: 76, right: 18),
+    child: Divider(
+      height: 1,
+      thickness: 1,
+      color: colorScheme.outlineVariant.withOpacity(0.75),
+    ),
+  );
+}
+
+Widget _infoTile(
+  BuildContext context, {
+  required IconData icon,
+  required String title,
+  required String subtitle,
+}) {
+  final theme = Theme.of(context);
+  final colorScheme = theme.colorScheme;
+
+  return Padding(
+    padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+    child: Row(
       children: [
         Container(
-          width: 58,
-          height: 58,
+          width: 44,
+          height: 44,
           decoration: BoxDecoration(
-            color: accentColor.withOpacity(0.2),
-            shape: BoxShape.circle,
+            color: colorScheme.primary.withOpacity(0.10),
+            borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(
             icon,
-            color: accentColor,
-            size: 30,
+            color: colorScheme.primary,
+            size: 22,
           ),
         ),
-        const SizedBox(width: 18),
-        Expanded(child: child),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontSize: 15.5,
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                subtitle,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontSize: 13,
+                  color: colorScheme.onSurfaceVariant,
+                  height: 1.25,
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
-    );
-  }
+    ),
+  );
 }

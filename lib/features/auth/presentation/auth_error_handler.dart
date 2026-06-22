@@ -10,7 +10,7 @@ class AuthErrorHandler {
   static String getMessage(Object error) {
     // Server errors with specific messages (business logic from backend)
     if (error is AuthApiException) {
-      return error.message;
+      return _normalizeAuthApiMessage(error.message);
     }
 
     // Connection/network errors
@@ -38,5 +38,32 @@ class AuthErrorHandler {
   /// Returns true if this is a connection error that should show connectivity message
   static bool isConnectivityError(Object error) {
     return error is! AuthApiException && _isConnectionError(error);
+  }
+
+  static String _normalizeAuthApiMessage(String message) {
+    final normalized = message.trim().toLowerCase();
+
+    if (normalized.contains('please verify your account') ||
+        normalized.contains('account_unverified')) {
+      return AuthMessages.verifyAccountRequired;
+    }
+
+    if (normalized.contains('reset code has expired') ||
+        normalized.contains('reset_code_expired')) {
+      return AuthMessages.resetCodeExpired;
+    }
+
+    if (normalized.contains('invalid or expired reset code') ||
+        normalized.contains('invalid_reset_code')) {
+      return AuthMessages.invalidOrExpiredResetCode;
+    }
+
+    if (normalized.contains('invalid email/phone or password') ||
+        normalized.contains('app user not found') ||
+        normalized.contains('user not found')) {
+      return AuthMessages.invalidCredentials;
+    }
+
+    return message;
   }
 }

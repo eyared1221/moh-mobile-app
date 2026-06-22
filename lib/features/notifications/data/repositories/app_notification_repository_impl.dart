@@ -35,32 +35,42 @@ class AppNotificationRepositoryImpl implements AppNotificationRepository {
 
   @override
   Future<void> addNotification(AppNotificationEntity notification) async {
+    await addNotificationIfNew(notification);
+  }
+
+  Future<AppNotification?> addNotificationIfNew(
+    AppNotificationEntity notification,
+  ) async {
     if (!await _isNotificationTypeEnabled(notification.type)) {
-      return;
+      return null;
     }
 
     final notifications = (await getNotifications()).cast<AppNotification>();
     final alreadyExists =
         notifications.any((item) => item.id == notification.id);
     if (alreadyExists) {
-      return;
+      return null;
     }
+
+    final appNotification =
+        notification is AppNotification
+            ? notification
+            : AppNotification(
+                id: notification.id,
+                type: notification.type,
+                title: notification.title,
+                message: notification.message,
+                createdAt: notification.createdAt,
+                readAt: notification.readAt,
+              );
 
     final updated = [
       ...notifications,
-      notification is AppNotification
-          ? notification
-          : AppNotification(
-              id: notification.id,
-              type: notification.type,
-              title: notification.title,
-              message: notification.message,
-              createdAt: notification.createdAt,
-              readAt: notification.readAt,
-            ),
+      appNotification,
     ]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
     await _persistNotifications(updated);
+    return appNotification;
   }
 
   @override

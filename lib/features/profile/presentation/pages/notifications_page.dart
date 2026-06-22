@@ -78,10 +78,12 @@ class _NotificationsPageState extends State<NotificationsPage> {
     setState(() => _isUpdatingPush = true);
 
     bool enabled = false;
+    bool showedSpecificError = false;
     try {
       enabled = await _controller.setPushEnabled(value);
     } catch (error) {
       enabled = false;
+      showedSpecificError = true;
       await _controller.setNotificationPreference(_controller.notifyPushKey, false);
       if (mounted) {
         _showMessage(error.toString().replaceFirst('Exception: ', ''));
@@ -94,7 +96,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
       _isUpdatingPush = false;
     });
 
-    if (value && !enabled) {
+    if (value && !enabled && !showedSpecificError) {
       _showMessage(
         'Push notifications are still off. Allow notification permission and confirm Firebase is configured for this device.',
       );
@@ -121,123 +123,160 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   'General',
                   style: theme.textTheme.labelLarge?.copyWith(
                     letterSpacing: 0.4,
+                    fontSize: 13,
                     fontWeight: FontWeight.w800,
                     color: colorScheme.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(height: 10),
-                _switchTile(
+                _switchSection(
                   context,
-                  title: 'Push Notifications',
-                  subtitle: _pushSupported
-                      ? 'Receive reminders and updates even when the app is closed'
-                      : 'Available in the Android or iPhone app. The browser version does not support this yet.',
-                  value: _pushEnabled,
-                  enabled: !_isUpdatingPush,
-                  onChanged: _togglePushNotifications,
-                ),
-                const SizedBox(height: 12),
-                _switchTile(
-                  context,
-                  title: 'Welcome Messages',
-                  subtitle: 'Show an automatic welcome message after sign-in',
-                  value: _welcome,
-                  onChanged: (value) async {
-                    setState(() => _welcome = value);
-                    await _save(_controller.notifyWelcomeKey, value);
-                    await _automationService.handleNotificationPreferenceChanged(
-                      _controller.notifyWelcomeKey,
-                      value,
-                    );
-                  },
+                  children: [
+                    _switchTile(
+                      context,
+                      title: 'Push Notifications',
+                      value: _pushEnabled,
+                      enabled: !_isUpdatingPush,
+                      onChanged: _togglePushNotifications,
+                    ),
+                    _sectionDivider(colorScheme),
+                    _switchTile(
+                      context,
+                      title: 'Welcome Messages',
+                      value: _welcome,
+                      onChanged: (value) async {
+                        setState(() => _welcome = value);
+                        await _save(_controller.notifyWelcomeKey, value);
+                        await _automationService.handleNotificationPreferenceChanged(
+                          _controller.notifyWelcomeKey,
+                          value,
+                        );
+                      },
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
                 Text(
                   'Learning & Guidance',
                   style: theme.textTheme.labelLarge?.copyWith(
                     letterSpacing: 0.4,
-                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
                     color: colorScheme.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(height: 10),
-                _switchTile(
+                _switchSection(
                   context,
-                  title: 'Last Login Reminders',
-                  subtitle: 'Get an automatic reminder after a period of inactivity',
-                  value: _inactivity,
-                  onChanged: (value) async {
-                    setState(() => _inactivity = value);
-                    await _save(_controller.notifyInactivityKey, value);
-                    await _automationService.handleNotificationPreferenceChanged(
-                      _controller.notifyInactivityKey,
-                      value,
-                    );
-                  },
-                ),
-                const SizedBox(height: 12),
-                _switchTile(
-                  context,
-                  title: 'Risk Assessment Reminders',
-                  subtitle: 'Get helpful reminders to assess regularly',
-                  value: _riskAssessment,
-                  onChanged: (value) async {
-                    setState(() => _riskAssessment = value);
-                    await _save(_controller.notifyRiskAssessmentKey, value);
-                    await _automationService.handleNotificationPreferenceChanged(
-                      _controller.notifyRiskAssessmentKey,
-                      value,
-                    );
-                  },
-                ),
-                const SizedBox(height: 12),
-                _switchTile(
-                  context,
-                  title: 'Learning Module Updates',
-                  subtitle: 'Know when new health lessons and learning content are available',
-                  value: _learning,
-                  onChanged: (value) async {
-                    setState(() => _learning = value);
-                    await _save(_controller.notifyLearningKey, value);
-                    await _automationService.handleNotificationPreferenceChanged(
-                      _controller.notifyLearningKey,
-                      value,
-                    );
-                  },
+                  children: [
+                    _switchTile(
+                      context,
+                      title: 'Last Login Reminders',
+                      value: _inactivity,
+                      onChanged: (value) async {
+                        setState(() => _inactivity = value);
+                        await _save(_controller.notifyInactivityKey, value);
+                        await _automationService.handleNotificationPreferenceChanged(
+                          _controller.notifyInactivityKey,
+                          value,
+                        );
+                      },
+                    ),
+                    _sectionDivider(colorScheme),
+                    _switchTile(
+                      context,
+                      title: 'Risk Assessment Reminders', 
+                      value: _riskAssessment,
+                      onChanged: (value) async {
+                        setState(() => _riskAssessment = value);
+                        await _save(_controller.notifyRiskAssessmentKey, value);
+                        await _automationService.handleNotificationPreferenceChanged(
+                          _controller.notifyRiskAssessmentKey,
+                          value,
+                        );
+                      },
+                    ),
+                    _sectionDivider(colorScheme),
+                    _switchTile(
+                      context,
+                      title: 'Learning Module Updates',
+                      value: _learning,
+                      onChanged: (value) async {
+                        setState(() => _learning = value);
+                        await _save(_controller.notifyLearningKey, value);
+                        await _automationService.handleNotificationPreferenceChanged(
+                          _controller.notifyLearningKey,
+                          value,
+                        );
+                      },
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
                 Text(
                   'Account & Safety',
                   style: theme.textTheme.labelLarge?.copyWith(
                     letterSpacing: 0.4,
-                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
                     color: colorScheme.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(height: 10),
-                _switchTile(
+                _switchSection(
                   context,
-                  title: 'Account & Security Alerts',
-                  subtitle: 'Stay informed about sign-in activity and important account changes',
-                  value: _security,
-                  onChanged: (value) async {
-                    setState(() => _security = value);
-                    await _save(_controller.notifySecurityKey, value);
-                    await _automationService.handleNotificationPreferenceChanged(
-                      _controller.notifySecurityKey,
-                      value,
-                    );
-                  },
+                  children: [
+                    _switchTile(
+                      context,
+                      title: 'Account & Security Alerts',
+                      value: _security,
+                      onChanged: (value) async {
+                        setState(() => _security = value);
+                        await _save(_controller.notifySecurityKey, value);
+                        await _automationService.handleNotificationPreferenceChanged(
+                          _controller.notifySecurityKey,
+                          value,
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ],
             ),
     );
   }
 
+  Widget _switchSection(
+    BuildContext context, {
+    required List<Widget> children,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.outlineVariant),
+      ),
+      child: Column(children: children),
+    );
+  }
+
+  Widget _sectionDivider(ColorScheme colorScheme) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 18, right: 18),
+      child: Divider(
+        height: 1,
+        thickness: 1,
+        color: colorScheme.outlineVariant.withOpacity(0.75),
+      ),
+    );
+  }
+
   Widget _switchTile(
     BuildContext context, {
     required String title,
-    required String subtitle,
     required bool value,
     bool enabled = true,
     required ValueChanged<bool> onChanged,
@@ -245,13 +284,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.outlineVariant),
-      ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       child: Row(
         children: [
           Expanded(
@@ -261,24 +295,30 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 Text(
                   title,
                   style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
             ),
           ),
           const SizedBox(width: 10),
-          Switch.adaptive(
-            value: value,
-            onChanged: enabled ? onChanged : null,
-          ),
+SizedBox(
+  width: 50,
+  height: 30,
+  child: FittedBox(
+    fit: BoxFit.fill,
+    child: Switch(
+      value: value,
+      onChanged: enabled ? onChanged : null,
+      activeColor: Colors.white,
+      activeTrackColor: const Color(0xFF005F99),
+      inactiveThumbColor: Colors.white,
+      inactiveTrackColor: Colors.grey.shade400,
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    ),
+  ),
+),
         ],
       ),
     );

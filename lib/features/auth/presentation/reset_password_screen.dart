@@ -3,6 +3,7 @@ import 'signin_screen.dart';
 import 'auth_success_dialog.dart';
 import 'auth_error_handler.dart';
 import 'auth_messages.dart';
+import 'password_validator.dart';
 import '../data/auth_models.dart';
 import 'controllers/auth_controller.dart';
 
@@ -182,11 +183,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                       ),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) return AuthMessages.passwordRequired;
-                      if (value.length < 8) return AuthMessages.passwordMinLength;
-                      return null;
-                    },
+                    validator: validatePassword,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
@@ -205,7 +202,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) return AuthMessages.confirmPasswordRequired;
-                      if (value.length < 8) return AuthMessages.passwordMinLength;
+                      final passwordError = validatePassword(value);
+                      if (passwordError != null) return passwordError;
                       if (value != _passwordCtrl.text) return AuthMessages.passwordsDoNotMatch;
                       return null;
                     },

@@ -29,6 +29,18 @@ import UIKit
           result(FlutterMethodNotImplemented)
         }
       }
+
+      let deviceChannel = FlutterMethodChannel(
+        name: "com.yegna_health/device",
+        binaryMessenger: controller.binaryMessenger
+      )
+      deviceChannel.setMethodCallHandler { call, result in
+        if call.method == "getLocalTimeZone" {
+          result(TimeZone.current.identifier)
+        } else {
+          result(FlutterMethodNotImplemented)
+        }
+      }
     }
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)

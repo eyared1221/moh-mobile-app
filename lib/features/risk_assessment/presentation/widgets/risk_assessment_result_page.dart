@@ -5,8 +5,14 @@ class RiskAssessmentResultPage extends StatelessWidget {
   final String statusLabel;
   final List<String> actions;
   final String keyMessage;
+  final String? saveStatusMessage;
+  final bool saveStatusIsError;
+  final String? saveStatusActionLabel;
+  final VoidCallback? onSaveStatusAction;
   final ColorScheme colorScheme;
   final TextTheme textTheme;
+  final VoidCallback onTalkToMentor;
+  final VoidCallback onGetService;
 
   const RiskAssessmentResultPage({
     super.key,
@@ -14,8 +20,14 @@ class RiskAssessmentResultPage extends StatelessWidget {
     required this.statusLabel,
     required this.actions,
     required this.keyMessage,
+    this.saveStatusMessage,
+    this.saveStatusIsError = false,
+    this.saveStatusActionLabel,
+    this.onSaveStatusAction,
     required this.colorScheme,
     required this.textTheme,
+    required this.onTalkToMentor,
+    required this.onGetService,
   });
 
   @override
@@ -25,12 +37,74 @@ class RiskAssessmentResultPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 12),
+          if (saveStatusMessage != null) ...[
+            _buildSaveStatusBanner(),
+            const SizedBox(height: 16),
+          ],
           _buildResultHeader(),
           const SizedBox(height: 16),
           _buildResultActionsSection(),
           const SizedBox(height: 16),
           _buildKeyMessage(),
-          const SizedBox(height: 10),
+          const SizedBox(height: 28),
+          _buildBottomActions(),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSaveStatusBanner() {
+    final bannerColor = saveStatusIsError ? colorScheme.error : colorScheme.primary;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        color: bannerColor.withOpacity(0.12),
+        border: Border.all(color: bannerColor.withOpacity(0.28)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            saveStatusIsError ? Icons.error_outline : Icons.sync_outlined,
+            color: bannerColor,
+            size: 20,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              saveStatusMessage!,
+              style: textTheme.bodySmall?.copyWith(
+                    color: bannerColor,
+                    fontWeight: FontWeight.w600,
+                    height: 1.4,
+                  ) ??
+                  TextStyle(
+                    color: bannerColor,
+                    fontWeight: FontWeight.w600,
+                    height: 1.4,
+                  ),
+            ),
+          ),
+          if (saveStatusActionLabel != null && onSaveStatusAction != null) ...[
+            const SizedBox(width: 12),
+            TextButton(
+              onPressed: onSaveStatusAction,
+              style: TextButton.styleFrom(
+                foregroundColor: bannerColor,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: Text(
+                saveStatusActionLabel!,
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -210,6 +284,44 @@ class RiskAssessmentResultPage extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildBottomActions() {
+    return Row(
+      children: [
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: onTalkToMentor,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            icon: const Icon(Icons.people_alt_outlined),
+            label: const Text('Talk to Mentor'),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: onGetService,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            icon: const Icon(Icons.local_hospital_outlined),
+            label: const Text('Get Service'),
+          ),
+        ),
+      ],
     );
   }
 }

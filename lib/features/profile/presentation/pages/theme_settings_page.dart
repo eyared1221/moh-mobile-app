@@ -26,33 +26,33 @@ class ThemeSettingsPage extends StatelessWidget {
                 'Appearance',
                 style: theme.textTheme.labelLarge?.copyWith(
                   letterSpacing: 0.4,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 13,
                   color: colorScheme.onSurfaceVariant,
                 ),
               ),
+
               const SizedBox(height: 10),
-              _optionTile(
+
+              _themeSection(
                 context,
-                title: 'Light',
-                subtitle: 'Always use the light appearance',
-                value: ThemeMode.light,
-                groupValue: mode,
-              ),
-              const SizedBox(height: 12),
-              _optionTile(
-                context,
-                title: 'Dark',
-                subtitle: 'Always use the dark appearance',
-                value: ThemeMode.dark,
-                groupValue: mode,
-              ),
-              const SizedBox(height: 12),
-              _optionTile(
-                context,
-                title: 'Use system default',
-                subtitle: 'Follow your device theme setting automatically',
-                value: ThemeMode.system,
-                groupValue: mode,
+                children: [
+                  _optionTile(
+                    context,
+                    title: 'Light Mode',
+                    value: ThemeMode.light,
+                    groupValue: mode,
+                  ),
+
+                  _sectionDivider(colorScheme),
+
+                  _optionTile(
+                    context,
+                    title: 'Dark Mode',
+                    value: ThemeMode.dark,
+                    groupValue: mode,
+                  ),
+                ],
               ),
             ],
           );
@@ -61,31 +61,47 @@ class ThemeSettingsPage extends StatelessWidget {
     );
   }
 
+  Widget _themeSection(
+    BuildContext context, {
+    required List<Widget> children,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.outlineVariant),
+      ),
+      child: Column(children: children),
+    );
+  }
+
+  Widget _sectionDivider(ColorScheme colorScheme) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 18, right: 18),
+      child: Divider(
+        height: 1,
+        thickness: 1,
+        color: colorScheme.outlineVariant.withOpacity(0.75),
+      ),
+    );
+  }
+
   Widget _optionTile(
     BuildContext context, {
     required String title,
-    required String subtitle,
     required ThemeMode value,
     required ThemeMode groupValue,
   }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final isSelected = value == groupValue;
 
     return InkWell(
       onTap: () => setSavedTheme(value),
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-        decoration: BoxDecoration(
-          color: theme.cardColor,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected
-                ? colorScheme.primary.withOpacity(0.42)
-                : colorScheme.outlineVariant,
-          ),
-        ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
         child: Row(
           children: [
             Expanded(
@@ -95,23 +111,23 @@ class ThemeSettingsPage extends StatelessWidget {
                   Text(
                     title,
                     style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
+                      fontSize: 15.5,
+                      fontWeight: FontWeight.w500,
                       color: colorScheme.onSurface,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
+
+                  const SizedBox(height: 3),
+
+                
                 ],
               ),
             ),
+
             Radio<ThemeMode>(
               value: value,
               groupValue: groupValue,
+              activeColor: colorScheme.primary,
               onChanged: (next) {
                 if (next != null) {
                   setSavedTheme(next);

@@ -297,14 +297,6 @@ class _GuestHeader extends StatelessWidget {
             ],
           ),
         ),
-        IconButton(
-          onPressed: () {},
-          icon: Icon(
-            Icons.notifications_none_rounded,
-            color: isDark ? Colors.white : const Color(0xFF16324C),
-            size: 26,
-          ),
-        ),
       ],
     );
   }

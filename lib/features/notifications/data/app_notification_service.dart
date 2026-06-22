@@ -25,6 +25,12 @@ class AppNotificationService extends AppNotificationRepositoryImpl {
     return super.addNotification(notification);
   }
 
+  Future<AppNotification?> addNotificationIfNew(
+    AppNotificationEntity notification,
+  ) {
+    return super.addNotificationIfNew(notification);
+  }
+
   @override
   Future<void> markRead(String id) {
     return super.markRead(id);

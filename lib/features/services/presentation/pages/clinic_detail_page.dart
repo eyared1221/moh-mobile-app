@@ -53,6 +53,7 @@ class _ClinicDetailPageState extends State<ClinicDetailPage> {
 
     return Scaffold(
       appBar: AppBar(
+        centerTitle: true,
         title: const Text('Healthcare Facility Detail'),
         backgroundColor: colorScheme.surface,
         foregroundColor: colorScheme.onSurface,
@@ -313,13 +314,25 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final panelColor = isDark ? const Color(0xFF162033) : colorScheme.surface;
+    final panelBorderColor = isDark
+        ? colorScheme.outlineVariant.withOpacity(0.38)
+        : colorScheme.outlineVariant;
+    final overlayColor = isDark
+        ? const Color(0xFF11192A).withOpacity(0.78)
+        : colorScheme.surface.withOpacity(0.75);
+    final badgeColor = isDark
+        ? const Color(0xFF1B2740).withOpacity(0.96)
+        : colorScheme.surface.withOpacity(0.94);
 
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: colorScheme.outlineVariant),
-        color: colorScheme.surface,
+        border: Border.all(color: panelBorderColor),
+        color: panelColor,
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -375,7 +388,9 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
                   )
                 else if (_hasMapError)
                   Container(
-                    color: colorScheme.surfaceVariant.withOpacity(0.3),
+                    color: isDark
+                        ? const Color(0xFF11192A).withOpacity(0.88)
+                        : colorScheme.surfaceVariant.withOpacity(0.3),
                     alignment: Alignment.center,
                     padding: const EdgeInsets.all(20),
                     child: Column(
@@ -411,13 +426,13 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
                   WebViewWidget(controller: _webViewController),
                 if (_isMapLoading && !kIsWeb)
                   Container(
-                    color: colorScheme.surface.withOpacity(0.75),
+                    color: overlayColor,
                     alignment: Alignment.center,
                     child: const CircularProgressIndicator(),
                   ),
                 if (_isLoadingRoute)
                   Container(
-                    color: colorScheme.surface.withOpacity(0.65),
+                    color: overlayColor,
                     alignment: Alignment.center,
                     child: const CircularProgressIndicator(),
                   ),
@@ -428,9 +443,9 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: colorScheme.surface.withOpacity(0.94),
+                        color: badgeColor,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: colorScheme.outlineVariant),
+                        border: Border.all(color: panelBorderColor),
                       ),
                       child: Text(
                         'Altitude: ${widget.altitude!.trim()} m',
@@ -464,31 +479,7 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
                     ),
                   ],
                 ),
-                if (_routeDistanceLabel != null || _routeDurationLabel != null || _isNavigating) ...[
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      if (_routeDistanceLabel != null)
-                        _MapMetricChip(
-                          icon: Icons.straighten_rounded,
-                          label: _routeDistanceLabel!,
-                        ),
-                      if (_routeDurationLabel != null)
-                        _MapMetricChip(
-                          icon: Icons.schedule_rounded,
-                          label: _routeDurationLabel!,
-                        ),
-                      if (_isNavigating)
-                        const _MapMetricChip(
-                          icon: Icons.route_rounded,
-                          label: 'In App',
-                        ),
-                    ],
-                  ),
-                ],
-                if (_routeNotice != null) ...[
+                if (_routeNotice != null && _routeNoticeIsError) ...[
                   const SizedBox(height: 8),
                   Text(
                     _routeNotice!,
@@ -570,7 +561,7 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
       _isNavigating = true;
       _routeDistanceLabel = _formatDistance(distanceMeters);
       _routeDurationLabel = null;
-      _routeNotice = 'Route loaded inside the app.';
+      _routeNotice = null;
       _routeNoticeIsError = false;
     });
 
@@ -685,44 +676,6 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
     } catch (_) {
       return first;
     }
-  }
-}
-
-class _MapMetricChip extends StatelessWidget {
-  const _MapMetricChip({
-    required this.icon,
-    required this.label,
-  });
-
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.45),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: colorScheme.outlineVariant),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: colorScheme.primary),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: TextStyle(
-              color: colorScheme.onSurface,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
 
@@ -972,13 +925,17 @@ class _InfoTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final tileColor = isDark ? const Color(0xFF162033) : Colors.white.withOpacity(0.92);
+    final borderColor = isDark
+        ? colorScheme.outlineVariant.withOpacity(0.38)
+        : colorScheme.outlineVariant;
     final tile = Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: isDark ? colorScheme.surface.withOpacity(0.7) : Colors.white.withOpacity(0.92),
+        color: tileColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colorScheme.outlineVariant),
+        border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(isDark ? 0.2 : 0.06),

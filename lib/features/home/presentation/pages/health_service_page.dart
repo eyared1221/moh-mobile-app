@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../../../core/responsive/responsive_container.dart';
+import '../../../../core/responsive/responsive_spacing.dart';
+import '../../../../core/responsive/responsive_text.dart';
 import '../../../../shared/widgets/top_header.dart';
 
 class HealthServicePage extends StatelessWidget {
@@ -7,7 +10,6 @@ class HealthServicePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -17,67 +19,75 @@ class HealthServicePage extends StatelessWidget {
         automaticallyImplyLeading: false,
         title: const TopHeader(showBack: true, showThemeToggle: false),
       ),
-      body: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Get Health Service',
-              style: textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-                color: colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Find nearby health facilities and services that match your needs.',
-              style: textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-                height: 1.4,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: Center(
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardColor,
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: colorScheme.outlineVariant),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.local_hospital_outlined,
-                        size: 44,
-                        color: colorScheme.primary,
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Service Finder',
-                        style: textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: colorScheme.onSurface,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Browse nearby clinics and get directions quickly.',
-                        textAlign: TextAlign.center,
-                        style: textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                          height: 1.4,
-                        ),
-                      ),
-                    ],
+      body: ResponsiveContainer.safe(
+        child: ResponsiveContainer.scrollable(
+          context: context,
+          child: ResponsiveContainer.adaptive(
+            context: context,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Get Health Service',
+                  style: ResponsiveText.titleStyle(
+                    context,
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
-              ),
+                SizedBox(height: ResponsiveSpacing.smSpacing(context)),
+                Text(
+                  'Find nearby health facilities and services that match your needs.',
+                  style: ResponsiveText.bodyStyle(
+                    context,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                SizedBox(height: ResponsiveSpacing.xlSpacing(context)),
+                SizedBox(
+                  height: MediaQuery.of(context).size.height - 250,
+                  child: Center(
+                    child: Container(
+                      padding: EdgeInsets.all(ResponsiveSpacing.xlSpacing(context)),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardColor,
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: colorScheme.outlineVariant),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.local_hospital_outlined,
+                            size: 44,
+                            color: colorScheme.primary,
+                          ),
+                          SizedBox(height: ResponsiveSpacing.mdSpacing(context)),
+                          Text(
+                            'Service Finder',
+                            style: ResponsiveText.subtitleStyle(
+                              context,
+                              color: colorScheme.onSurface,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          SizedBox(height: ResponsiveSpacing.xsSpacing(context)),
+                          Text(
+                            'Browse nearby clinics and get directions quickly.',
+                            textAlign: TextAlign.center,
+                            style: ResponsiveText.bodyStyle(
+                              context,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

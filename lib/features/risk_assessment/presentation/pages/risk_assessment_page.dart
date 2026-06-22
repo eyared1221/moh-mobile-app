@@ -6,6 +6,8 @@ import '../../../../shared/widgets/app_bottom_nav.dart';
 import '../../../../shared/widgets/global_notification_bell.dart';
 import '../../../mentor/presentation/pages/mentor_page.dart';
 import '../../../notifications/data/notification_automation_service.dart';
+import '../../../auth/data/auth_session_storage.dart';
+import '../../../auth/presentation/signin_screen.dart';
 import '../../data/risk_assessment_repository.dart';
 import '../../domain/entities/risk_question_entity.dart';
 import '../../domain/usecases/get_risk_assessment_questions_use_case.dart';
@@ -39,6 +41,9 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
   List<RiskQuestionEntity> _questions = const [];
   List<int?> _selectedOptionIndexes = const [];
   bool _isLoadingQuestions = true;
+  bool _isSavingAssessment = false;
+  String? _saveAssessmentMessage;
+  bool _saveAssessmentNeedsReauth = false;
 
   _RiskStage _stage = _RiskStage.intro;
   int _currentIndex = 0;
@@ -129,36 +134,26 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
+        centerTitle: true,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         automaticallyImplyLeading: false,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          color: colorScheme.primary,
+          color: isDark ? Colors.white : colorScheme.primary,
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          'Risk Assessment',
-          style: textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-                color: colorScheme.primary,
-              ) ??
-              TextStyle(
-                fontWeight: FontWeight.w800,
-                color: colorScheme.primary,
-              ),
-        ),
+        title: const Text('Risk Assessment'),
         actions: [
-          GlobalTopBarActions(
-            color: colorScheme.primary,
-            onSyncPressed: _syncQuestions,
-          ),
+          GlobalTopBarActions(onSyncPressed: _syncQuestions),
           const SizedBox(width: 6),
         ],
       ),
@@ -173,19 +168,11 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
           ),
         ),
       ),
-      bottomNavigationBar: _buildBottomBar(colorScheme),
+      bottomNavigationBar: _buildBottomBar(),
     );
   }
 
   Widget _buildStageContent(ColorScheme colorScheme, TextTheme textTheme) {
-    if (_isLoadingQuestions) {
-      return _buildLoadingState(colorScheme, textTheme, key: const ValueKey('loading'));
-    }
-
-    if (_questions.isEmpty) {
-      return _buildEmptyState(colorScheme, textTheme, key: const ValueKey('empty'));
-    }
-
     switch (_stage) {
       case _RiskStage.intro:
         return RiskAssessmentIntroPage(
@@ -196,6 +183,20 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
           onGetStarted: _startAssessment,
         );
       case _RiskStage.questions:
+        if (_isLoadingQuestions) {
+          return _buildLoadingState(
+            colorScheme,
+            textTheme,
+            key: const ValueKey('loading'),
+          );
+        }
+        if (_questions.isEmpty) {
+          return _buildEmptyState(
+            colorScheme,
+            textTheme,
+            key: const ValueKey('empty'),
+          );
+        }
         return RiskAssessmentQuestionPage(
           key: ValueKey('question-$_currentIndex'),
           question: _questions[_currentIndex],
@@ -212,14 +213,31 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
           onNext: _goNext,
         );
       case _RiskStage.result:
+        if (_questions.isEmpty) {
+          return _buildEmptyState(
+            colorScheme,
+            textTheme,
+            key: const ValueKey('empty'),
+          );
+        }
         return RiskAssessmentResultPage(
           key: const ValueKey('result'),
           isHigh: _riskLevel == _RiskLevel.high,
           statusLabel: _resultStatusLabel,
           actions: _resultActions,
           keyMessage: _resultKeyMessage,
+          saveStatusMessage: _isSavingAssessment
+              ? 'Saving this assessment to your history...'
+              : _saveAssessmentMessage,
+          saveStatusIsError: !_isSavingAssessment && _saveAssessmentMessage != null,
+          saveStatusActionLabel:
+              _saveAssessmentNeedsReauth ? 'Sign in again' : null,
+          onSaveStatusAction:
+              _saveAssessmentNeedsReauth ? _navigateToSignIn : null,
           colorScheme: colorScheme,
           textTheme: textTheme,
+          onTalkToMentor: _openPeerMentor,
+          onGetService: _openHealthService,
         );
     }
   }
@@ -245,18 +263,6 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
                 color: colorScheme.primary,
               ),
             ),
-            const SizedBox(width: 12),
-            Text(
-              'Preparing questions...',
-              style: textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w600,
-                  ) ??
-                  TextStyle(
-                    color: colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
           ],
         ),
       ),
@@ -280,145 +286,15 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
     );
   }
 
-  Widget? _buildBottomBar(ColorScheme colorScheme) {
+  Widget? _buildBottomBar() {
     if (_stage == _RiskStage.questions) {
       return null;
     }
 
-    if (_stage == _RiskStage.intro) {
-      return AppBottomNav(
-        age: widget.age ?? '',
-        currentIndex: -1,
-        userName: widget.userName,
-      );
-    }
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
-          child: _buildBottomActions(colorScheme),
-        ),
-        AppBottomNav(
-          age: widget.age ?? '',
-          currentIndex: -1,
-          userName: widget.userName,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBottomActions(ColorScheme colorScheme) {
-    switch (_stage) {
-      case _RiskStage.intro:
-        return const SizedBox.shrink();
-      case _RiskStage.questions:
-        final isFirst = _currentIndex == 0;
-        final isAnswered = _selectedOptionIndexes[_currentIndex] != null;
-        final isLast = _currentIndex == _questions.length - 1;
-        return Row(
-          children: [
-            _buildNavIconButton(
-              icon: Icons.arrow_back_rounded,
-              label: isFirst ? 'Back' : 'Previous',
-              onTap: isFirst ? _backToIntro : _goPrevious,
-              colorScheme: colorScheme,
-              filled: false,
-            ),
-            const Spacer(),
-            _buildNavIconButton(
-              icon: isLast ? Icons.check_rounded : Icons.arrow_forward_rounded,
-              label: isLast ? 'Finish' : 'Next',
-              onTap: isAnswered ? _goNext : null,
-              colorScheme: colorScheme,
-              filled: true,
-            ),
-          ],
-        );
-      case _RiskStage.result:
-        return Row(
-          children: [
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: _openPeerMentor,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: colorScheme.primary,
-                  foregroundColor: colorScheme.onPrimary,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                ),
-                icon: const Icon(Icons.people_alt_outlined),
-                label: const Text('Talk to Mentor'),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: _openHealthService,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: colorScheme.primary,
-                  foregroundColor: colorScheme.onPrimary,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                ),
-                icon: const Icon(Icons.local_hospital_outlined),
-                label: const Text('Get Service'),
-              ),
-            ),
-          ],
-        );
-    }
-  }
-
-  Widget _buildNavIconButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback? onTap,
-    required ColorScheme colorScheme,
-    required bool filled,
-  }) {
-    final isDisabled = onTap == null;
-    final backgroundColor = filled
-        ? (isDisabled ? colorScheme.primary.withOpacity(0.4) : colorScheme.primary)
-        : Theme.of(context).cardColor;
-    final foregroundColor = filled
-        ? colorScheme.onPrimary
-        : isDisabled
-            ? colorScheme.outline
-            : colorScheme.onSurface;
-    final borderColor = filled ? Colors.transparent : colorScheme.outlineVariant;
-
-    return Semantics(
-      button: true,
-      label: label,
-      child: Tooltip(
-        message: label,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(18),
-          child: Container(
-            width: 56,
-            height: 46,
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: borderColor),
-              boxShadow: filled
-                  ? [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, 6),
-                      ),
-                    ]
-                  : null,
-            ),
-            child: Icon(icon, color: foregroundColor),
-          ),
-        ),
-      ),
+    return AppBottomNav(
+      age: widget.age ?? '',
+      currentIndex: -1,
+      userName: widget.userName,
     );
   }
 
@@ -432,6 +308,8 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
     setState(() {
       _stage = _RiskStage.questions;
       _currentIndex = 0;
+      _saveAssessmentMessage = null;
+      _saveAssessmentNeedsReauth = false;
     });
   }
 
@@ -454,6 +332,9 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
     setState(() {
       if (isLast) {
         _stage = _RiskStage.result;
+        _isSavingAssessment = true;
+        _saveAssessmentMessage = null;
+        _saveAssessmentNeedsReauth = false;
       } else {
         _currentIndex += 1;
       }
@@ -462,7 +343,9 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
     if (isLast) {
       unawaited(_persistLatestAssessment());
       unawaited(
-        NotificationAutomationService.instance.recordRiskAssessmentCompleted(),
+        NotificationAutomationService.instance.recordRiskAssessmentCompleted(
+          riskLevel: _riskLevel.name,
+        ),
       );
     }
   }
@@ -567,11 +450,68 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
         riskScore: _totalYesCount,
         takenAt: DateTime.now(),
       );
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isSavingAssessment = false;
+        _saveAssessmentMessage = null;
+        _saveAssessmentNeedsReauth = false;
+      });
     } catch (e) {
-      // Saving latest assessment should not block the user from seeing the result page.
-      // Log error for debugging
-      print('Failed to save risk assessment: $e');
+      final needsReauth = _isAuthenticationFailure(e);
+      final message = needsReauth
+          ? 'Your session expired before we could save this assessment. Sign in again to keep your history up to date.'
+          : 'We could not save this assessment to your history right now. Please try again in a moment.';
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isSavingAssessment = false;
+        _saveAssessmentMessage = message;
+        _saveAssessmentNeedsReauth = needsReauth;
+      });
+
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(message),
+          action: needsReauth
+              ? SnackBarAction(
+                  label: 'Sign in',
+                  onPressed: _navigateToSignIn,
+                )
+              : null,
+        ),
+      );
+
+      debugPrint('Failed to save risk assessment: $e');
     }
+  }
+
+  bool _isAuthenticationFailure(Object error) {
+    final normalizedMessage = error.toString().toLowerCase();
+    return normalizedMessage.contains('sign in again') ||
+        normalizedMessage.contains('authentication required') ||
+        normalizedMessage.contains('invalid or expired token') ||
+        normalizedMessage.contains('unauthorized');
+  }
+
+  Future<void> _navigateToSignIn() async {
+    await AuthSessionStorage.clear();
+    if (!mounted) {
+      return;
+    }
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const SignInScreen(),
+      ),
+    );
   }
 }
 

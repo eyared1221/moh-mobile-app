@@ -88,14 +88,12 @@ class GlobalTopBarActions extends StatefulWidget {
     this.iconSize,
     this.onBellPressed,
     this.onSyncPressed,
-    this.languageLabel = 'EN',
   });
 
   final Color? color;
   final double? iconSize;
   final VoidCallback? onBellPressed;
   final SyncActionCallback? onSyncPressed;
-  final String languageLabel;
 
   @override
   State<GlobalTopBarActions> createState() => _GlobalTopBarActionsState();
@@ -139,19 +137,6 @@ class _GlobalTopBarActionsState extends State<GlobalTopBarActions> {
 
   @override
   Widget build(BuildContext context) {
-    final resolvedColor = widget.color ?? IconTheme.of(context).color;
-    final textStyle =
-        Theme.of(context).textTheme.labelLarge?.copyWith(
-          color: resolvedColor,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 0.4,
-        ) ??
-        TextStyle(
-          color: resolvedColor,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 0.4,
-        );
-
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -159,11 +144,6 @@ class _GlobalTopBarActionsState extends State<GlobalTopBarActions> {
           onPressed: widget.onBellPressed,
           color: widget.color,
           iconSize: widget.iconSize,
-        ),
-        const SizedBox(width: 10),
-        Padding(
-          padding: const EdgeInsets.only(right: 10),
-          child: Text(widget.languageLabel, style: textStyle),
         ),
         IconButton(
           onPressed: _isSyncing ? null : _syncNotifications,

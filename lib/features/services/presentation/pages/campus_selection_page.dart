@@ -190,6 +190,10 @@ class _CampusSelectionPageState extends State<CampusSelectionPage> {
       backgroundColor: Colors.transparent,
       builder: (context) {
         final colorScheme = Theme.of(context).colorScheme;
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final dividerColor = isDark
+            ? colorScheme.outlineVariant.withOpacity(0.38)
+            : kPrimaryStroke.withOpacity(0.65);
         return SafeArea(
           top: false,
           child: DraggableScrollableSheet(
@@ -200,7 +204,9 @@ class _CampusSelectionPageState extends State<CampusSelectionPage> {
             builder: (context, scrollController) {
               return Container(
                 decoration: BoxDecoration(
-                  color: Theme.of(context).scaffoldBackgroundColor,
+                  color: isDark
+                      ? const Color(0xFF162033)
+                      : Theme.of(context).scaffoldBackgroundColor,
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
                 ),
                 child: Column(
@@ -241,7 +247,7 @@ class _CampusSelectionPageState extends State<CampusSelectionPage> {
                         ],
                       ),
                     ),
-                    Divider(height: 1, color: kPrimaryStroke.withOpacity(0.65)),
+                    Divider(height: 1, color: dividerColor),
                     Expanded(
                       child: ListView.builder(
                         controller: scrollController,
@@ -269,7 +275,7 @@ class _CampusSelectionPageState extends State<CampusSelectionPage> {
                                   height: 1,
                                   indent: 0,
                                   endIndent: 0,
-                                  color: kPrimaryStroke.withOpacity(0.65),
+                                  color: dividerColor,
                                 ),
                             ],
                           );
@@ -293,6 +299,7 @@ class _CampusSelectionPageState extends State<CampusSelectionPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
     final sections = _filteredSections;
 
     return Scaffold(
@@ -333,7 +340,9 @@ class _CampusSelectionPageState extends State<CampusSelectionPage> {
                   ) ?? TextStyle(color: colorScheme.onSurfaceVariant),
                   prefixIcon: Icon(Icons.search, color: colorScheme.onSurfaceVariant),
                   filled: true,
-                  fillColor: colorScheme.surfaceVariant.withOpacity(0.4),
+                  fillColor: isDark
+                      ? const Color(0xFF162033)
+                      : colorScheme.surfaceVariant.withOpacity(0.4),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
@@ -341,7 +350,11 @@ class _CampusSelectionPageState extends State<CampusSelectionPage> {
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide.none,
+                    borderSide: BorderSide(
+                      color: isDark
+                          ? colorScheme.outlineVariant.withOpacity(0.38)
+                          : Colors.transparent,
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
@@ -372,7 +385,6 @@ class _CampusSelectionPageState extends State<CampusSelectionPage> {
                     ),
                     const SizedBox(height: 14),
                   ],
-                  _CampusWhyCard(colorScheme: colorScheme),
                 ],
               ),
             ),
@@ -397,17 +409,24 @@ class _CampusDetectCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDisabled
+        ? (isDark ? const Color(0xFF11192A) : const Color(0xFFF5F7F9))
+        : (isDark ? const Color(0xFF162033) : Colors.white);
+    final borderColor = isDark
+        ? colorScheme.outlineVariant.withOpacity(0.38)
+        : kPrimaryStroke;
     return GestureDetector(
       onTap: isLoading || isDisabled ? null : onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
         decoration: BoxDecoration(
-          color: isDisabled ? const Color(0xFFF5F7F9) : Colors.white,
+          color: cardColor,
           borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: kPrimaryStroke),
+          border: Border.all(color: borderColor),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withOpacity(isDark ? 0.18 : 0.04),
               blurRadius: 14,
               offset: const Offset(0, 6),
             ),
@@ -418,8 +437,8 @@ class _CampusDetectCard extends StatelessWidget {
             Container(
               width: 42,
               height: 42,
-              decoration: const BoxDecoration(
-                color: kPrimarySoft,
+              decoration: BoxDecoration(
+                color: colorScheme.primary.withOpacity(isDark ? 0.16 : 0.10),
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,
@@ -495,17 +514,34 @@ class _CampusSectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final styles = _CampusSelectionPageState._sectionStyles[section.title]!;
     final visibleCampuses = section.campuses.take(5).toList();
+    final cardColor = isDark ? const Color(0xFF162033) : Colors.white;
+    final borderColor = isDark
+        ? colorScheme.outlineVariant.withOpacity(0.38)
+        : kPrimaryStroke;
+    final headerGradient = isDark
+        ? [
+            colorScheme.primary.withOpacity(0.16),
+            const Color(0xFF11192A),
+          ]
+        : [
+            styles.tint,
+            Colors.white,
+          ];
+    final pillColor = isDark
+        ? colorScheme.primary.withOpacity(0.16)
+        : styles.tint;
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: kPrimaryStroke),
+        border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withOpacity(isDark ? 0.18 : 0.04),
             blurRadius: 14,
             offset: const Offset(0, 6),
           ),
@@ -517,10 +553,7 @@ class _CampusSectionCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  styles.tint,
-                  Colors.white,
-                ],
+                colors: headerGradient,
               ),
               borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
             ),
@@ -541,7 +574,7 @@ class _CampusSectionCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: styles.tint,
+                    color: pillColor,
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
@@ -557,14 +590,14 @@ class _CampusSectionCard extends StatelessWidget {
             ),
           ),
           if (isLoading && visibleCampuses.isEmpty)
-            const Padding(
-              padding: EdgeInsets.fromLTRB(18, 18, 18, 18),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
                   'Loading universities...',
                   style: TextStyle(
-                    color: Color(0xFF5F6E7A),
+                    color: colorScheme.onSurfaceVariant,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
@@ -572,14 +605,14 @@ class _CampusSectionCard extends StatelessWidget {
               ),
             )
           else if (hasError && visibleCampuses.isEmpty)
-            const Padding(
-              padding: EdgeInsets.fromLTRB(18, 18, 18, 18),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
                   'Could not load universities.',
                   style: TextStyle(
-                    color: Color(0xFF5F6E7A),
+                    color: colorScheme.onSurfaceVariant,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
@@ -587,14 +620,14 @@ class _CampusSectionCard extends StatelessWidget {
               ),
             )
           else if (!isLoading && visibleCampuses.isEmpty)
-            const Padding(
-              padding: EdgeInsets.fromLTRB(18, 18, 18, 18),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
                   'No universities available.',
                   style: TextStyle(
-                    color: Color(0xFF5F6E7A),
+                    color: colorScheme.onSurfaceVariant,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
@@ -620,7 +653,9 @@ class _CampusSectionCard extends StatelessWidget {
                   height: 1,
                   indent: 0,
                   endIndent: 0,
-                  color: kPrimaryStroke.withOpacity(0.65),
+                  color: isDark
+                      ? colorScheme.outlineVariant.withOpacity(0.38)
+                      : kPrimaryStroke.withOpacity(0.65),
                 ),
             ],
           InkWell(
@@ -638,8 +673,6 @@ class _CampusSectionCard extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const Spacer(),
-                  Icon(Icons.chevron_right_rounded, color: colorScheme.primary, size: 24),
                 ],
               ),
             ),
@@ -666,6 +699,7 @@ class _CampusRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final subtitle = campus.subtitle ?? '';
     final hasSubtitle = subtitle.isNotEmpty;
 
@@ -696,7 +730,7 @@ class _CampusRow extends StatelessWidget {
                           margin: const EdgeInsets.only(left: 10),
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
-                            color: kPrimarySoft,
+                            color: colorScheme.primary.withOpacity(isDark ? 0.16 : 0.10),
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text(
@@ -728,78 +762,6 @@ class _CampusRow extends StatelessWidget {
             Icon(Icons.chevron_right_rounded, color: colorScheme.onSurfaceVariant, size: 26),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _CampusWhyCard extends StatelessWidget {
-  final ColorScheme colorScheme;
-
-  const _CampusWhyCard({
-    required this.colorScheme,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [
-            Color(0xFFF2F7FB),
-            Colors.white,
-          ],
-        ),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: kPrimaryStroke),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 50,
-            height: 50,
-            decoration: const BoxDecoration(
-              color: kPrimarySoft,
-              shape: BoxShape.circle,
-            ),
-            alignment: Alignment.center,
-            child: Icon(Icons.shield_outlined, color: colorScheme.primary, size: 30),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Why select your campus?',
-                  style: TextStyle(
-                    color: colorScheme.primary,
-                    fontSize: 15.5,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  "We'll show you health facilities recommended for your campus and nearby.",
-                  style: TextStyle(
-                    color: colorScheme.onSurfaceVariant,
-                    fontSize: 13.5,
-                    height: 1.35,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

@@ -1,8 +1,5 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 
-import '../../../../shared/widgets/hero_banner.dart';
 import '../../../../shared/widgets/app_bottom_nav.dart';
 import '../../../../shared/widgets/global_notification_bell.dart';
 import '../../../learning/data/learning_service.dart';
@@ -26,32 +23,6 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int? _pressedNavIndex;
-  final ScrollController _scrollController = ScrollController();
-  bool _hasScrolled = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(_handleScroll);
-  }
-
-  @override
-  void dispose() {
-    _scrollController.removeListener(_handleScroll);
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void _handleScroll() {
-    final hasScrolled = _scrollController.offset > 12;
-    if (hasScrolled == _hasScrolled) {
-      return;
-    }
-
-    setState(() {
-      _hasScrolled = hasScrolled;
-    });
-  }
 
   Future<void> _syncHomeData() async {
     await Future.wait<dynamic>([
@@ -64,56 +35,97 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final colorScheme = theme.colorScheme;
     final navCards = _buildNavCards();
+    final pageBackground = isDark ? const Color(0xFF0B1220) : const Color(0xFFF4F8FE);
+    final pageGradient = isDark
+        ? const [
+            Color(0xFF0B1220),
+            Color(0xFF11192A),
+            Color(0xFF0E1625),
+          ]
+        : const [
+            Color(0xFFF4F8FE),
+            Color(0xFFF1F5FC),
+            Color(0xFFF7FAFF),
+          ];
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: pageBackground,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         centerTitle: true,
-        backgroundColor: _hasScrolled
-            ? colorScheme.surfaceVariant.withOpacity(isDark ? 0.18 : 0.9)
-            : Theme.of(context).scaffoldBackgroundColor,
+        backgroundColor: pageBackground,
         surfaceTintColor: Colors.transparent,
-        title: const Text('Health Support'),
+        elevation: 0,
+        title: Text(
+          'Health Support',
+          style: TextStyle(
+            color: isDark ? Colors.white : colorScheme.primary,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.2,
+          ),
+        ),
         actions: [
-          GlobalTopBarActions(onSyncPressed: _syncHomeData),
+          GlobalTopBarActions(
+            onSyncPressed: _syncHomeData,
+            color: colorScheme.primary,
+          ),
         ],
       ),
       body: SafeArea(
         top: false,
         bottom: false,
-        child: CustomScrollView(
-          controller: _scrollController,
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: _buildSlantedHero(isDark, colorScheme),
-              ),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: pageGradient,
+              stops: [0.0, 0.45, 1.0],
             ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(12, 12, 12, 28),
-              sliver: SliverGrid(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  childAspectRatio: 0.96,
+          ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 18),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: constraints.maxHeight - 32,
+                  ),
+                  child: Column(
+                    children: [
+                      _buildSupportHeroCard(isDark, colorScheme),
+                      const SizedBox(height: 18),
+                      GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: navCards.length,
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: 0.94,
+                        ),
+                        itemBuilder: (context, index) {
+                          return _buildNavCard(
+                            navCards[index],
+                            isDark,
+                            index,
+                            colorScheme,
+                          );
+                        },
+                      ),
+                    ],
+                  ),
                 ),
-                delegate: SliverChildBuilderDelegate((context, index) {
-                  return _buildNavCard(
-                    navCards[index],
-                    isDark,
-                    index,
-                    colorScheme,
-                  );
-                }, childCount: navCards.length),
-              ),
-            ),
-          ],
+              );
+            },
+          ),
         ),
       ),
       bottomNavigationBar: AppBottomNav(
@@ -124,58 +136,105 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildSlantedHero(
+  Widget _buildSupportHeroCard(
     bool isDark,
     ColorScheme colorScheme,
   ) {
-    return Center(
-      child: Transform(
-        transform: Matrix4.identity()
-          ..setEntry(3, 2, 0.001)
-          ..rotateX(-0.06)
-          ..rotateY(0.03),
-        alignment: Alignment.center,
-        child: Container(
-          margin: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 4,
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDark
+              ? const [
+                  Color(0xFF162033),
+                  Color(0xFF101A2B),
+                ]
+              : const [
+                  Color(0xFFFFFFFF),
+                  Color(0xFFF2F7FF),
+                ],
+        ),
+        border: Border.all(
+          color: isDark
+              ? colorScheme.outlineVariant.withOpacity(0.28)
+              : const Color(0xFFE6EEF8),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFB9C8E6).withOpacity(isDark ? 0.12 : 0.22),
+            blurRadius: 28,
+            offset: const Offset(0, 12),
           ),
-          constraints: const BoxConstraints(minHeight: 95),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(30),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: isDark
-                  ? [
-                      colorScheme.onSurface.withOpacity(0.12),
-                      colorScheme.onSurface.withOpacity(0.01),
-                    ]
-                  : [colorScheme.surface, colorScheme.surfaceVariant],
-            ),
-            border: Border.all(
-              color: isDark ? colorScheme.outlineVariant : colorScheme.surface,
-              width: 2,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(30),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-              child: HeroBanner(
-                title: "Choose Your Health Support",
-                subtitle: "",
-                age: widget.age,
-              ),
-            ),
-          ),
+        ],
+      ),
+      child: SizedBox(
+        height: 178,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isCompact = constraints.maxWidth < 360;
+            final titleFontSize = isCompact ? 20.5 : 22.0;
+            final subtitleFontSize = isCompact ? 12.7 : 13.4;
+            final imageWidth = isCompact ? 158.0 : 182.0;
+            final imageRight = isCompact ? -4.0 : -2.0;
+            final imageTop = isCompact ? 14.0 : 10.0;
+            final textRightInset = isCompact ? 138.0 : 160.0;
+
+            return Stack(
+              children: [
+                Positioned(
+                  left: 22,
+                  top: 26,
+                  right: textRightInset,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Choose Your\nHealth Support',
+                        maxLines: 2,
+                        style: textTheme.headlineSmall?.copyWith(
+                          fontSize: titleFontSize,
+                          height: 1.16,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.25,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Support, guidance, and trusted health resources.',
+                        maxLines: 2,
+                        style: textTheme.bodyMedium?.copyWith(
+                          fontSize: subtitleFontSize,
+                          height: 1.45,
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Positioned(
+                  top: imageTop,
+                  right: imageRight,
+                  width: imageWidth,
+                  height: 150,
+                  child: Image.asset(
+                    'assets/images/homepage.png',
+                    fit: BoxFit.contain,
+                    alignment: Alignment.centerRight,
+                    filterQuality: FilterQuality.high,
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -255,7 +314,12 @@ class _HomePageState extends State<HomePage> {
     ColorScheme colorScheme,
   ) {
     final isPressed = _pressedNavIndex == index;
-    const outerRadius = 22.0;
+    const outerRadius = 24.0;
+    final cardColor = isDark ? const Color(0xFF162033) : Colors.white;
+    final footerColor = isDark ? const Color(0xFF0F1928) : Colors.white;
+    final titleColor = isDark ? colorScheme.primary : const Color(0xFF0B5F82);
+    final fallbackBackground = isDark ? const Color(0xFF1B273A) : const Color(0xFFF2F7FF);
+    final fallbackIconColor = isDark ? colorScheme.primary.withOpacity(0.95) : const Color(0xFF0B6F95);
 
     return GestureDetector(
       onTap: () => data.onTap(context),
@@ -263,55 +327,73 @@ class _HomePageState extends State<HomePage> {
       onTapUp: (_) => setState(() => _pressedNavIndex = null),
       onTapCancel: () => setState(() => _pressedNavIndex = null),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 160),
-        curve: Curves.easeOut,
-        transform: Matrix4.identity()..scale(isPressed ? 0.97 : 1.0),
+        duration: const Duration(milliseconds: 170),
+        curve: Curves.easeOutCubic,
+        transform: Matrix4.identity()..scale(isPressed ? 0.975 : 1.0),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(outerRadius),
-          border: Border.all(color: colorScheme.outlineVariant),
-          color: isDark ? colorScheme.surface : Colors.white,
+          border: Border.all(
+            color: isDark
+                ? colorScheme.outlineVariant.withOpacity(0.28)
+                : const Color(0xFFE8EEF7),
+            width: 1,
+          ),
+          color: cardColor,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.10 : 0.045),
+              blurRadius: 16,
+              offset: const Offset(0, 7),
+            ),
+          ],
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(outerRadius),
           child: Column(
             children: [
               Expanded(
-                child: Padding(
-                  padding: EdgeInsets.zero,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
                   child: Image.asset(
                     data.image,
                     fit: BoxFit.contain,
                     errorBuilder: (context, error, stackTrace) {
                       return Container(
-                        color: colorScheme.surfaceVariant,
                         alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: fallbackBackground,
+                          borderRadius: BorderRadius.circular(18),
+                        ),
                         child: Icon(
                           data.icon,
                           size: 36,
-                          color: colorScheme.primary,
+                          color: fallbackIconColor,
                         ),
                       );
                     },
                   ),
                 ),
               ),
-              SizedBox(
-                height: 46,
-                child: Padding(
-                  padding: EdgeInsets.zero,
-                  child: Center(
-                    child: Text(
-                      data.title,
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: colorScheme.primary,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w900,
-                        height: 1.0,
-                      ),
-                    ),
+              Container(
+                height: 48,
+                width: double.infinity,
+                alignment: Alignment.center,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                decoration: BoxDecoration(
+                  color: footerColor,
+                ),
+                child: Text(
+                  data.title,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: titleColor,
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w700,
+                    height: 1.08,
+                    letterSpacing: -0.1,
                   ),
                 ),
               ),

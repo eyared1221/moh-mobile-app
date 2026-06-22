@@ -10,6 +10,7 @@ class AuthApiClient {
       : _httpClient = httpClient ?? http.Client();
 
   final http.Client _httpClient;
+  static const String _genericServerError = 'Something went wrong. Please try again.';
 
   static const String _configuredBaseUrl = String.fromEnvironment(
     'MOBILE_API_BASE_URL',
@@ -40,25 +41,61 @@ class AuthApiClient {
 
   Uri _uri(String path) => Uri.parse('$_baseUrl$path');
 
-  Future<Map<String, dynamic>> post(String path, Map<String, dynamic> body) async {
-    final response = await _httpClient.post(
-      _uri(path),
-      headers: const {'Content-Type': 'application/json'},
-      body: jsonEncode(body),
-    );
-
-    final payload = response.body.isEmpty
-        ? <String, dynamic>{}
-        : jsonDecode(response.body) as Map<String, dynamic>;
-
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      final error = payload['error'];
-      final message = error is Map<String, dynamic>
-          ? error['message'] as String? ?? 'Request failed'
-          : payload['message'] as String? ?? 'Request failed';
-      throw AuthApiException(message);
+  String _extractErrorMessage(Map<String, dynamic> payload, int statusCode) {
+    if (statusCode >= 500) {
+      return _genericServerError;
     }
 
-    return payload;
+    final error = payload['error'];
+    if (error is Map<String, dynamic>) {
+      final message = error['message'];
+      if (message is String && message.trim().isNotEmpty) {
+        return message;
+      }
+    }
+
+    if (error is String && error.trim().isNotEmpty) {
+      return error;
+    }
+
+    final message = payload['message'];
+    if (message is String && message.trim().isNotEmpty) {
+      return message;
+    }
+
+    return _genericServerError;
+  }
+
+  Future<Map<String, dynamic>> post(String path, Map<String, dynamic> body) async {
+    final uri = _uri(path);
+    print('DEBUG API: POST $uri');
+    print('DEBUG API: Body: $body');
+
+    try {
+      final response = await _httpClient.post(
+        uri,
+        headers: const {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
+
+      print('DEBUG API: Status code: ${response.statusCode}');
+      print('DEBUG API: Response body: ${response.body}');
+
+      final payload = response.body.isEmpty
+          ? <String, dynamic>{}
+          : jsonDecode(response.body) as Map<String, dynamic>;
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        final message = _extractErrorMessage(payload, response.statusCode);
+        print('DEBUG API: Error - $message');
+        throw AuthApiException(message);
+      }
+
+      return payload;
+    } catch (error) {
+      print('DEBUG API: Request failed with error: $error');
+      print('DEBUG API: Error type: ${error.runtimeType}');
+      rethrow;
+    }
   }
 }

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
 import '../../../../core/theme/theme_notifier.dart';
 import '../../../../shared/widgets/app_bottom_nav.dart';
 import '../../../auth/presentation/signin_screen.dart';
 import '../../../auth/presentation/auth_messages.dart';
 import '../../domain/entities/profile_user_entity.dart';
 import '../controllers/profile_controller.dart';
+import 'edit_profile_page.dart';
 import 'language_page.dart';
 import 'notifications_page.dart';
 import 'privacy_security_page.dart';
@@ -183,142 +183,60 @@ class _ProfilePageState extends State<ProfilePage> {
       );
   }
 
-  String? _validateAge(String? value) {
-    if (value == null || value.trim().isEmpty) return AuthMessages.ageRequired;
-    final age = int.tryParse(value.trim());
-    if (age == null) return AuthMessages.invalidAge;
-    if (age < 10) return AuthMessages.ageMin;
-    return null;
-  }
-
-  Future<void> _openEditProfileDialog() async {
-    final nameCtrl = TextEditingController(text: _profile.fullName);
-    final ageCtrl = TextEditingController(text: _profile.age.toString());
-    final formKey = GlobalKey<FormState>();
-
-    final updated = await showDialog<ProfileUserEntity>(
-      context: context,
-      barrierDismissible: true,
-      builder: (dialogContext) {
-        final theme = Theme.of(dialogContext);
-        final colorScheme = theme.colorScheme;
-        return Dialog(
-          elevation: 0,
-          backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-            decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: colorScheme.outlineVariant),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.18),
-                  blurRadius: 28,
-                  offset: const Offset(0, 14),
-                ),
-              ],
-            ),
-            child: Form(
-              key: formKey,
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'Edit Profile',
-                            style: theme.textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.w800,
-                                  color: colorScheme.primary,
-                                ),
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () => Navigator.pop(dialogContext),
-                          icon: const Icon(Icons.close_rounded),
-                        ),
-                      ],
-                    ),
-                    Text(
-                      'Update your details below.',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    _field(
-                      controller: nameCtrl,
-                      label: 'Full Name',
-                      icon: Icons.person_outline_rounded,
-                      validator: (value) =>
-                          value != null && value.trim().isNotEmpty ? null : AuthMessages.usernameRequired,
-                    ),
-                    const SizedBox(height: 10),
-                    _field(
-                      controller: ageCtrl,
-                      label: 'Age',
-                      keyboardType: TextInputType.number,
-                      icon: Icons.cake_outlined,
-                      validator: _validateAge,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(3),
-                        TextInputFormatter.withFunction((oldValue, newValue) {
-                          final text = newValue.text;
-                          if (text.isEmpty || !text.startsWith('0')) return newValue;
-                          return oldValue;
-                        }),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          if (!formKey.currentState!.validate()) {
-                            return;
-                          }
-
-                          final age = int.parse(ageCtrl.text.trim());
-                          Navigator.pop(
-                            dialogContext,
-                            _profile.copyWith(
-                              fullName: nameCtrl.text.trim(),
-                              age: age,
-                            ),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: colorScheme.primary,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                        child: const Text(
-                          'Save Changes',
-                          style: TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      },
+  Future<void> _openEditProfilePage() async {
+    final updated = await Navigator.push<ProfileUserEntity>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EditProfilePage(profile: _profile),
+      ),
     );
 
     if (updated != null) {
       await _saveProfile(updated);
     }
+  }
+
+  // Keeps hot-reload from calling a deleted method while the app state updates.
+  Future<void> _openEditProfileDialog() {
+    return _openEditProfilePage();
+  }
+
+  // Compatibility shim for stale hot-reload closures from the old edit dialog.
+  Widget _field({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+    List<TextInputFormatter>? inputFormatters,
+  }) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      validator: validator,
+      inputFormatters: inputFormatters,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon),
+        filled: true,
+        fillColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.45),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.primary,
+            width: 1.6,
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _openLanguagePage() async {
@@ -435,34 +353,74 @@ class _ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        centerTitle: true,
-        title: const Text('Profile'),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: TextButton.icon(
-              onPressed: () async {
-                final ok = await _confirmLogout();
-                if (!ok) return;
-                await _logout();
-              },
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.white,
-                backgroundColor: colorScheme.primary,
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+  centerTitle: true,
+  elevation: 0,
+  surfaceTintColor: Colors.transparent,
+  backgroundColor: theme.scaffoldBackgroundColor,
+  actions: [
+    PopupMenuButton<String>(
+      offset: const Offset(0, 50),
+
+      elevation: 4,
+
+      color: theme.cardColor,
+
+      surfaceTintColor: Colors.transparent,
+
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+      ),
+
+      onSelected: (value) async {
+        if (value == 'logout') {
+          final ok = await _confirmLogout();
+
+          if (!ok) return;
+
+          await _logout();
+        }
+      },
+
+      itemBuilder: (context) => [
+        PopupMenuItem<String>(
+          value: 'logout',
+
+          child: Row(
+            children: [
+              Icon(
+                Icons.logout_rounded,
+                color: colorScheme.primary,
+                size: 22,
+              ),
+
+              const SizedBox(width: 12),
+
+              Text(
+                'Log Out',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.primary,
                 ),
               ),
-              icon: const Icon(Icons.logout_rounded, size: 16),
-              label: const Text(
-                'Logout',
-                style: TextStyle(fontWeight: FontWeight.w700),
-              ),
-            ),
+            ],
           ),
-        ],
+        ),
+      ],
+
+      child: Padding(
+        padding: const EdgeInsets.only(
+          right: 14,
+          left: 4,
+        ),
+        child: Icon(
+          Icons.more_vert_rounded,
+          color: colorScheme.onSurface,
+          size: 27,
+        ),
       ),
+    ),
+  ],
+),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(18, 8, 18, 18),
         child: Column(
@@ -470,34 +428,14 @@ class _ProfilePageState extends State<ProfilePage> {
           children: [
             _profileHeader(context),
             const SizedBox(height: 18),
-            _actionTile(
-              context,
-              icon: Icons.person_2_outlined,
-              title: 'Edit Profile',
-              subtitle: 'Update identity & age',
-              accent: colorScheme.primary,
-              onTap: _openEditProfileDialog,
-            ),
-            const SizedBox(height: 12),
-            _actionTile(
-              context,
-              icon: Icons.notifications_none_rounded,
-              title: 'Notifications',
-              subtitle: 'Preferences & alerts',
-              accent: Colors.teal,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const NotificationsPage()),
-                );
-              },
-            ),
+            _primaryActionsSection(context),
             const SizedBox(height: 24),
             Text(
               'ACCOUNT SETTINGS',
               style: theme.textTheme.labelLarge?.copyWith(
-                letterSpacing: 1.3,
-                fontWeight: FontWeight.w700,
+                fontSize: 13,
+                letterSpacing: 0.8,
+                fontWeight: FontWeight.w600,
                 color: colorScheme.onSurfaceVariant,
               ),
             ),
@@ -547,8 +485,11 @@ class _ProfilePageState extends State<ProfilePage> {
           const SizedBox(height: 14),
           Text(
             _profile.fullName,
-            style: theme.textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.w800,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontSize: 24,
+              fontWeight: FontWeight.w500,
+              letterSpacing: 0,
+              color: colorScheme.primary,
             ),
           ),
         ],
@@ -606,7 +547,8 @@ Widget _actionTile(
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
                       color: colorScheme.onSurface,
                     ),
                   ),
@@ -616,8 +558,9 @@ Widget _actionTile(
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodyMedium?.copyWith(
+                      fontSize: 13.5,
                       color: colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                 ],
@@ -631,6 +574,111 @@ Widget _actionTile(
     ),
   );
 }
+
+  Widget _primaryActionsSection(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: colorScheme.outlineVariant),
+      ),
+      child: Column(
+        children: [
+          _primaryActionRow(
+            context,
+            icon: Icons.person_2_outlined,
+            title: 'Edit Profile',
+            subtitle: 'Identity • Age',
+            accent: colorScheme.primary,
+            onTap: _openEditProfilePage,
+          ),
+          _settingsDivider(colorScheme),
+          _primaryActionRow(
+            context,
+            icon: Icons.notifications_none_rounded,
+            title: 'Notifications',
+            subtitle: 'Preferences • Alerts',
+            accent: colorScheme.primary,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const NotificationsPage()),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _primaryActionRow(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color accent,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(22),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: accent.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: accent, size: 24),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w400,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded, color: colorScheme.outline),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _settingsSection(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -648,6 +696,7 @@ Widget _actionTile(
             context,
             icon: Icons.shield_outlined,
             title: 'Privacy & Security',
+            subtitle: 'Password • Privacy • Security',
             trailingText: null,
             onTap: () {
               Navigator.push(
@@ -661,27 +710,30 @@ Widget _actionTile(
               );
             },
           ),
-          Divider(height: 1, color: colorScheme.outlineVariant),
+          _settingsDivider(colorScheme),
           _settingsRow(
             context,
             icon: Icons.language_rounded,
             title: 'App Language',
+            subtitle: 'Language • Region • Preferences',
             trailingText: _profile.language,
             onTap: _openLanguagePage,
           ),
-          Divider(height: 1, color: colorScheme.outlineVariant),
+          _settingsDivider(colorScheme),
           _settingsRow(
             context,
             icon: Icons.palette_outlined,
             title: 'App Theme',
+            subtitle: 'Display • Appearance • Theme',
             trailingText: themeModeLabel(themeNotifier.value),
             onTap: _openThemeSettingsPage,
           ),
-          Divider(height: 1, color: colorScheme.outlineVariant),
+          _settingsDivider(colorScheme),
           _settingsRow(
             context,
             icon: Icons.help_outline_rounded,
             title: 'Support Center',
+            subtitle: 'Help • Contact • Support',
             trailingText: null,
             onTap: () {
               Navigator.push(
@@ -695,10 +747,22 @@ Widget _actionTile(
     );
   }
 
+  Widget _settingsDivider(ColorScheme colorScheme) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 16, right: 16),
+      child: Divider(
+        height: 1,
+        thickness: 1,
+        color: colorScheme.outlineVariant.withOpacity(0.75),
+      ),
+    );
+  }
+
   Widget _settingsRow(
     BuildContext context, {
     required IconData icon,
     required String title,
+    required String subtitle,
     required String? trailingText,
     required VoidCallback onTap,
   }) {
@@ -722,19 +786,41 @@ Widget _actionTile(
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(
-                title,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w400,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
               ),
             ),
             if (trailingText != null) ...[
               Text(
                 trailingText,
                 style: theme.textTheme.bodyMedium?.copyWith(
+                  fontSize: 13.5,
                   color: colorScheme.primary,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
               const SizedBox(width: 6),
@@ -746,37 +832,4 @@ Widget _actionTile(
     );
   }
 
-  Widget _field({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    TextInputType? keyboardType,
-    String? Function(String?)? validator,
-    List<TextInputFormatter>? inputFormatters,
-  }) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      validator: validator,
-      inputFormatters: inputFormatters,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon),
-        filled: true,
-        fillColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.45),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.6),
-        ),
-      ),
-    );
-  }
 }

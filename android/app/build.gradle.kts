@@ -3,8 +3,8 @@ import java.util.Properties
 plugins {
     id("com.android.application")
     id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    id("com.google.gms.google-services")
 }
 
 val localProperties = Properties().apply {
@@ -20,8 +20,9 @@ val mapsApiKey = localProperties.getProperty("MAPS_API_KEY")
 
 android {
     namespace = "com.example.health_minister_application"
-    compileSdk = flutter.compileSdkVersion
-    // fixed: use installed NDK
+
+    // Compatible with latest Android SDK
+    compileSdk = 36
 
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
@@ -35,10 +36,16 @@ android {
 
     defaultConfig {
         applicationId = "com.example.health_minister_application"
+
+        // Supports older Android phones from Android 6.0+
         minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+
+        // Good for modern Android / Play Store compatibility
+        targetSdk = 35
+
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
         manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
         resValue("string", "google_maps_api_key", mapsApiKey)
     }
@@ -50,11 +57,13 @@ android {
     }
 }
 
-
 flutter {
     source = "../.."
 }
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+
+    implementation(platform("com.google.firebase:firebase-bom:34.0.0"))
+    implementation("com.google.firebase:firebase-analytics")
 }

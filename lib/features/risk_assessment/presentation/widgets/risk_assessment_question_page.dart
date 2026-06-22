@@ -47,7 +47,7 @@ class RiskAssessmentQuestionPage extends StatelessWidget {
           _buildProgressHeader(progress),
           const SizedBox(height: 21),
           _buildQuestionCard(context),
-          const SizedBox(height: 21),
+          const SizedBox(height: 14),
           ...question.options.asMap().entries.map(
                 (entry) => _buildOptionTile(
                   context,
@@ -56,8 +56,8 @@ class RiskAssessmentQuestionPage extends StatelessWidget {
                   onTap: () => onSelectOption(entry.key),
                 ),
               ),
+          const SizedBox(height: 4),
           const SizedBox(height: 8),
-          const SizedBox(height: 12),
           Row(
             children: [
               _buildNavIconButton(
@@ -89,12 +89,19 @@ class RiskAssessmentQuestionPage extends StatelessWidget {
     required ColorScheme colorScheme,
     required bool filled,
   }) {
+    final isDark = colorScheme.brightness == Brightness.dark;
     final isDisabled = onTap == null;
     final backgroundColor = filled
-        ? (isDisabled ? colorScheme.primary.withOpacity(0.4) : colorScheme.primary)
+        ? (isDisabled
+            ? colorScheme.primary.withOpacity(isDark ? 0.52 : 0.4)
+            : colorScheme.primary)
         : colorScheme.surface;
     final foregroundColor = filled
-        ? colorScheme.onPrimary
+        ? (isDisabled
+            ? (isDark
+                ? Colors.white.withOpacity(0.82)
+                : colorScheme.onPrimary.withOpacity(0.8))
+            : colorScheme.onPrimary)
         : isDisabled
             ? colorScheme.outline
             : colorScheme.onSurface;
@@ -268,13 +275,13 @@ class RiskAssessmentQuestionPage extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 22),
+      padding: const EdgeInsets.only(bottom: 12),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
           decoration: BoxDecoration(
             color: isSelected
                 ? colorScheme.primary.withOpacity(0.12)
