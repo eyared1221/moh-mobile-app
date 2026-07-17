@@ -34,7 +34,13 @@ class _SignInScreenState extends State<SignInScreen> {
   }
 
   String? _validateContact(String? value) {
-    return ContactValidation.validate(value);
+    if (value == null || value.trim().isEmpty) {
+      return AuthMessages.emailRequired;
+    }
+
+    return ContactValidation.isValidEmail(value)
+        ? null
+        : AuthMessages.invalidEmail;
   }
 
   // Simulate a network request
@@ -183,7 +189,7 @@ class _SignInScreenState extends State<SignInScreen> {
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
                       style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-                      decoration: _modernInput('Email or Phone Number', Icons.contact_mail, context),
+                      decoration: _modernInput('Email', Icons.contact_mail, context),
                       validator: _validateContact,
                     ),
                     const SizedBox(height: 20),

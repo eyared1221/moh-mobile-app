@@ -53,7 +53,7 @@ class MinistrySection extends StatelessWidget {
           const SizedBox(height: 18),
 
           Text(
-            "yegnaHealth is developed and managed by the Ethiopian Ministry of Health to provide safe, accurate, and youth-friendly information. "
+            "Wise Youth is developed and managed by the Ethiopian Ministry of Health to provide safe, accurate, and youth-friendly information. "
             "Our mission is to empower young people (10–24) with trusted knowledge, privacy, and direct access to essential health services.",
             textAlign: TextAlign.center,
             style: TextStyle(

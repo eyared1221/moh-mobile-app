@@ -4,7 +4,6 @@ import 'responsive_helper.dart';
 /// Responsive spacing utilities for consistent spacing across the app.
 /// Based on Material Design 3 spacing scale (4, 8, 12, 16, 24, 32, 48, 64, 96).
 class ResponsiveSpacing {
-  /// Base spacing scale
   static const double xs = 4;
   static const double sm = 8;
   static const double md = 12;

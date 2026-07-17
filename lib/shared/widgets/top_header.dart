@@ -50,7 +50,7 @@ class TopHeader extends StatelessWidget {
           fit: BoxFit.contain,
         ),
         const SizedBox(width: 10),
-        Text('yegna Health', style: titleStyle),
+        Text('Wise Youth', style: titleStyle),
         const Spacer(),
         if (showThemeToggle)
           ValueListenableBuilder<ThemeMode>(

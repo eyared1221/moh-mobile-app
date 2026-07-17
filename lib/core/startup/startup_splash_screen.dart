@@ -15,10 +15,7 @@ class StartupSplashScreen extends StatefulWidget {
 }
 
 class _StartupSplashScreenState extends State<StartupSplashScreen> {
-  static const String _lightLaunchAsset =
-      'android/app/src/main/res/drawable-nodpi/native_launch_light.png';
-  static const String _darkLaunchAsset =
-      'android/app/src/main/res/drawable-nodpi/native_launch_dark.png';
+  static const String _startupLogoAsset = 'assets/images/logo.png';
 
   @override
   void initState() {
@@ -38,10 +35,20 @@ class _StartupSplashScreenState extends State<StartupSplashScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: SizedBox.expand(
-        child: Image.asset(
-          isDark ? _darkLaunchAsset : _lightLaunchAsset,
-          fit: BoxFit.cover,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Image.asset(
+            _startupLogoAsset,
+            height: isDark ? 190 : 190,
+            errorBuilder: (context, error, stackTrace) {
+              return Icon(
+                Icons.health_and_safety,
+                size: 96,
+                color: isDark ? Colors.white70 : const Color(0xFF005C8F),
+              );
+            },
+          ),
         ),
       ),
     );

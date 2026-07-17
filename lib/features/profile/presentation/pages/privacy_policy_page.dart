@@ -22,11 +22,6 @@ class PrivacyPolicyPage extends StatelessWidget {
       body: 'Your data helps provide guidance, reminders, security, and app improvements.',
       ),
     _PolicyItem(
-      icon: Icons.verified_user_outlined,
-      title: 'Your Rights',
-      body: 'You can access, update, or request deletion of your account data.', 
-      ),
-    _PolicyItem(
       icon: Icons.lock_outline_rounded,
       title: 'Data Protection & Security',
       body: 'We use secure systems and encryption to protect your information.',

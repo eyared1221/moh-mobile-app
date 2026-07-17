@@ -24,7 +24,7 @@ class WhyYegnaSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Why Young People Love Yegna Health",
+            "Why Young People Love Wise Youth",
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w800,

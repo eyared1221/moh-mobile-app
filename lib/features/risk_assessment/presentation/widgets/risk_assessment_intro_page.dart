@@ -1,4 +1,8 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+
+import '../../../profile/presentation/pages/privacy_policy_page.dart';
+import '../../../profile/presentation/pages/terms_conditions_page.dart';
 
 class RiskAssessmentIntroPage extends StatefulWidget {
   final ColorScheme colorScheme;
@@ -21,6 +25,22 @@ class RiskAssessmentIntroPage extends StatefulWidget {
 
 class _RiskAssessmentIntroPageState extends State<RiskAssessmentIntroPage> {
   bool _hasAcceptedDisclaimer = false;
+  late final TapGestureRecognizer _termsRecognizer;
+  late final TapGestureRecognizer _privacyRecognizer;
+
+  @override
+  void initState() {
+    super.initState();
+    _termsRecognizer = TapGestureRecognizer()..onTap = _openTermsAndConditions;
+    _privacyRecognizer = TapGestureRecognizer()..onTap = _openPrivacyPolicy;
+  }
+
+  @override
+  void dispose() {
+    _termsRecognizer.dispose();
+    _privacyRecognizer.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -123,9 +143,9 @@ class _RiskAssessmentIntroPageState extends State<RiskAssessmentIntroPage> {
                               children: [
                                 const TextSpan(
                                   text:
-                                      'By sharing your responses, the app can provide more relevant support. Review how your data is handled in the ',
+                                      'By sharing your responses, the app can provide more relevant support. All your information provided on this application is ',
                                 ),
-                                _accentSpan('privacy policy.', colorScheme),
+                                _accentSpan('private and confidential.', colorScheme),
                               ],
                             ),
                           ),
@@ -360,6 +380,7 @@ class _RiskAssessmentIntroPageState extends State<RiskAssessmentIntroPage> {
                       decoration: TextDecoration.underline,
                       fontWeight: FontWeight.w600,
                     ),
+                    recognizer: _termsRecognizer,
                   ),
                   const TextSpan(text: ' and '),
                   TextSpan(
@@ -369,6 +390,7 @@ class _RiskAssessmentIntroPageState extends State<RiskAssessmentIntroPage> {
                       decoration: TextDecoration.underline,
                       fontWeight: FontWeight.w600,
                     ),
+                    recognizer: _privacyRecognizer,
                   ),
                 ],
               ),
@@ -415,6 +437,24 @@ class _RiskAssessmentIntroPageState extends State<RiskAssessmentIntroPage> {
                     : disabledForeground,
               ),
         ),
+      ),
+    );
+  }
+
+  void _openTermsAndConditions() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const TermsConditionsPage(),
+      ),
+    );
+  }
+
+  void _openPrivacyPolicy() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const PrivacyPolicyPage(),
       ),
     );
   }

@@ -5,8 +5,11 @@ import 'package:flutter/services.dart';
 
 import '../../../core/constants.dart';
 import '../../../shared/widgets/faq_section.dart';
-import '../../../shared/widgets/guest_bottom_nav.dart';
 import '../../auth/presentation/signin_screen.dart';
+import '../../learning/presentation/pages/learning_module_page.dart';
+import '../../mentor/presentation/pages/mentor_page.dart';
+import '../../risk_assessment/presentation/pages/risk_assessment_page.dart';
+import '../../services/presentation/pages/clinic_page.dart';
 
 class GuestPage extends StatefulWidget {
   const GuestPage({super.key});
@@ -86,6 +89,7 @@ class _GuestPageState extends State<GuestPage>
                   start: 0.0,
                   child: _GuestHeader(
                     isDark: isDark,
+                    onSignIn: _openSignIn,
                   ),
                 ),
                 const SizedBox(height: 18),
@@ -99,10 +103,10 @@ class _GuestPageState extends State<GuestPage>
                   controller: _controller,
                   start: 0.22,
                   child: _FeatureGrid(
-                    onRiskAssessment: _openSignIn,
-                    onLearn: _openSignIn,
-                    onFindClinic: _openSignIn,
-                    onPeerMentor: _openSignIn,
+                    onRiskAssessment: _openRiskAssessment,
+                    onLearn: _openLearningModules,
+                    onFindClinic: _openClinicPage,
+                    onPeerMentor: _openMentorPage,
                   ),
                 ),
                 const SizedBox(height: 18),
@@ -111,9 +115,7 @@ class _GuestPageState extends State<GuestPage>
                   start: 0.34,
                   child: _SectionHeader(
                     key: _healthInfoKey,
-                    title: 'Health Information',
-                    actionLabel: 'View all',
-                    onTap: _openSignIn,
+                    title: 'Explore about SRH',
                     isDark: isDark,
                   ),
                 ),
@@ -154,7 +156,6 @@ class _GuestPageState extends State<GuestPage>
             ),
           ),
         ),
-        bottomNavigationBar: const GuestBottomNav(),
       ),
     );
   }
@@ -163,6 +164,48 @@ class _GuestPageState extends State<GuestPage>
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const SignInScreen()),
+    );
+  }
+
+  void _openRiskAssessment() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const RiskAssessmentPage(
+          age: '',
+        ),
+      ),
+    );
+  }
+
+  void _openLearningModules() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const LearningModulesPage(
+          age: '',
+        ),
+      ),
+    );
+  }
+
+  void _openClinicPage() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const ClinicPage(
+          age: '',
+        ),
+      ),
+    );
+  }
+
+  void _openMentorPage() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const MentorPage(),
+      ),
     );
   }
 
@@ -235,64 +278,54 @@ class _AnimatedReveal extends StatelessWidget {
 
 class _GuestHeader extends StatelessWidget {
   final bool isDark;
+  final VoidCallback onSignIn;
 
   const _GuestHeader({
     required this.isDark,
+    required this.onSignIn,
   });
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Container(
-          width: 46,
-          height: 46,
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF161D2C) : Colors.white,
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
-            ),
-            boxShadow: isDark
-                ? null
-                : [
-                    BoxShadow(
-                      color: const Color(0xFF123A59).withOpacity(0.06),
-                      blurRadius: 18,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(7),
-            child: Image.asset(
-              'assets/images/logo.png',
-              fit: BoxFit.cover,
-              alignment: Alignment.topCenter,
-            ),
+        SizedBox(
+          width: 72,
+          height: 72,
+          child: Image.asset(
+            'assets/images/logo.png',
+            fit: BoxFit.contain,
+            alignment: Alignment.center,
           ),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        const Spacer(),
+        TextButton(
+          onPressed: onSignIn,
+          style: TextButton.styleFrom(
+            foregroundColor: Colors.white,
+            backgroundColor: const Color(0xFF0F6897),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+            elevation: 0,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Yegna Health',
+                'Get Started',
                 style: TextStyle(
-                  color: isDark ? Colors.white : const Color(0xFF16324C),
-                  fontSize: 20,
+                  color: Colors.white,
+                  fontSize: 14,
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              const SizedBox(height: 2),
-              Text(
-                'Together for Better Health',
-                style: TextStyle(
-                  color: isDark ? Colors.white70 : const Color(0xFF6C7C8F),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
+              const SizedBox(width: 4),
+              Icon(
+                Icons.arrow_forward_rounded,
+                size: 16,
+                color: Colors.white,
               ),
             ],
           ),
@@ -315,7 +348,7 @@ class _GreetingBlock extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Welcome to Yegna Health',
+          'Welcome to Wise Youth',
           style: TextStyle(
             color: isDark ? Colors.white : const Color(0xFF16324C),
             fontSize: 28,
@@ -325,7 +358,7 @@ class _GreetingBlock extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          'What would you like to do today?',
+          'This mobile application empowers you to conduct self-assessment, learn about your sexual and reproductive health and link you to experienced professionals and compassionate counselors to get service. Use this opportunity and get empowered.',
           style: TextStyle(
             color: isDark ? Colors.white70 : const Color(0xFF73849A),
             fontSize: 14,
@@ -363,26 +396,26 @@ class _FeatureGrid extends StatelessWidget {
             SizedBox(
               width: cardWidth,
               child: _FeatureCard(
-                icon: Icons.assignment_rounded,
-                title: 'Self Check',
-                description: 'Check your health and get guidance',
+                imagePath: 'assets/images/assesment.png',
+                title: 'Self-Assessment',
+                description: 'assess your exposure status and get guidance for appropriate action',
                 onTap: onRiskAssessment,
               ),
             ),
             SizedBox(
               width: cardWidth,
               child: _FeatureCard(
-                icon: Icons.menu_book_rounded,
+                imagePath: 'assets/images/modules.png',
                 title: 'Learn',
-                description: 'Explore health topics and resources',
+                description: 'Explore the details of Sexual and Reproductive Health',
                 onTap: onLearn,
               ),
             ),
             SizedBox(
               width: cardWidth,
               child: _FeatureCard(
-                icon: Icons.local_hospital_rounded,
-                title: 'Find Clinic',
+                imagePath: 'assets/images/clinic.png',
+                title: 'Find Heath Facilities',
                 description: 'Locate nearby health facilities',
                 onTap: onFindClinic,
               ),
@@ -390,7 +423,7 @@ class _FeatureGrid extends StatelessWidget {
             SizedBox(
               width: cardWidth,
               child: _FeatureCard(
-                icon: Icons.groups_rounded,
+                imagePath: 'assets/images/getmentor.png',
                 title: 'Peer Mentor',
                 description: 'Connect with mentors for support',
                 onTap: onPeerMentor,
@@ -404,13 +437,13 @@ class _FeatureGrid extends StatelessWidget {
 }
 
 class _FeatureCard extends StatelessWidget {
-  final IconData icon;
+  final String imagePath;
   final String title;
   final String description;
   final VoidCallback onTap;
 
   const _FeatureCard({
-    required this.icon,
+    required this.imagePath,
     required this.title,
     required this.description,
     required this.onTap,
@@ -453,19 +486,12 @@ class _FeatureCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Center(
-                      child: Container(
-                        width: isCompact ? 44 : 48,
-                        height: isCompact ? 44 : 48,
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? kPrimary.withOpacity(0.16)
-                              : const Color(0xFFF1F7FD),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Icon(
-                          icon,
-                          size: isCompact ? 24 : 26,
-                          color: const Color(0xFF1764B1),
+                      child: SizedBox(
+                        width: isCompact ? 62 : 68,
+                        height: isCompact ? 62 : 68,
+                        child: Image.asset(
+                          imagePath,
+                          fit: BoxFit.contain,
                         ),
                       ),
                     ),

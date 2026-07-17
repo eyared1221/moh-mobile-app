@@ -130,18 +130,10 @@ class BlueCard extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Yegna Health',
+                                'Wise Youth',
                                 style: theme.textTheme.titleLarge?.copyWith(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w900,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Together for Better Health',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: Colors.white70,
-                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ],

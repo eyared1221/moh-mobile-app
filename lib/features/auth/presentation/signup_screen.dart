@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'signin_screen.dart';
@@ -7,6 +8,8 @@ import 'auth_error_handler.dart';
 import 'auth_messages.dart';
 import 'password_validator.dart';
 import 'contact_validation.dart';
+import '../../profile/presentation/pages/privacy_policy_page.dart';
+import '../../profile/presentation/pages/terms_conditions_page.dart';
 import '../data/auth_models.dart';
 import 'controllers/auth_controller.dart';
 
@@ -24,6 +27,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   // Controllers
   final _contactCtrl = TextEditingController();
   final _usernameCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
   final _ageCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
@@ -31,12 +35,25 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
   bool _isLoading = false;
+  bool _hasAcceptedTerms = false;
   final AuthController _authController = AuthController.standard();
+  late final TapGestureRecognizer _termsRecognizer;
+  late final TapGestureRecognizer _privacyRecognizer;
+
+  @override
+  void initState() {
+    super.initState();
+    _termsRecognizer = TapGestureRecognizer()..onTap = _openTermsAndConditions;
+    _privacyRecognizer = TapGestureRecognizer()..onTap = _openPrivacyPolicy;
+  }
 
   @override
   void dispose() {
+    _termsRecognizer.dispose();
+    _privacyRecognizer.dispose();
     _contactCtrl.dispose();
     _usernameCtrl.dispose();
+    _phoneCtrl.dispose();
     _ageCtrl.dispose();
     _passwordCtrl.dispose();
     _confirmCtrl.dispose();
@@ -44,7 +61,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   String? _validateContact(String? value) {
-    return ContactValidation.validate(value);
+    if (value == null || value.trim().isEmpty) {
+      return AuthMessages.emailRequired;
+    }
+
+    return ContactValidation.isValidEmail(value)
+        ? null
+        : AuthMessages.invalidEmail;
   }
 
   String? _validateAge(String? value) {
@@ -55,7 +78,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
     return null;
   }
 
+  String? _validatePhone(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return AuthMessages.phoneRequired;
+    }
+
+    return ContactValidation.isValidPhone(value)
+        ? null
+        : AuthMessages.invalidPhone;
+  }
+
   Future<void> _handleSignUp() async {
+    if (!_hasAcceptedTerms) return;
     if (!_formKey.currentState!.validate()) return;
 
     FocusScope.of(context).unfocus();
@@ -63,8 +97,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     try {
       final result = await _authController.register(
-        contact: _contactCtrl.text.trim(),
+        email: _contactCtrl.text.trim(),
         username: _usernameCtrl.text.trim(),
+        phone: _phoneCtrl.text.trim(),
         age: int.parse(_ageCtrl.text.trim()),
         password: _passwordCtrl.text,
       );
@@ -98,6 +133,24 @@ class _SignUpScreenState extends State<SignUpScreen> {
         message: AuthErrorHandler.getMessage(error),
       );
     }
+  }
+
+  void _openTermsAndConditions() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const TermsConditionsPage(),
+      ),
+    );
+  }
+
+  void _openPrivacyPolicy() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const PrivacyPolicyPage(),
+      ),
+    );
   }
 
   void _changeAge(int delta) {
@@ -151,6 +204,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = const Color(0xFF005C8F);
+    final canCreateAccount = _hasAcceptedTerms && !_isLoading;
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
@@ -200,7 +254,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
                     style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-                    decoration: _buildInputDecoration('Enter your email or phone number', Icons.contact_mail_outlined, context),
+                    decoration: _buildInputDecoration('Enter your email', Icons.contact_mail_outlined, context),
                     validator: _validateContact,
                   ),
                   const SizedBox(height: 16),
@@ -212,6 +266,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     style: TextStyle(color: isDark ? Colors.white : Colors.black87),
                     decoration: _buildInputDecoration('Enter a username', Icons.person_outline_rounded, context),
                     validator: (v) => v != null && v.trim().isNotEmpty ? null : AuthMessages.usernameRequired,
+                  ),
+                  const SizedBox(height: 16),
+
+                  TextFormField(
+                    controller: _phoneCtrl,
+                    keyboardType: TextInputType.phone,
+                    textInputAction: TextInputAction.next,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(10),
+                    ],
+                    style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+                    decoration: _buildInputDecoration('Enter your phone number', Icons.phone_outlined, context),
+                    validator: _validatePhone,
                   ),
                   const SizedBox(height: 16),
 
@@ -295,24 +363,75 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                   const SizedBox(height: 32),
 
-                  Text.rich(
-                    TextSpan(
-                      text: 'By continuing, you agree to our ',
-                      style: TextStyle(
-                        fontSize: 13.5,
-                        color: isDark ? Colors.grey[400] : Colors.grey[600],
-                      ),
+                  Container(
+                    padding: const EdgeInsets.fromLTRB(8, 2, 8, 0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        TextSpan(
-                          text: 'Terms and conditions',
-                          style: TextStyle(
-                            color: primaryColor,
-                            fontWeight: FontWeight.w600,
+                        Padding(
+                          padding: const EdgeInsets.only(top: 3),
+                          child: SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: Checkbox(
+                              value: _hasAcceptedTerms,
+                              onChanged: (value) {
+                                setState(() {
+                                  _hasAcceptedTerms = value ?? false;
+                                });
+                              },
+                              activeColor: primaryColor,
+                              side: BorderSide(color: primaryColor, width: 1.4),
+                              materialTapTargetSize:
+                                  MaterialTapTargetSize.shrinkWrap,
+                              visualDensity: const VisualDensity(
+                                horizontal: -4,
+                                vertical: -4,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text.rich(
+                            TextSpan(
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: isDark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[700],
+                                height: 1.45,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              children: [
+                                const TextSpan(
+                                  text: 'I have read and agree to the ',
+                                ),
+                                TextSpan(
+                                  text: 'Terms and Conditions',
+                                  style: TextStyle(
+                                    color: primaryColor,
+                                    decoration: TextDecoration.underline,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  recognizer: _termsRecognizer,
+                                ),
+                                const TextSpan(text: ' and '),
+                                TextSpan(
+                                  text: 'Privacy Policy.',
+                                  style: TextStyle(
+                                    color: primaryColor,
+                                    decoration: TextDecoration.underline,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  recognizer: _privacyRecognizer,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],
                     ),
-                    textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
 
@@ -325,9 +444,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         foregroundColor: Colors.white,
                         elevation: 4,
                         shadowColor: primaryColor.withOpacity(0.4),
+                        disabledBackgroundColor: primaryColor.withOpacity(0.48),
+                        disabledForegroundColor: Colors.white.withOpacity(0.78),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       ),
-                      onPressed: _isLoading ? null : _handleSignUp,
+                      onPressed: canCreateAccount ? _handleSignUp : null,
                       child: _isLoading 
                         ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                         : const Text('Create Account', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),

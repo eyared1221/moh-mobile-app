@@ -270,18 +270,6 @@ class RiskAssessmentResultPage extends StatelessWidget {
                   height: 1.45,
                 ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Talk to a counselor or peer mentor.',
-            style: textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.primary,
-                  fontWeight: FontWeight.w700,
-                ) ??
-                TextStyle(
-                  color: colorScheme.primary,
-                  fontWeight: FontWeight.w700,
-                ),
-          ),
         ],
       ),
     );

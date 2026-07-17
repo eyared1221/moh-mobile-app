@@ -24,14 +24,16 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<RegisterResultEntity> register({
-    required String contact,
+    required String email,
     required String username,
+    required String phone,
     required int age,
     required String password,
   }) {
     return _remoteDataSource.register(
-      contact: contact,
+      email: email,
       username: username,
+      phone: phone,
       age: age,
       password: password,
     );

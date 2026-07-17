@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'breakpoints.dart';
 
-/// Helper class for responsive utilities including device detection,
-/// screen dimensions, and orientation checks.
+/// Detects device & provides screen info
 class ResponsiveHelper {
   /// Get screen width
   static double width(BuildContext context) {

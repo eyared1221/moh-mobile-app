@@ -130,7 +130,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               children: [
                 const SizedBox(height: 10),
                 Text(
-                  'Manage your account details and the health profile used across Yegna Health.',
+                  'Manage your account details and the health profile used across Wise Youth.',
                   style: theme.textTheme.bodyLarge?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                     height: 1.45,

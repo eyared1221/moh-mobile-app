@@ -19,7 +19,9 @@ class AuthMessages {
 
   // Form validation
   static const String emailOrPhoneRequired = 'Email or phone is required';
+  static const String emailRequired = 'Email is required';
   static const String invalidEmail = 'Enter a valid email address';
+  static const String phoneRequired = 'Phone number is required';
   static const String invalidPhone = 'Phone number must be 10 digits and start with 09 or 07';
   static const String usernameRequired = 'Username is required';
   static const String passwordRequired = 'Password is required';

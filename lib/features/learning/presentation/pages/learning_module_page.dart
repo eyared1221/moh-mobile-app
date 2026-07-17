@@ -12,6 +12,7 @@ import '../../domain/usecases/get_learning_modules_use_case.dart';
 import '../controllers/learning_modules_controller.dart';
 import '../widgets/learning_module_card.dart';
 import 'learning_module_detail_page.dart';
+import 'learning_module_quiz_page.dart';
 
 class LearningModulesPage extends StatefulWidget {
   final String age;
@@ -115,12 +116,12 @@ class _LearningModulesPageState extends State<LearningModulesPage> {
   Future<void> _retryLoadingModules() async {
     await _refreshLearningModules(showLoading: true);
     if (_pageController.hasClients && _learningModules.isNotEmpty) {
-      final nextIndex = _currentIndex.clamp(0, _learningModules.length - 1) as int;
+      final nextIndex =
+          _currentIndex.clamp(0, _learningModules.length - 1) as int;
       _pageController.jumpToPage(nextIndex);
     }
   }
 
-  
   void _goNext() {
     if (_currentIndex < _learningModules.length - 1) {
       _pageController.nextPage(
@@ -247,7 +248,6 @@ class _LearningModulesPageState extends State<LearningModulesPage> {
 
     final currentModule = _learningModules[_currentIndex];
     final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -282,7 +282,47 @@ class _LearningModulesPageState extends State<LearningModulesPage> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => LearningModuleDetailPage(module: module),
+                            builder: (_) =>
+                                LearningModuleDetailPage(module: module),
+                          ),
+                        );
+                      },
+                      onTakeQuizTap: () {
+                        final normalizedTitle = module.title.toLowerCase();
+                        final hasQuiz = normalizedTitle.contains('hiv') ||
+                            normalizedTitle.contains('sti') ||
+                            normalizedTitle.contains('sexually transmitted') ||
+                            normalizedTitle.contains('hepatitis') ||
+                            normalizedTitle.contains('hbv') ||
+                            normalizedTitle.contains('gbv') ||
+                            normalizedTitle.contains('gender-based') ||
+                            normalizedTitle.contains('gender based') ||
+                            normalizedTitle.contains('violence') ||
+                            normalizedTitle.contains('srh') ||
+                            normalizedTitle.contains('sexual and reproductive') ||
+                            normalizedTitle.contains('substance') ||
+                            normalizedTitle.contains('abuse') ||
+                            normalizedTitle.contains('alcohol') ||
+                            normalizedTitle.contains('drug');
+                        if (!hasQuiz) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Quiz for this module is coming soon.',
+                              ),
+                            ),
+                          );
+                          return;
+                        }
+
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => LearningModuleQuizPage(
+                              age: widget.age,
+                              userName: widget.userName,
+                              moduleTitle: module.title,
+                            ),
                           ),
                         );
                       },
@@ -313,7 +353,9 @@ class _LearningModulesPageState extends State<LearningModulesPage> {
                         _learningModules.length,
                         (index) => AnimatedContainer(
                           duration: const Duration(milliseconds: 220),
-                          margin: EdgeInsets.symmetric(horizontal: ResponsiveSpacing.xsSpacing(context)),
+                          margin: EdgeInsets.symmetric(
+                            horizontal: ResponsiveSpacing.xsSpacing(context),
+                          ),
                           width: _currentIndex == index ? 22 : 8,
                           height: 8,
                           decoration: BoxDecoration(
@@ -338,9 +380,11 @@ class _LearningModulesPageState extends State<LearningModulesPage> {
             ),
 
             Padding(
-              padding: EdgeInsets.only(bottom: ResponsiveSpacing.xsSpacing(context)),
+              padding: EdgeInsets.only(
+                bottom: ResponsiveSpacing.xsSpacing(context),
+              ),
               child: Text(
-                '${_currentIndex + 1} / ${_learningModules.length}  •  ${currentModule.title}',
+                '${_currentIndex + 1} / ${_learningModules.length}  |  ${currentModule.title}',
                 textAlign: TextAlign.center,
                 style: ResponsiveText.bodyStyle(
                   context,
@@ -382,12 +426,16 @@ class _NavCircleButton extends StatelessWidget {
         width: 44,
         height: 44,
         decoration: BoxDecoration(
-          color: isDisabled ? colorScheme.surfaceVariant : colorScheme.primary,
+          color: isDisabled
+              ? colorScheme.surfaceVariant
+              : colorScheme.primary,
           shape: BoxShape.circle,
         ),
         child: Icon(
           icon,
-          color: isDisabled ? colorScheme.onSurfaceVariant : colorScheme.onPrimary,
+          color: isDisabled
+              ? colorScheme.onSurfaceVariant
+              : colorScheme.onPrimary,
           size: 18,
         ),
       ),

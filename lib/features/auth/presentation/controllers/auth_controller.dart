@@ -54,14 +54,16 @@ class AuthController {
   final ChangePasswordUseCase _changePasswordUseCase;
 
   Future<RegisterResultEntity> register({
-    required String contact,
+    required String email,
     required String username,
+    required String phone,
     required int age,
     required String password,
   }) {
     return _registerUseCase(
-      contact: contact,
+      email: email,
       username: username,
+      phone: phone,
       age: age,
       password: password,
     );

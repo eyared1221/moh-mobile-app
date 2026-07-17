@@ -1,11 +1,13 @@
 {
-    "name": "health_minister_application",
-    "short_name": "health_minister_application",
+    "name": "Yegna Health",
+    "short_name": "Yegna",
+    "id": ".",
     "start_url": ".",
+    "scope": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Trusted youth-friendly health guidance and services from the Ministry of Health.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

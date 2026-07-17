@@ -4,7 +4,6 @@ import 'responsive_helper.dart';
 /// Responsive typography utilities for consistent text sizing across the app.
 /// Based on Material Design 3 typography scale.
 class ResponsiveText {
-  /// Base font size scale
   static const double displayLarge = 57;
   static const double displayMedium = 45;
   static const double displaySmall = 36;

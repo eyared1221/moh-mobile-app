@@ -8,14 +8,16 @@ class AuthRemoteDataSource {
   final AuthApiClient _apiClient;
 
   Future<RegisterResult> register({
-    required String contact,
+    required String email,
     required String username,
+    required String phone,
     required int age,
     required String password,
   }) async {
     final payload = await _apiClient.post('/register', {
-      'contact': contact,
+      'email': email,
       'username': username,
+      'phone': phone,
       'age': age,
       'password': password,
     });

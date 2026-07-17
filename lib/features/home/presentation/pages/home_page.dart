@@ -196,8 +196,8 @@ class _HomePageState extends State<HomePage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Choose Your\nHealth Support',
-                        maxLines: 2,
+                        'Choose Your Sexual and Reproductive Support',
+                        maxLines: 3,
                         style: textTheme.headlineSmall?.copyWith(
                           fontSize: titleFontSize,
                           height: 1.16,
@@ -208,7 +208,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        'Support, guidance, and trusted health resources.',
+                        'Empowerment, guidance, support and trusted learning resources',
                         maxLines: 2,
                         style: textTheme.bodyMedium?.copyWith(
                           fontSize: subtitleFontSize,
@@ -243,7 +243,7 @@ class _HomePageState extends State<HomePage> {
   List<_HomeNavCardData> _buildNavCards() {
     return [
       _HomeNavCardData(
-        title: 'Risk Assessment',
+        title: 'Self-Assessment',
         image: 'assets/images/assesment.png',
         icon: Icons.fact_check_outlined,
         onTap: (context) {

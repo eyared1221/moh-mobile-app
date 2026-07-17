@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'verify_reset_code_screen.dart';
 import 'auth_success_dialog.dart';
 import 'auth_error_handler.dart';
+import 'auth_messages.dart';
+import 'contact_validation.dart';
 import '../data/auth_models.dart';
 import 'controllers/auth_controller.dart';
 
@@ -26,13 +28,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     super.dispose();
   }
 
-  bool _isValidEmail(String value) {
-    return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(value);
-  }
+  String? _validateEmail(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return AuthMessages.emailRequired;
+    }
 
-  bool _isValidPhone(String value) {
-    final digits = value.replaceAll(RegExp(r'[^0-9]'), '');
-    return RegExp(r'^(09|07)\d{8}$').hasMatch(digits);
+    return ContactValidation.isValidEmail(value)
+        ? null
+        : AuthMessages.invalidEmail;
   }
 
   InputDecoration _buildInputDecoration(String label, IconData icon, BuildContext context) {
@@ -169,7 +172,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'Enter your email or phone number and we will generate a password reset code.',
+                    'Enter your email and we will generate a password reset code.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,
@@ -182,16 +185,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.done,
                     style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-                    decoration: _buildInputDecoration('Enter your email or phone number', Icons.contact_mail_outlined, context),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) return 'Email or phone is required';
-                      final contact = value.trim();
-                      if (contact.contains('@')) {
-                        return _isValidEmail(contact) ? null : 'Enter a valid email address';
-                      }
-                      if (_isValidPhone(contact)) return null;
-                      return 'Enter a valid email or a 10-digit phone number starting with 09 or 07';
-                    },
+                    decoration: _buildInputDecoration('Enter your email', Icons.contact_mail_outlined, context),
+                    validator: _validateEmail,
                     onFieldSubmitted: (_) => _isLoading ? null : _handleReset(),
                   ),
                   const SizedBox(height: 20),

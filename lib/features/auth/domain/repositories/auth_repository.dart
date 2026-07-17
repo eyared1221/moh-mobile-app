@@ -4,8 +4,9 @@ import '../entities/register_result_entity.dart';
 
 abstract class AuthRepository {
   Future<RegisterResultEntity> register({
-    required String contact,
+    required String email,
     required String username,
+    required String phone,
     required int age,
     required String password,
   });

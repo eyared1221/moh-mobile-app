@@ -83,13 +83,37 @@ class _LandingScreenState extends State<LandingScreen> {
     _autoSlideTimer = null;
   }
 
-  Future<void> _handleGetStarted() async {
+  Future<void> _completeOnboarding() async {
     await _startupService.markOnboardingCompleted();
     if (!mounted) return;
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (_) => const GuestPage()),
     );
+  }
+
+  Future<void> _handleSkip() async {
+    _stopAutoSlide();
+    await _completeOnboarding();
+  }
+
+  Future<void> _handleNext() async {
+    _stopAutoSlide();
+
+    if (_currentIndex >= _slides.length - 1) {
+      await _completeOnboarding();
+      return;
+    }
+
+    await _pageController.animateToPage(
+      _currentIndex + 1,
+      duration: const Duration(milliseconds: 320),
+      curve: Curves.easeInOut,
+    );
+
+    if (mounted) {
+      _startAutoSlide();
+    }
   }
 
   @override
@@ -112,6 +136,13 @@ class _LandingScreenState extends State<LandingScreen> {
           ),
           child: Column(
             children: [
+              Align(
+                alignment: Alignment.topRight,
+                child: _SkipAction(
+                  onPressed: _handleSkip,
+                ),
+              ),
+              SizedBox(height: isLandscape ? 6 : 10),
               Expanded(
                 child: Listener(
                   onPointerDown: (_) => _stopAutoSlide(),
@@ -141,8 +172,8 @@ class _LandingScreenState extends State<LandingScreen> {
               ),
               const SizedBox(height: 12),
               _PrimaryCta(
-                label: 'Get Started',
-                onPressed: _handleGetStarted,
+                label: 'Next',
+                onPressed: _handleNext,
               ),
             ],
           ),
@@ -339,35 +370,82 @@ class _PrimaryCta extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final shadowColor = theme.brightness == Brightness.dark
+        ? Colors.black.withOpacity(0.28)
+        : kPrimary.withOpacity(0.24);
+
     return Center(
       child: SizedBox(
-        width: 190,
+        width: 172,
         height: 54,
-        child: ElevatedButton(
-          onPressed: onPressed,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: kPrimary,
-            foregroundColor: Colors.white,
-            elevation: 6,
-            shadowColor: kPrimary.withOpacity(0.26),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(999),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: LinearGradient(
+              colors: [
+                kPrimary,
+                Color.lerp(kPrimary, kSecondary, 0.35)!,
+              ],
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                ),
+            boxShadow: [
+              BoxShadow(
+                color: shadowColor,
+                blurRadius: 14,
+                offset: const Offset(0, 6),
               ),
-              const SizedBox(width: 10),
-              const Icon(Icons.arrow_forward_rounded, size: 24),
             ],
+          ),
+          child: ElevatedButton(
+            onPressed: onPressed,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.transparent,
+              foregroundColor: Colors.white,
+              shadowColor: Colors.transparent,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+            ),
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.2,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SkipAction extends StatelessWidget {
+  final VoidCallback onPressed;
+
+  const _SkipAction({
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return GestureDetector(
+      onTap: onPressed,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+        child: Text(
+          'SKIP',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 0.4,
+            color: isDark ? Colors.white : kPrimary,
           ),
         ),
       ),

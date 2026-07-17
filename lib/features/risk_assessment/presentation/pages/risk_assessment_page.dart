@@ -440,7 +440,11 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
     return _riskLevel == _RiskLevel.high ? _highRiskActions : _lowRiskActions;
   }
 
-  String get _resultKeyMessage => _defaultRiskKeyMessage;
+  String get _resultKeyMessage {
+    return _riskLevel == _RiskLevel.high
+        ? _highRiskKeyMessage
+        : _lowRiskKeyMessage;
+  }
 
   Future<void> _persistLatestAssessment() async {
     try {
@@ -474,20 +478,6 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
         _saveAssessmentMessage = message;
         _saveAssessmentNeedsReauth = needsReauth;
       });
-
-      final messenger = ScaffoldMessenger.of(context);
-      messenger.hideCurrentSnackBar();
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(message),
-          action: needsReauth
-              ? SnackBarAction(
-                  label: 'Sign in',
-                  onPressed: _navigateToSignIn,
-                )
-              : null,
-        ),
-      );
 
       debugPrint('Failed to save risk assessment: $e');
     }
@@ -526,7 +516,10 @@ const List<String> _lowRiskActions = [
   'Actively participate in all peer learning sessions.',
 ];
 
-const String _defaultRiskKeyMessage =
+const String _highRiskKeyMessage =
     'Having a high-risk score does not mean that you are infected with HIV. '
     'However, if risky behaviors continue, there is a possibility of acquiring HIV infection. '
     'Therefore, make strong efforts to reduce your level of HIV exposure risk.';
+
+const String _lowRiskKeyMessage =
+    'Having a low-risk score indicates a lower current risk of HIV exposure, but it does not guarantee you not to be at risk if you engage in risky behavior. Continuing to avoid behaviors that increase HIV risk will help you maintain this low-risk status in the future.';

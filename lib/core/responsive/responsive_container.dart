@@ -3,9 +3,7 @@ import 'breakpoints.dart';
 import 'responsive_helper.dart';
 import 'responsive_spacing.dart';
 
-/// Responsive container utilities for adaptive layouts.
 class ResponsiveContainer {
-  /// Get responsive container with max width constraint
   static Widget constrained({
     required Widget child,
     double? maxWidth,
@@ -24,7 +22,6 @@ class ResponsiveContainer {
     );
   }
 
-  /// Get responsive container based on device type
   static Widget adaptive({
     required BuildContext context,
     required Widget child,
@@ -84,7 +81,6 @@ class ResponsiveContainer {
     );
   }
 
-  /// Get responsive card container
   static Widget card({
     required BuildContext context,
     required Widget child,
@@ -108,7 +104,6 @@ class ResponsiveContainer {
     );
   }
 
-  /// Get responsive container with aspect ratio
   static Widget aspectRatio({
     required BuildContext context,
     required double aspectRatio,
@@ -120,7 +115,6 @@ class ResponsiveContainer {
     );
   }
 
-  /// Get responsive container for scrollable content
   static Widget scrollable({
     required BuildContext context,
     required Widget child,
@@ -134,7 +128,6 @@ class ResponsiveContainer {
     );
   }
 
-  /// Get responsive container with safe area
   static Widget safe({
     required Widget child,
     bool top = true,
@@ -151,7 +144,6 @@ class ResponsiveContainer {
     );
   }
 
-  /// Get responsive container for adaptive layout (mobile vs tablet)
   static Widget adaptiveLayout({
     required BuildContext context,
     required Widget mobile,
