@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -27,7 +29,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _contactCtrl = TextEditingController();
   final _usernameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
-  final _ageCtrl = TextEditingController();
+  final _dateOfBirthCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
 
@@ -35,6 +37,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool _obscureConfirm = true;
   bool _isLoading = false;
   bool _hasAcceptedTerms = false;
+  DateTime? _selectedDateOfBirth;
+  Timer? _usernameCheckTimer;
+  bool _isCheckingUsername = false;
+  bool? _isUsernameAvailable;
+  String? _checkedUsername;
   final AuthController _authController = AuthController.standard();
   late final TapGestureRecognizer _termsRecognizer;
   late final TapGestureRecognizer _privacyRecognizer;
@@ -48,12 +55,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   @override
   void dispose() {
+    _usernameCheckTimer?.cancel();
     _termsRecognizer.dispose();
     _privacyRecognizer.dispose();
     _contactCtrl.dispose();
     _usernameCtrl.dispose();
     _phoneCtrl.dispose();
-    _ageCtrl.dispose();
+    _dateOfBirthCtrl.dispose();
     _passwordCtrl.dispose();
     _confirmCtrl.dispose();
     super.dispose();
@@ -69,11 +77,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
         : AuthMessages.invalidEmail;
   }
 
-  String? _validateAge(String? value) {
-    if (value == null || value.trim().isEmpty) return AuthMessages.ageRequired;
-    final age = int.tryParse(value.trim());
-    if (age == null) return AuthMessages.invalidAge;
-    if (age < 10) return AuthMessages.ageMin;
+  int _ageFromDateOfBirth(DateTime dateOfBirth) {
+    final today = DateTime.now();
+    var age = today.year - dateOfBirth.year;
+    if (today.month < dateOfBirth.month ||
+        (today.month == dateOfBirth.month && today.day < dateOfBirth.day)) {
+      age--;
+    }
+    return age;
+  }
+
+  String? _validateDateOfBirth(String? _) {
+    final dateOfBirth = _selectedDateOfBirth;
+    if (dateOfBirth == null) return AuthMessages.ageRequired;
+    if (_ageFromDateOfBirth(dateOfBirth) < 10) return AuthMessages.ageMin;
     return null;
   }
 
@@ -87,8 +104,57 @@ class _SignUpScreenState extends State<SignUpScreen> {
         : AuthMessages.invalidPhone;
   }
 
+  String? _validateUsername(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return AuthMessages.usernameRequired;
+    }
+    if (_checkedUsername == value.trim() && _isUsernameAvailable == false) {
+      return 'This username is already taken';
+    }
+    return null;
+  }
+
+  void _onUsernameChanged(String value) {
+    _usernameCheckTimer?.cancel();
+    final username = value.trim();
+    setState(() {
+      _checkedUsername = null;
+      _isUsernameAvailable = null;
+      _isCheckingUsername = false;
+    });
+
+    if (username.isEmpty) return;
+    _usernameCheckTimer = Timer(
+      const Duration(milliseconds: 500),
+      () => _checkUsernameAvailability(username),
+    );
+  }
+
+  Future<void> _checkUsernameAvailability(String username) async {
+    if (!mounted || _usernameCtrl.text.trim() != username) return;
+    setState(() => _isCheckingUsername = true);
+
+    try {
+      final available = await _authController.isUsernameAvailable(username);
+      if (!mounted || _usernameCtrl.text.trim() != username) return;
+      setState(() {
+        _checkedUsername = username;
+        _isUsernameAvailable = available;
+        _isCheckingUsername = false;
+      });
+    } catch (_) {
+      if (!mounted || _usernameCtrl.text.trim() != username) return;
+      setState(() => _isCheckingUsername = false);
+    }
+  }
+
   Future<void> _handleSignUp() async {
     if (!_hasAcceptedTerms) return;
+    final username = _usernameCtrl.text.trim();
+    if (username.isNotEmpty &&
+        (_checkedUsername != username || _isUsernameAvailable != true)) {
+      await _checkUsernameAvailability(username);
+    }
     if (!_formKey.currentState!.validate()) return;
 
     FocusScope.of(context).unfocus();
@@ -97,9 +163,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
     try {
       final result = await _authController.register(
         email: _contactCtrl.text.trim(),
-        username: _usernameCtrl.text.trim(),
+        username: username,
         phone: _phoneCtrl.text.trim(),
-        age: int.parse(_ageCtrl.text.trim()),
+        age: _ageFromDateOfBirth(_selectedDateOfBirth!),
         password: _passwordCtrl.text,
       );
 
@@ -127,61 +193,82 @@ class _SignUpScreenState extends State<SignUpScreen> {
     } catch (error) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      showAuthErrorDialog(
-        context,
-        message: AuthErrorHandler.getMessage(error),
-      );
+      showAuthErrorDialog(context, message: AuthErrorHandler.getMessage(error));
     }
   }
 
   void _openTermsAndConditions() {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => const TermsConditionsPage(),
-      ),
+      MaterialPageRoute(builder: (_) => const TermsConditionsPage()),
     );
   }
 
   void _openPrivacyPolicy() {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => const PrivacyPolicyPage(),
-      ),
+      MaterialPageRoute(builder: (_) => const PrivacyPolicyPage()),
     );
   }
 
-  void _changeAge(int delta) {
-    final current = int.tryParse(_ageCtrl.text.trim());
-    final next = current == null ? 10 : current + delta;
-    if (next < 10) {
-      return;
-    }
+  Future<void> _selectDateOfBirth() async {
+    final now = DateTime.now();
+    final earliestAllowedDate = DateTime(now.year - 999, now.month, now.day);
+    final latestAllowedDate = DateTime(now.year - 10, now.month, now.day);
+    final initialDate =
+        _selectedDateOfBirth ?? DateTime(now.year - 18, now.month, now.day);
+    final selectedDate = await showDatePicker(
+      context: context,
+      initialDate: initialDate.isAfter(latestAllowedDate)
+          ? latestAllowedDate
+          : initialDate,
+      firstDate: earliestAllowedDate,
+      lastDate: latestAllowedDate,
+      helpText: 'Select your date of birth',
+      fieldHintText: 'DD/MM/YY',
+    );
+
+    if (selectedDate == null || !mounted) return;
+
     setState(() {
-      _ageCtrl.text = next.toString();
-      _ageCtrl.selection = TextSelection.fromPosition(
-        TextPosition(offset: _ageCtrl.text.length),
-      );
+      _selectedDateOfBirth = selectedDate;
+      _dateOfBirthCtrl.text = _formatDate(selectedDate);
     });
   }
 
-  InputDecoration _buildInputDecoration(String label, IconData icon, BuildContext context) {
+  String _formatDate(DateTime date) {
+    String twoDigits(int value) => value.toString().padLeft(2, '0');
+    return '${twoDigits(date.day)}/${twoDigits(date.month)}/${date.year.toString().substring(2)}';
+  }
+
+  InputDecoration _buildInputDecoration(
+    String label,
+    IconData icon,
+    BuildContext context,
+  ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     const primaryColor = Color(0xFF005C8F);
     final errorColor = Theme.of(context).colorScheme.error;
 
     return InputDecoration(
       labelText: label,
-      labelStyle: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 14),
+      labelStyle: TextStyle(
+        color: isDark ? Colors.grey[400] : Colors.grey[600],
+        fontSize: 14,
+      ),
       prefixIcon: Icon(icon, color: primaryColor, size: 22),
       filled: true,
       fillColor: isDark ? const Color(0xFF161D2C) : const Color(0xFFF8FAFC),
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide.none,
+      ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: isDark ? Colors.white12 : Colors.grey.shade200),
+        borderSide: BorderSide(
+          color: isDark ? Colors.white12 : Colors.grey.shade200,
+        ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
@@ -213,7 +300,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
           backgroundColor: Colors.transparent,
           elevation: 0,
           leading: IconButton(
-            icon: Icon(Icons.arrow_back_ios_new, color: isDark ? Colors.white : Colors.black87, size: 20),
+            icon: Icon(
+              Icons.arrow_back_ios_new,
+              color: isDark ? Colors.white : Colors.black87,
+              size: 20,
+            ),
             onPressed: () => Navigator.of(context).pop(),
           ),
         ),
@@ -252,8 +343,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     controller: _contactCtrl,
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
-                    style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-                    decoration: _buildInputDecoration('Enter your email', Icons.contact_mail_outlined, context),
+                    style: TextStyle(
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                    decoration: _buildInputDecoration(
+                      'Enter your email',
+                      Icons.contact_mail_outlined,
+                      context,
+                    ),
                     validator: _validateContact,
                   ),
                   const SizedBox(height: 16),
@@ -261,10 +358,56 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   TextFormField(
                     controller: _usernameCtrl,
                     textCapitalization: TextCapitalization.none,
+                    autocorrect: false,
                     textInputAction: TextInputAction.next,
-                    style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-                    decoration: _buildInputDecoration('Enter a username', Icons.person_outline_rounded, context),
-                    validator: (v) => v != null && v.trim().isNotEmpty ? null : AuthMessages.usernameRequired,
+                    onChanged: _onUsernameChanged,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                    decoration:
+                        _buildInputDecoration(
+                          'Enter a username',
+                          Icons.person_outline_rounded,
+                          context,
+                        ).copyWith(
+                          helperText: _isCheckingUsername
+                              ? 'Checking username...'
+                              : _isUsernameAvailable == true
+                              ? 'Username available'
+                              : _isUsernameAvailable == false
+                              ? 'Username taken'
+                              : null,
+                          helperStyle: TextStyle(
+                            color: _isUsernameAvailable == true
+                                ? Colors.green.shade700
+                                : _isUsernameAvailable == false
+                                ? Theme.of(context).colorScheme.error
+                                : null,
+                          ),
+                          suffixIcon: _isCheckingUsername
+                              ? const Padding(
+                                  padding: EdgeInsets.all(14),
+                                  child: SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                )
+                              : _isUsernameAvailable == true
+                              ? Icon(
+                                  Icons.check_circle_outline,
+                                  color: Colors.green.shade700,
+                                )
+                              : _isUsernameAvailable == false
+                              ? Icon(
+                                  Icons.cancel_outlined,
+                                  color: Theme.of(context).colorScheme.error,
+                                )
+                              : null,
+                        ),
+                    validator: _validateUsername,
                   ),
                   const SizedBox(height: 16),
 
@@ -276,47 +419,36 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       FilteringTextInputFormatter.digitsOnly,
                       LengthLimitingTextInputFormatter(10),
                     ],
-                    style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-                    decoration: _buildInputDecoration('Enter your phone number', Icons.phone_outlined, context),
+                    style: TextStyle(
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                    decoration: _buildInputDecoration(
+                      'Enter your phone number',
+                      Icons.phone_outlined,
+                      context,
+                    ),
                     validator: _validatePhone,
                   ),
                   const SizedBox(height: 16),
 
                   TextFormField(
-                    controller: _ageCtrl,
-                    keyboardType: TextInputType.number,
+                    controller: _dateOfBirthCtrl,
+                    readOnly: true,
                     textInputAction: TextInputAction.next,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(3),
-                    ],
-                    style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-                    decoration: _buildInputDecoration('Age', Icons.cake_outlined, context).copyWith(
-                      hintText: 'Enter you Age',
-                      suffixIcon: SizedBox(
-                        width: 44,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            InkWell(
-                              onTap: () => _changeAge(1),
-                              child: const Padding(
-                                padding: EdgeInsets.only(top: 6, bottom: 2),
-                                child: Icon(Icons.keyboard_arrow_up_rounded, size: 20),
-                              ),
-                            ),
-                            InkWell(
-                              onTap: () => _changeAge(-1),
-                              child: const Padding(
-                                padding: EdgeInsets.only(top: 2, bottom: 6),
-                                child: Icon(Icons.keyboard_arrow_down_rounded, size: 20),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                    onTap: _selectDateOfBirth,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : Colors.black87,
                     ),
-                    validator: _validateAge,
+                    decoration:
+                        _buildInputDecoration(
+                          'Date of birth',
+                          Icons.cake_outlined,
+                          context,
+                        ).copyWith(
+                          hintText: 'DD/MM/YY',
+                          suffixIcon: const Icon(Icons.calendar_today_outlined),
+                        ),
+                    validator: _validateDateOfBirth,
                   ),
                   const SizedBox(height: 16),
 
@@ -324,16 +456,29 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     controller: _passwordCtrl,
                     obscureText: _obscurePassword,
                     textInputAction: TextInputAction.next,
-                    style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-                    decoration: _buildInputDecoration('Enter your password', Icons.lock_outline_rounded, context).copyWith(
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                          color: isDark ? Colors.grey[400] : Colors.grey[400],
-                        ),
-                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                      ),
+                    style: TextStyle(
+                      color: isDark ? Colors.white : Colors.black87,
                     ),
+                    decoration:
+                        _buildInputDecoration(
+                          'Enter your password',
+                          Icons.lock_outline_rounded,
+                          context,
+                        ).copyWith(
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
+                              color: isDark
+                                  ? Colors.grey[400]
+                                  : Colors.grey[400],
+                            ),
+                            onPressed: () => setState(
+                              () => _obscurePassword = !_obscurePassword,
+                            ),
+                          ),
+                        ),
                     validator: validatePassword,
                   ),
                   const SizedBox(height: 16),
@@ -342,21 +487,36 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     controller: _confirmCtrl,
                     obscureText: _obscureConfirm,
                     textInputAction: TextInputAction.done,
-                    style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-                    decoration: _buildInputDecoration('Re-enter your password', Icons.verified_user_outlined, context).copyWith(
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscureConfirm ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                          color: isDark ? Colors.grey[400] : Colors.grey[400],
-                        ),
-                        onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
-                      ),
+                    style: TextStyle(
+                      color: isDark ? Colors.white : Colors.black87,
                     ),
+                    decoration:
+                        _buildInputDecoration(
+                          'Re-enter your password',
+                          Icons.verified_user_outlined,
+                          context,
+                        ).copyWith(
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscureConfirm
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
+                              color: isDark
+                                  ? Colors.grey[400]
+                                  : Colors.grey[400],
+                            ),
+                            onPressed: () => setState(
+                              () => _obscureConfirm = !_obscureConfirm,
+                            ),
+                          ),
+                        ),
                     validator: (v) {
-                      if (v == null || v.isEmpty) return AuthMessages.confirmPasswordRequired;
+                      if (v == null || v.isEmpty)
+                        return AuthMessages.confirmPasswordRequired;
                       final passwordError = validatePassword(v);
                       if (passwordError != null) return passwordError;
-                      if (v != _passwordCtrl.text) return AuthMessages.passwordsDoNotMatch;
+                      if (v != _passwordCtrl.text)
+                        return AuthMessages.passwordsDoNotMatch;
                       return null;
                     },
                   ),
@@ -380,7 +540,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 });
                               },
                               activeColor: primaryColor,
-                              side: const BorderSide(color: primaryColor, width: 1.4),
+                              side: const BorderSide(
+                                color: primaryColor,
+                                width: 1.4,
+                              ),
                               materialTapTargetSize:
                                   MaterialTapTargetSize.shrinkWrap,
                               visualDensity: const VisualDensity(
@@ -445,29 +608,55 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         shadowColor: primaryColor.withOpacity(0.4),
                         disabledBackgroundColor: primaryColor.withOpacity(0.48),
                         disabledForegroundColor: Colors.white.withOpacity(0.78),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                       ),
                       onPressed: canCreateAccount ? _handleSignUp : null,
-                      child: _isLoading 
-                        ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                        : const Text('Create Account', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Text(
+                              'Create Account',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                     ),
                   ),
 
                   const SizedBox(height: 48),
-                  
+
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text("Already have an account? ", style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[700])),
+                      Text(
+                        "Already have an account? ",
+                        style: TextStyle(
+                          color: isDark ? Colors.grey[400] : Colors.grey[700],
+                        ),
+                      ),
                       GestureDetector(
                         onTap: () => Navigator.pushReplacement(
-                          context, 
-                          MaterialPageRoute(builder: (_) => SignInScreen(language: widget.language))
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                SignInScreen(language: widget.language),
+                          ),
                         ),
                         child: const Text(
                           'Sign In',
-                          style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: primaryColor,
+                          ),
                         ),
                       ),
                     ],

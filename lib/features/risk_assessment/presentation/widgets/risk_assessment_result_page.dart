@@ -5,10 +5,6 @@ class RiskAssessmentResultPage extends StatelessWidget {
   final String statusLabel;
   final List<String> actions;
   final String keyMessage;
-  final String? saveStatusMessage;
-  final bool saveStatusIsError;
-  final String? saveStatusActionLabel;
-  final VoidCallback? onSaveStatusAction;
   final ColorScheme colorScheme;
   final TextTheme textTheme;
   final VoidCallback onTalkToMentor;
@@ -20,10 +16,6 @@ class RiskAssessmentResultPage extends StatelessWidget {
     required this.statusLabel,
     required this.actions,
     required this.keyMessage,
-    this.saveStatusMessage,
-    this.saveStatusIsError = false,
-    this.saveStatusActionLabel,
-    this.onSaveStatusAction,
     required this.colorScheme,
     required this.textTheme,
     required this.onTalkToMentor,
@@ -37,10 +29,6 @@ class RiskAssessmentResultPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 12),
-          if (saveStatusMessage != null) ...[
-            _buildSaveStatusBanner(),
-            const SizedBox(height: 16),
-          ],
           _buildResultHeader(),
           const SizedBox(height: 16),
           _buildResultActionsSection(),
@@ -49,62 +37,6 @@ class RiskAssessmentResultPage extends StatelessWidget {
           const SizedBox(height: 28),
           _buildBottomActions(),
           const SizedBox(height: 24),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSaveStatusBanner() {
-    final bannerColor = saveStatusIsError ? colorScheme.error : colorScheme.primary;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        color: bannerColor.withOpacity(0.12),
-        border: Border.all(color: bannerColor.withOpacity(0.28)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            saveStatusIsError ? Icons.error_outline : Icons.sync_outlined,
-            color: bannerColor,
-            size: 20,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              saveStatusMessage!,
-              style: textTheme.bodySmall?.copyWith(
-                    color: bannerColor,
-                    fontWeight: FontWeight.w600,
-                    height: 1.4,
-                  ) ??
-                  TextStyle(
-                    color: bannerColor,
-                    fontWeight: FontWeight.w600,
-                    height: 1.4,
-                  ),
-            ),
-          ),
-          if (saveStatusActionLabel != null && onSaveStatusAction != null) ...[
-            const SizedBox(width: 12),
-            TextButton(
-              onPressed: onSaveStatusAction,
-              style: TextButton.styleFrom(
-                foregroundColor: bannerColor,
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              child: Text(
-                saveStatusActionLabel!,
-                style: const TextStyle(fontWeight: FontWeight.w700),
-              ),
-            ),
-          ],
         ],
       ),
     );
@@ -141,10 +73,7 @@ class RiskAssessmentResultPage extends StatelessWidget {
               color: color.withOpacity(0.15),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              icon,
-              color: color,
-            ),
+            child: Icon(icon, color: color),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -153,7 +82,8 @@ class RiskAssessmentResultPage extends StatelessWidget {
               children: [
                 Text(
                   'Assessment Result',
-                  style: textTheme.titleMedium?.copyWith(
+                  style:
+                      textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w800,
                         color: colorScheme.onSurface,
                       ) ??
@@ -165,14 +95,12 @@ class RiskAssessmentResultPage extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   statusLabel,
-                  style: textTheme.bodyMedium?.copyWith(
+                  style:
+                      textTheme.bodyMedium?.copyWith(
                         color: color,
                         fontWeight: FontWeight.w700,
                       ) ??
-                      TextStyle(
-                        color: color,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      TextStyle(color: color, fontWeight: FontWeight.w700),
                 ),
               ],
             ),
@@ -188,7 +116,8 @@ class RiskAssessmentResultPage extends StatelessWidget {
       children: [
         Text(
           'Recommended actions',
-          style: textTheme.titleSmall?.copyWith(
+          style:
+              textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w800,
                 color: colorScheme.onSurface,
               ) ??
@@ -217,7 +146,8 @@ class RiskAssessmentResultPage extends StatelessWidget {
                 Expanded(
                   child: Text(
                     action,
-                    style: textTheme.bodySmall?.copyWith(
+                    style:
+                        textTheme.bodySmall?.copyWith(
                           color: colorScheme.onSurfaceVariant,
                           height: 1.45,
                         ) ??
@@ -249,7 +179,8 @@ class RiskAssessmentResultPage extends StatelessWidget {
         children: [
           Text(
             'Key message',
-            style: textTheme.titleSmall?.copyWith(
+            style:
+                textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w800,
                   color: colorScheme.onSurface,
                 ) ??
@@ -261,14 +192,12 @@ class RiskAssessmentResultPage extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             keyMessage,
-            style: textTheme.bodySmall?.copyWith(
+            style:
+                textTheme.bodySmall?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                   height: 1.45,
                 ) ??
-                TextStyle(
-                  color: colorScheme.onSurfaceVariant,
-                  height: 1.45,
-                ),
+                TextStyle(color: colorScheme.onSurfaceVariant, height: 1.45),
           ),
         ],
       ),

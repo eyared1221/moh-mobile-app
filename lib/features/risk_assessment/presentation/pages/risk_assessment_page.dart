@@ -6,8 +6,6 @@ import '../../../../shared/widgets/app_bottom_nav.dart';
 import '../../../../shared/widgets/global_notification_bell.dart';
 import '../../../mentor/presentation/pages/mentor_page.dart';
 import '../../../notifications/data/notification_automation_service.dart';
-import '../../../auth/data/auth_session_storage.dart';
-import '../../../auth/presentation/signin_screen.dart';
 import '../../data/risk_assessment_repository.dart';
 import '../../domain/entities/risk_question_entity.dart';
 import '../../domain/usecases/get_risk_assessment_questions_use_case.dart';
@@ -21,11 +19,7 @@ class RiskAssessmentPage extends StatefulWidget {
   final String? age;
   final String? userName;
 
-  const RiskAssessmentPage({
-    super.key,
-    this.age,
-    this.userName,
-  });
+  const RiskAssessmentPage({super.key, this.age, this.userName});
 
   @override
   State<RiskAssessmentPage> createState() => _RiskAssessmentPageState();
@@ -41,10 +35,6 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
   List<RiskQuestionEntity> _questions = const [];
   List<int?> _selectedOptionIndexes = const [];
   bool _isLoadingQuestions = true;
-  bool _isSavingAssessment = false;
-  String? _saveAssessmentMessage;
-  bool _saveAssessmentIsError = false;
-  bool _saveAssessmentNeedsReauth = false;
 
   _RiskStage _stage = _RiskStage.intro;
   int _currentIndex = 0;
@@ -68,9 +58,7 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
       });
     }
 
-    unawaited(
-      _refreshQuestions(showLoading: cachedQuestions.isEmpty),
-    );
+    unawaited(_refreshQuestions(showLoading: cachedQuestions.isEmpty));
   }
 
   Future<void> _refreshQuestions({bool showLoading = false}) async {
@@ -110,20 +98,19 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
     final previousSelections = <String, int?>{};
     if (preserveSelections) {
       for (var index = 0; index < _questions.length; index++) {
-        previousSelections[_questions[index].id] = _selectedOptionIndexes[index];
+        previousSelections[_questions[index].id] =
+            _selectedOptionIndexes[index];
       }
     }
 
     _questions = items;
-    _selectedOptionIndexes = items
-        .map((question) {
-          final selectedIndex = previousSelections[question.id];
-          if (selectedIndex == null) {
-            return null;
-          }
-          return selectedIndex < question.options.length ? selectedIndex : null;
-        })
-        .toList();
+    _selectedOptionIndexes = items.map((question) {
+      final selectedIndex = previousSelections[question.id];
+      if (selectedIndex == null) {
+        return null;
+      }
+      return selectedIndex < question.options.length ? selectedIndex : null;
+    }).toList();
     _currentIndex = items.isEmpty
         ? 0
         : _currentIndex.clamp(0, items.length - 1);
@@ -140,36 +127,39 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
     final textTheme = theme.textTheme;
     final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        centerTitle: true,
+    return WillPopScope(
+      onWillPop: _onWillPop,
+      child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          color: isDark ? Colors.white : colorScheme.primary,
-          onPressed: () => Navigator.pop(context),
+        appBar: AppBar(
+          centerTitle: true,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          elevation: 0,
+          automaticallyImplyLeading: false,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            color: isDark ? Colors.white : colorScheme.primary,
+            onPressed: _handleBackNavigation,
+          ),
+          title: const Text('Risk Assessment'),
+          actions: [
+            GlobalTopBarActions(onSyncPressed: _syncQuestions),
+            const SizedBox(width: 6),
+          ],
         ),
-        title: const Text('Risk Assessment'),
-        actions: [
-          GlobalTopBarActions(onSyncPressed: _syncQuestions),
-          const SizedBox(width: 6),
-        ],
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 2, 20, 8),
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 220),
-            switchInCurve: Curves.easeOut,
-            switchOutCurve: Curves.easeIn,
-            child: _buildStageContent(colorScheme, textTheme),
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 2, 20, 8),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 220),
+              switchInCurve: Curves.easeOut,
+              switchOutCurve: Curves.easeIn,
+              child: _buildStageContent(colorScheme, textTheme),
+            ),
           ),
         ),
+        bottomNavigationBar: _buildBottomBar(),
       ),
-      bottomNavigationBar: _buildBottomBar(),
     );
   }
 
@@ -210,7 +200,7 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
           isFirst: _currentIndex == 0,
           isAnswered: _selectedOptionIndexes[_currentIndex] != null,
           isLast: _currentIndex == _questions.length - 1,
-          onPrevious: _currentIndex == 0 ? _backToIntro : _goPrevious,
+          onPrevious: _currentIndex == 0 ? _handleBackNavigation : _goPrevious,
           onNext: _goNext,
         );
       case _RiskStage.result:
@@ -227,14 +217,6 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
           statusLabel: _resultStatusLabel,
           actions: _resultActions,
           keyMessage: _resultKeyMessage,
-          saveStatusMessage: _isSavingAssessment
-              ? 'Saving this assessment to your history...'
-              : _saveAssessmentMessage,
-          saveStatusIsError: _saveAssessmentIsError,
-          saveStatusActionLabel:
-              _saveAssessmentNeedsReauth ? 'Sign in again' : null,
-          onSaveStatusAction:
-              _saveAssessmentNeedsReauth ? _navigateToSignIn : null,
           colorScheme: colorScheme,
           textTheme: textTheme,
           onTalkToMentor: _openPeerMentor,
@@ -243,7 +225,11 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
     }
   }
 
-  Widget _buildLoadingState(ColorScheme colorScheme, TextTheme textTheme, {Key? key}) {
+  Widget _buildLoadingState(
+    ColorScheme colorScheme,
+    TextTheme textTheme, {
+    Key? key,
+  }) {
     return Center(
       key: key,
       child: Container(
@@ -270,12 +256,17 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
     );
   }
 
-  Widget _buildEmptyState(ColorScheme colorScheme, TextTheme textTheme, {Key? key}) {
+  Widget _buildEmptyState(
+    ColorScheme colorScheme,
+    TextTheme textTheme, {
+    Key? key,
+  }) {
     return Center(
       key: key,
       child: Text(
         'No assessment questions available right now.',
-        style: textTheme.bodyMedium?.copyWith(
+        style:
+            textTheme.bodyMedium?.copyWith(
               color: colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w600,
             ) ??
@@ -309,16 +300,43 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
     setState(() {
       _stage = _RiskStage.questions;
       _currentIndex = 0;
-      _saveAssessmentMessage = null;
-      _saveAssessmentIsError = false;
-      _saveAssessmentNeedsReauth = false;
     });
   }
 
-  void _backToIntro() {
-    setState(() {
-      _stage = _RiskStage.intro;
-    });
+  Future<bool> _onWillPop() async {
+    if (_stage != _RiskStage.questions) return true;
+    return _confirmExitAssessment();
+  }
+
+  Future<void> _handleBackNavigation() async {
+    if (_stage == _RiskStage.questions) {
+      final shouldExit = await _confirmExitAssessment();
+      if (!shouldExit || !mounted) return;
+    }
+    if (mounted) Navigator.of(context).pop();
+  }
+
+  Future<bool> _confirmExitAssessment() async {
+    final shouldExit = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Exit Self Assessment'),
+        content: const Text(
+          'You have not completed your assessment. Do you want to exit?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('No'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Yes'),
+          ),
+        ],
+      ),
+    );
+    return shouldExit ?? false;
   }
 
   void _goPrevious() {
@@ -334,10 +352,6 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
     setState(() {
       if (isLast) {
         _stage = _RiskStage.result;
-        _isSavingAssessment = true;
-        _saveAssessmentMessage = null;
-        _saveAssessmentIsError = false;
-        _saveAssessmentNeedsReauth = false;
       } else {
         _currentIndex += 1;
       }
@@ -360,10 +374,8 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => ClinicPage(
-          age: widget.age ?? '',
-          userName: widget.userName,
-        ),
+        builder: (_) =>
+            ClinicPage(age: widget.age ?? '', userName: widget.userName),
       ),
     );
   }
@@ -375,10 +387,7 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => MentorPage(
-          age: widget.age,
-          userName: widget.userName,
-        ),
+        builder: (_) => MentorPage(age: widget.age, userName: widget.userName),
       ),
     );
   }
@@ -457,72 +466,15 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
 
   Future<void> _persistLatestAssessment() async {
     try {
-      final saveResult = await _controller.submitLatestResult(
+      await _controller.submitLatestResult(
         riskLevel: _riskLevel.name,
         resultLabel: _resultStatusLabel,
         riskScore: _totalYesCount,
         takenAt: DateTime.now(),
       );
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _isSavingAssessment = false;
-        _saveAssessmentIsError = false;
-        _saveAssessmentNeedsReauth = saveResult.needsReauth;
-        _saveAssessmentMessage = switch (saveResult.mode) {
-          RiskAssessmentSaveMode.syncedToAccount => null,
-          RiskAssessmentSaveMode.savedAnonymousToDatabase =>
-            saveResult.needsReauth
-                ? 'Session expired, but your assessment was saved anonymously in the database.'
-                : 'Assessment saved anonymously in the database.',
-          RiskAssessmentSaveMode.savedLocallyPendingSync =>
-            saveResult.needsReauth
-                ? 'Assessment was saved on this device for now. Sign in again later if you want future results linked to your account.'
-                : 'Assessment saved on this device for now. It could not be synced to the database yet.',
-        };
-      });
     } catch (e) {
-      final needsReauth = _isAuthenticationFailure(e);
-      final message = needsReauth
-          ? 'Your session expired before we could save this assessment. Sign in again to keep your history up to date.'
-          : 'We could not save this assessment to your history right now. Please try again in a moment.';
-
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _isSavingAssessment = false;
-        _saveAssessmentIsError = true;
-        _saveAssessmentMessage = message;
-        _saveAssessmentNeedsReauth = needsReauth;
-      });
-
       debugPrint('Failed to save risk assessment: $e');
     }
-  }
-
-  bool _isAuthenticationFailure(Object error) {
-    final normalizedMessage = error.toString().toLowerCase();
-    return normalizedMessage.contains('sign in again') ||
-        normalizedMessage.contains('authentication required') ||
-        normalizedMessage.contains('invalid or expired token') ||
-        normalizedMessage.contains('unauthorized');
-  }
-
-  Future<void> _navigateToSignIn() async {
-    await AuthSessionStorage.clear();
-    if (!mounted) {
-      return;
-    }
-
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const SignInScreen(),
-      ),
-    );
   }
 }
 

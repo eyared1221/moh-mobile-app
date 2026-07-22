@@ -136,7 +136,7 @@ class NotificationAutomationService {
         id: 'welcome-${now.millisecondsSinceEpoch}',
         type: 'welcome',
         title: 'Welcome back',
-        message: 'Welcome back, $userName. Your health dashboard is ready.',
+        message: 'Welcome back, $userName.',
         createdAt: now,
       ),
     );

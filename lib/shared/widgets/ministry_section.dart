@@ -29,7 +29,7 @@ class MinistrySection extends StatelessWidget {
           const SizedBox(height: 20),
 
           Text(
-            "ሚኒስቴሪ - ጤና",
+            "ጤና ሚኒስቴር",
             style: TextStyle(
               color: isDark ? Colors.white : const Color(0xFF10304B),
               fontSize: 20,

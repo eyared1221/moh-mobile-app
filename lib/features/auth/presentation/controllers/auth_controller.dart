@@ -3,6 +3,7 @@ import '../../domain/entities/auth_action_result_entity.dart';
 import '../../domain/entities/login_result_entity.dart';
 import '../../domain/entities/register_result_entity.dart';
 import '../../domain/usecases/change_password_use_case.dart';
+import '../../domain/usecases/check_username_availability_use_case.dart';
 import '../../domain/usecases/forgot_password_use_case.dart';
 import '../../domain/usecases/login_use_case.dart';
 import '../../domain/usecases/register_use_case.dart';
@@ -21,6 +22,7 @@ class AuthController {
     required VerifyResetCodeUseCase verifyResetCodeUseCase,
     required ResetPasswordUseCase resetPasswordUseCase,
     required ChangePasswordUseCase changePasswordUseCase,
+    required CheckUsernameAvailabilityUseCase checkUsernameAvailabilityUseCase,
   }) : _registerUseCase = registerUseCase,
        _loginUseCase = loginUseCase,
        _verifyOtpUseCase = verifyOtpUseCase,
@@ -28,7 +30,8 @@ class AuthController {
        _forgotPasswordUseCase = forgotPasswordUseCase,
        _verifyResetCodeUseCase = verifyResetCodeUseCase,
        _resetPasswordUseCase = resetPasswordUseCase,
-       _changePasswordUseCase = changePasswordUseCase;
+       _changePasswordUseCase = changePasswordUseCase,
+       _checkUsernameAvailabilityUseCase = checkUsernameAvailabilityUseCase;
 
   factory AuthController.standard() {
     final repository = AuthService.instance;
@@ -41,6 +44,9 @@ class AuthController {
       verifyResetCodeUseCase: VerifyResetCodeUseCase(repository),
       resetPasswordUseCase: ResetPasswordUseCase(repository),
       changePasswordUseCase: ChangePasswordUseCase(repository),
+      checkUsernameAvailabilityUseCase: CheckUsernameAvailabilityUseCase(
+        repository,
+      ),
     );
   }
 
@@ -52,6 +58,7 @@ class AuthController {
   final VerifyResetCodeUseCase _verifyResetCodeUseCase;
   final ResetPasswordUseCase _resetPasswordUseCase;
   final ChangePasswordUseCase _changePasswordUseCase;
+  final CheckUsernameAvailabilityUseCase _checkUsernameAvailabilityUseCase;
 
   Future<RegisterResultEntity> register({
     required String email,
@@ -73,20 +80,15 @@ class AuthController {
     required String identifier,
     required String password,
   }) {
-    return _loginUseCase(
-      identifier: identifier,
-      password: password,
-    );
+    return _loginUseCase(identifier: identifier, password: password);
   }
 
-  Future<void> verifyOtp({
-    required String contact,
-    required String otp,
-  }) {
-    return _verifyOtpUseCase(
-      contact: contact,
-      otp: otp,
-    );
+  Future<bool> isUsernameAvailable(String username) {
+    return _checkUsernameAvailabilityUseCase(username);
+  }
+
+  Future<void> verifyOtp({required String contact, required String otp}) {
+    return _verifyOtpUseCase(contact: contact, otp: otp);
   }
 
   Future<AuthActionResultEntity> resendOtp({required String contact}) {
@@ -101,10 +103,7 @@ class AuthController {
     required String contact,
     required String code,
   }) {
-    return _verifyResetCodeUseCase(
-      contact: contact,
-      code: code,
-    );
+    return _verifyResetCodeUseCase(contact: contact, code: code);
   }
 
   Future<void> resetPassword({

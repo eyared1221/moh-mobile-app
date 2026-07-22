@@ -65,14 +65,13 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<void> verifyOtp({
-    required String contact,
-    required String otp,
-  }) {
-    return _remoteDataSource.verifyOtp(
-      contact: contact,
-      otp: otp,
-    );
+  Future<bool> isUsernameAvailable(String username) {
+    return _remoteDataSource.isUsernameAvailable(username);
+  }
+
+  @override
+  Future<void> verifyOtp({required String contact, required String otp}) {
+    return _remoteDataSource.verifyOtp(contact: contact, otp: otp);
   }
 
   @override
@@ -90,10 +89,7 @@ class AuthRepositoryImpl implements AuthRepository {
     required String contact,
     required String code,
   }) {
-    return _remoteDataSource.verifyResetCode(
-      contact: contact,
-      code: code,
-    );
+    return _remoteDataSource.verifyResetCode(contact: contact, code: code);
   }
 
   @override

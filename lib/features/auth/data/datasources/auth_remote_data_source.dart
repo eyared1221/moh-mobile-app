@@ -3,7 +3,7 @@ import '../auth_models.dart';
 
 class AuthRemoteDataSource {
   AuthRemoteDataSource({AuthApiClient? apiClient})
-      : _apiClient = apiClient ?? AuthApiClient();
+    : _apiClient = apiClient ?? AuthApiClient();
 
   final AuthApiClient _apiClient;
 
@@ -39,10 +39,15 @@ class AuthRemoteDataSource {
     );
   }
 
-  Future<void> verifyOtp({
-    required String contact,
-    required String otp,
-  }) async {
+  Future<bool> isUsernameAvailable(String username) async {
+    final payload = await _apiClient.post('/username-availability', {
+      'username': username,
+    });
+    final data = payload['data'] as Map<String, dynamic>? ?? const {};
+    return data['available'] as bool? ?? false;
+  }
+
+  Future<void> verifyOtp({required String contact, required String otp}) async {
     await _apiClient.post('/verification?action=verify-otp', {
       'contact': contact,
       'otp': otp,

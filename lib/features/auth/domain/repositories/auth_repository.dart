@@ -16,19 +16,15 @@ abstract class AuthRepository {
     required String password,
   });
 
-  Future<void> verifyOtp({
-    required String contact,
-    required String otp,
-  });
+  Future<bool> isUsernameAvailable(String username);
+
+  Future<void> verifyOtp({required String contact, required String otp});
 
   Future<AuthActionResultEntity> resendOtp({required String contact});
 
   Future<AuthActionResultEntity> forgotPassword({required String contact});
 
-  Future<void> verifyResetCode({
-    required String contact,
-    required String code,
-  });
+  Future<void> verifyResetCode({required String contact, required String code});
 
   Future<void> resetPassword({
     required String contact,

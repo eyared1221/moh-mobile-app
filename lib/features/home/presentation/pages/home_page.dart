@@ -42,18 +42,12 @@ class _HomePageState extends State<HomePage> {
     final isDark = theme.brightness == Brightness.dark;
     final colorScheme = theme.colorScheme;
     final navCards = _buildNavCards();
-    final pageBackground = isDark ? const Color(0xFF0B1220) : const Color(0xFFF4F8FE);
+    final pageBackground = isDark
+        ? const Color(0xFF0B1220)
+        : const Color(0xFFF4F8FE);
     final pageGradient = isDark
-        ? const [
-            Color(0xFF0B1220),
-            Color(0xFF11192A),
-            Color(0xFF0E1625),
-          ]
-        : const [
-            Color(0xFFF4F8FE),
-            Color(0xFFF1F5FC),
-            Color(0xFFF7FAFF),
-          ];
+        ? const [Color(0xFF0B1220), Color(0xFF11192A), Color(0xFF0E1625)]
+        : const [Color(0xFFF4F8FE), Color(0xFFF1F5FC), Color(0xFFF7FAFF)];
 
     return Scaffold(
       backgroundColor: pageBackground,
@@ -109,11 +103,11 @@ class _HomePageState extends State<HomePage> {
                         itemCount: navCards.length,
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
-                          childAspectRatio: 0.94,
-                        ),
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                              childAspectRatio: 0.94,
+                            ),
                         itemBuilder: (context, index) {
                           return _buildNavCard(
                             navCards[index],
@@ -139,10 +133,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildSupportHeroCard(
-    bool isDark,
-    ColorScheme colorScheme,
-  ) {
+  Widget _buildSupportHeroCard(bool isDark, ColorScheme colorScheme) {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
 
@@ -154,14 +145,8 @@ class _HomePageState extends State<HomePage> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: isDark
-              ? const [
-                  Color(0xFF162033),
-                  Color(0xFF101A2B),
-                ]
-              : const [
-                  Color(0xFFFFFFFF),
-                  Color(0xFFF2F7FF),
-                ],
+              ? const [Color(0xFF162033), Color(0xFF101A2B)]
+              : const [Color(0xFFFFFFFF), Color(0xFFF2F7FF)],
         ),
         border: Border.all(
           color: isDark
@@ -297,10 +282,8 @@ class _HomePageState extends State<HomePage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => HealthServicePage(
-                age: widget.age,
-                userName: widget.userName,
-              ),
+              builder: (_) =>
+                  HealthServicePage(age: widget.age, userName: widget.userName),
             ),
           );
         },
@@ -313,10 +296,8 @@ class _HomePageState extends State<HomePage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => MentorPage(
-                age: widget.age,
-                userName: widget.userName,
-              ),
+              builder: (_) =>
+                  MentorPage(age: widget.age, userName: widget.userName),
             ),
           );
         },
@@ -335,8 +316,12 @@ class _HomePageState extends State<HomePage> {
     final cardColor = isDark ? const Color(0xFF162033) : Colors.white;
     final footerColor = isDark ? const Color(0xFF0F1928) : Colors.white;
     final titleColor = isDark ? colorScheme.primary : const Color(0xFF0B5F82);
-    final fallbackBackground = isDark ? const Color(0xFF1B273A) : const Color(0xFFF2F7FF);
-    final fallbackIconColor = isDark ? colorScheme.primary.withOpacity(0.95) : const Color(0xFF0B6F95);
+    final fallbackBackground = isDark
+        ? const Color(0xFF1B273A)
+        : const Color(0xFFF2F7FF);
+    final fallbackIconColor = isDark
+        ? colorScheme.primary.withOpacity(0.95)
+        : const Color(0xFF0B6F95);
 
     return GestureDetector(
       onTap: () => data.onTap(context),
@@ -397,20 +382,30 @@ class _HomePageState extends State<HomePage> {
                 width: double.infinity,
                 alignment: Alignment.center,
                 padding: const EdgeInsets.symmetric(horizontal: 8),
-                decoration: BoxDecoration(
-                  color: footerColor,
-                ),
-                child: Text(
-                  data.title,
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: titleColor,
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w700,
-                    height: 1.08,
-                    letterSpacing: -0.1,
+                decoration: BoxDecoration(color: footerColor),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        data.title,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: titleColor,
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w700,
+                          height: 1.08,
+                          letterSpacing: -0.1,
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 14,
+                        color: titleColor,
+                      ),
+                    ],
                   ),
                 ),
               ),

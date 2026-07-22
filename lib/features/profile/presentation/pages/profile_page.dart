@@ -367,7 +367,7 @@ class _ProfilePageState extends State<ProfilePage> {
           _primaryActionRow(
             context,
             icon: Icons.person_2_outlined,
-            title: 'Edit Profile',
+            title: 'View Profile',
             subtitle: 'Identity • Age',
             accent: colorScheme.primary,
             onTap: _openEditProfilePage,

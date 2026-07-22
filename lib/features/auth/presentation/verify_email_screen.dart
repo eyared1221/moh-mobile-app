@@ -440,10 +440,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back_ios_new, color: isDark ? Colors.white : Colors.black87, size: 20),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
+          automaticallyImplyLeading: false,
         ),
         body: SafeArea(
           child: SingleChildScrollView(

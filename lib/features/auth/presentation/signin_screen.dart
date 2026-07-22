@@ -4,7 +4,6 @@ import 'forgot_password_screen.dart';
 import 'auth_success_dialog.dart';
 import 'auth_error_handler.dart';
 import 'auth_messages.dart';
-import 'contact_validation.dart';
 import 'controllers/auth_controller.dart';
 import 'package:yegna_health/features/home/presentation/pages/home_page.dart';
 
@@ -20,7 +19,7 @@ class _SignInScreenState extends State<SignInScreen> {
   final _formKey = GlobalKey<FormState>();
   final _contactCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
-  
+
   bool _obscure = true;
   bool _isLoading = false; // Loading state for professional feel
   final AuthController _authController = AuthController.standard();
@@ -32,14 +31,11 @@ class _SignInScreenState extends State<SignInScreen> {
     super.dispose();
   }
 
-  String? _validateContact(String? value) {
+  String? _validateIdentifier(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return AuthMessages.emailRequired;
+      return AuthMessages.usernameOrEmailRequired;
     }
-
-    return ContactValidation.isValidEmail(value)
-        ? null
-        : AuthMessages.invalidEmail;
+    return null;
   }
 
   // Simulate a network request
@@ -58,10 +54,7 @@ class _SignInScreenState extends State<SignInScreen> {
       if (!mounted) return;
       setState(() => _isLoading = false);
 
-      showAuthSuccessDialog(
-        context,
-        message: AuthMessages.signInSuccess,
-      );
+      showAuthSuccessDialog(context, message: AuthMessages.signInSuccess);
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -74,29 +67,38 @@ class _SignInScreenState extends State<SignInScreen> {
     } catch (error) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      showAuthErrorDialog(
-        context,
-        message: AuthErrorHandler.getMessage(error),
-      );
+      showAuthErrorDialog(context, message: AuthErrorHandler.getMessage(error));
     }
   }
 
-  InputDecoration _modernInput(String label, IconData icon, BuildContext context) {
+  InputDecoration _modernInput(
+    String label,
+    IconData icon,
+    BuildContext context,
+  ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     const primaryColor = Color(0xFF005C8F);
     final errorColor = Theme.of(context).colorScheme.error;
 
     return InputDecoration(
       labelText: label,
-      labelStyle: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 14),
+      labelStyle: TextStyle(
+        color: isDark ? Colors.grey[400] : Colors.grey[600],
+        fontSize: 14,
+      ),
       prefixIcon: Icon(icon, color: primaryColor, size: 22),
       filled: true,
       fillColor: isDark ? const Color(0xFF161D2C) : const Color(0xFFF8FAFC),
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide.none,
+      ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: isDark ? Colors.white12 : Colors.grey.shade200),
+        borderSide: BorderSide(
+          color: isDark ? Colors.white12 : Colors.grey.shade200,
+        ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
@@ -146,127 +148,191 @@ class _SignInScreenState extends State<SignInScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 10),
-                    
-                    // Hero Animation for Logo smoothness
-                    Hero(
-                      tag: 'app_logo',
-                      child: Image.asset(
-                        'assets/images/logo.png',
-                        height: 100,
-                        errorBuilder: (context, error, stackTrace) {
-                          // Fallback if image is missing
-                          return const Icon(Icons.health_and_safety, size: 80, color: Color(0xFF005C8F));
-                        },
-                      ),
-                    ),
-                    
-                    const SizedBox(height: 20),
-                    Text(
-                      'Welcome Back!',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -0.5,
-                        color: isDark ? Colors.white : const Color(0xFF005C8F),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      'Sign in to your account',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: isDark ? Colors.grey[400] : Colors.grey[600]
-                      ),
-                    ),
-                    const SizedBox(height: 24),
 
-                    // Inputs
-                    TextFormField(
-                      controller: _contactCtrl,
-                      keyboardType: TextInputType.emailAddress,
-                      textInputAction: TextInputAction.next,
-                      style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-                      decoration: _modernInput('Email', Icons.contact_mail, context),
-                      validator: _validateContact,
+                  // Hero Animation for Logo smoothness
+                  Hero(
+                    tag: 'app_logo',
+                    child: Image.asset(
+                      'assets/images/logo.png',
+                      height: 100,
+                      errorBuilder: (context, error, stackTrace) {
+                        // Fallback if image is missing
+                        return const Icon(
+                          Icons.health_and_safety,
+                          size: 80,
+                          color: Color(0xFF005C8F),
+                        );
+                      },
                     ),
-                    const SizedBox(height: 20),
-                    
-                    TextFormField(
-                      controller: _passwordCtrl,
-                      obscureText: _obscure,
-                      textInputAction: TextInputAction.done,
-                      style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-                      decoration: _modernInput('Password', Icons.lock_outline, context).copyWith(
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined, 
-                            color: isDark ? Colors.grey[400] : Colors.grey[400]
+                  ),
+
+                  const SizedBox(height: 20),
+                  Text(
+                    'Welcome Back!',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.5,
+                      color: isDark ? Colors.white : const Color(0xFF005C8F),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Sign in to your account',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Inputs
+                  TextFormField(
+                    controller: _contactCtrl,
+                    keyboardType: TextInputType.text,
+                    textCapitalization: TextCapitalization.none,
+                    autocorrect: false,
+                    textInputAction: TextInputAction.next,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                    decoration: _modernInput(
+                      'Username or email',
+                      Icons.account_circle_outlined,
+                      context,
+                    ),
+                    validator: _validateIdentifier,
+                  ),
+                  const SizedBox(height: 20),
+
+                  TextFormField(
+                    controller: _passwordCtrl,
+                    obscureText: _obscure,
+                    textInputAction: TextInputAction.done,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                    decoration:
+                        _modernInput(
+                          'Password',
+                          Icons.lock_outline,
+                          context,
+                        ).copyWith(
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscure
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
+                              color: isDark
+                                  ? Colors.grey[400]
+                                  : Colors.grey[400],
+                            ),
+                            onPressed: () =>
+                                setState(() => _obscure = !_obscure),
                           ),
-                          onPressed: () => setState(() => _obscure = !_obscure),
+                        ),
+                    validator: (value) => (value == null || value.isEmpty)
+                        ? AuthMessages.passwordRequired
+                        : null,
+                  ),
+
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: GestureDetector(
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              ForgotPasswordScreen(language: widget.language),
                         ),
                       ),
-                      validator: (value) => (value == null || value.isEmpty) ? AuthMessages.passwordRequired : null,
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 10),
+                        child: Text(
+                          'Forgot Password?',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF005C8F),
+                          ),
+                        ),
+                      ),
                     ),
+                  ),
 
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: GestureDetector(
+                  const SizedBox(height: 20),
+
+                  // Loading Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF005C8F),
+                        foregroundColor: Colors.white,
+                        elevation: 4,
+                        shadowColor: const Color(0xFF005C8F).withOpacity(0.4),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      onPressed: _isLoading ? null : _handleSignIn,
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Text(
+                              'Sign In',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        "Don't have an account? ",
+                        style: TextStyle(
+                          color: isDark ? Colors.grey[400] : Colors.grey[700],
+                        ),
+                      ),
+                      GestureDetector(
                         onTap: () => Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => ForgotPasswordScreen(language: widget.language)),
-                        ),
-                        child: const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 10),
-                          child: Text('Forgot Password?', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF005C8F))),
-                        ),
-                      ),
-                    ),
-                    
-                    const SizedBox(height: 20),
-                    
-                    // Loading Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF005C8F),
-                          foregroundColor: Colors.white,
-                          elevation: 4,
-                          shadowColor: const Color(0xFF005C8F).withOpacity(0.4),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        ),
-                        onPressed: _isLoading ? null : _handleSignIn,
-                        child: _isLoading 
-                          ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                          : const Text('Sign In', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-                      ),
-                    ),
-                    
-                    const SizedBox(height: 28),
-                    
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text("Don't have an account? ", style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[700])),
-                        GestureDetector(
-                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SignUpScreen(language: widget.language))),
-                          child: const Text(
-                            'Sign Up',
-                            style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF005C8F)),
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                SignUpScreen(language: widget.language),
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-                ),
+                        child: const Text(
+                          'Sign Up',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF005C8F),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                ],
               ),
             ),
           ),
         ),
-      );
+      ),
+    );
   }
 }
