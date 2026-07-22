@@ -41,7 +41,10 @@ class MentorPageController {
     return mentors.where((mentor) {
       final name = mentor.fullName.toLowerCase();
       final phone = mentor.phone.toLowerCase();
-      return name.contains(normalized) || phone.contains(normalized);
+      final assignedArea = mentor.assignedArea?.toLowerCase() ?? '';
+      return name.contains(normalized) ||
+          phone.contains(normalized) ||
+          assignedArea.contains(normalized);
     }).toList();
   }
 }

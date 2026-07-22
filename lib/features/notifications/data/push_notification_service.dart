@@ -262,7 +262,7 @@ class PushNotificationService {
       debugPrint('PushNotificationService: failed to register push token: $error');
       if (throwOnFailure) {
         if (error is Exception) {
-          throw error;
+          rethrow;
         }
         throw const PushNotificationSetupException(
           'Failed to register this device for push notifications.',

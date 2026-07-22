@@ -338,7 +338,6 @@ class _PasswordField extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
-    final primaryColor = const Color(0xFF005C8F);
 
     return TextFormField(
       controller: controller,

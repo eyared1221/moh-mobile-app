@@ -27,8 +27,6 @@ class _CampusSelectionPageState extends State<CampusSelectionPage> {
   String? _error;
   List<CampusSectionEntity> _sections = [];
 
-  static const int _sectionPreviewLimit = 5;
-
   static const Map<String, ({Color accent, Color tint})> _sectionStyles = {
     'Government Universities': (accent: kPrimary, tint: Color(0xFFEAF3F8)),
     'Private Universities in Addis Ababa': (accent: kPrimary, tint: Color(0xFFEAF3F8)),

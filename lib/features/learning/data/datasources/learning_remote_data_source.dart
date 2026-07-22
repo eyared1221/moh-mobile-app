@@ -122,6 +122,8 @@ class LearningRemoteDataSource {
     switch (backendType) {
       case 'text':
         return LearningContentType.paragraph;
+      case 'video':
+        return LearningContentType.video;
       case 'subtitle':
         return LearningContentType.subtitle;
       case 'bulletList':

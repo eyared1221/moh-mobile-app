@@ -35,6 +35,7 @@ dependencies:
   flutter_local_notifications: ^21.0.0
   package_info_plus: ^10.0.0
   timezone: ^0.11.0
+  uuid: ^4.6.0
 
 dev_dependencies:
   flutter_test:
@@ -42,6 +43,7 @@ dev_dependencies:
   flutter_lints: ^3.0.0
   # Package to generate your App Icon automatically
   flutter_launcher_icons: ^0.14.3
+  dart_code_linter: ^4.1.7
 
 # 🚀 App Icon Configuration
 flutter_launcher_icons:
@@ -59,3 +61,4 @@ flutter:
     - assets/icons/
     - android/app/src/main/res/drawable-nodpi/native_launch_light.png
     - android/app/src/main/res/drawable-nodpi/native_launch_dark.png
+    - assets/images/health-facility.png

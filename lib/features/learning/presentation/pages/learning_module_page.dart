@@ -84,7 +84,7 @@ class _LearningModulesPageState extends State<LearningModulesPage> {
 
       final nextIndex = modules.isEmpty
           ? 0
-          : _currentIndex.clamp(0, modules.length - 1) as int;
+          : _currentIndex.clamp(0, modules.length - 1);
 
       setState(() {
         _learningModules = modules;
@@ -117,7 +117,7 @@ class _LearningModulesPageState extends State<LearningModulesPage> {
     await _refreshLearningModules(showLoading: true);
     if (_pageController.hasClients && _learningModules.isNotEmpty) {
       final nextIndex =
-          _currentIndex.clamp(0, _learningModules.length - 1) as int;
+          _currentIndex.clamp(0, _learningModules.length - 1);
       _pageController.jumpToPage(nextIndex);
     }
   }

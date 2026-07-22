@@ -21,8 +21,12 @@ class NotificationAutomationService {
 
   static final NotificationAutomationService instance =
       NotificationAutomationService();
+  static const String homeFeatureSelfAssessmentKey = 'self_assessment';
+  static const String homeFeatureLearningModuleKey = 'learning_module';
 
   static const Duration inactivityReminderDelay = Duration(days: 3);
+  static const Duration highRiskSupportReminderDelay = Duration(hours: 24);
+  static const Duration homeFeatureReminderDelay = Duration(hours: 24);
 
   static const String _migrationKey = 'notifications_live_behavior_v2';
   static const String _lastActiveAtKey = 'notifications_last_active_at';
@@ -31,6 +35,14 @@ class NotificationAutomationService {
       'notifications_last_risk_assessment_at';
   static const String _riskReminderStartAtKey =
       'notifications_risk_reminder_start_at';
+  static const String _highRiskSupportReminderStartAtKey =
+      'notifications_high_risk_support_reminder_start_at';
+  static const String _homeFeatureReminderStartAtKey =
+      'notifications_home_feature_reminder_start_at';
+  static const String _hasOpenedSelfAssessmentKey =
+      'notifications_has_opened_self_assessment';
+  static const String _hasOpenedLearningModuleKey =
+      'notifications_has_opened_learning_module';
   static const String _lastInactivityReminderSourceKey =
       'notifications_last_inactivity_reminder_source';
   static const String _learningSignatureKey = 'notifications_learning_signature';
@@ -43,6 +55,11 @@ class NotificationAutomationService {
     'learning-update',
     'security-alert',
     'inactivity-reminder',
+  };
+  static const Set<String> _deprecatedGuidanceNotificationTypes = {
+    'reminder',
+    'risk_assessment',
+    'learning',
   };
 
   static const List<_RiskReminderTemplate> _riskReminderTemplates = [
@@ -72,6 +89,7 @@ class NotificationAutomationService {
 
   Future<void> initialize() async {
     await _migrateLegacySeededNotifications();
+    await _purgeDeprecatedGuidanceNotifications();
     await refreshAutomatedNotifications(markAppActive: true);
   }
 
@@ -96,9 +114,22 @@ class NotificationAutomationService {
       _riskReminderStartAtKey,
       prefs.getString(_riskReminderStartAtKey) ?? nowIso,
     );
+    await prefs.setString(
+      _homeFeatureReminderStartAtKey,
+      prefs.getString(_homeFeatureReminderStartAtKey) ?? nowIso,
+    );
+    await prefs.setBool(
+      _hasOpenedSelfAssessmentKey,
+      prefs.getBool(_hasOpenedSelfAssessmentKey) ?? false,
+    );
+    await prefs.setBool(
+      _hasOpenedLearningModuleKey,
+      prefs.getBool(_hasOpenedLearningModuleKey) ?? false,
+    );
 
     await _migrateLegacySeededNotifications();
     await _reconcileNotificationPreferences();
+    await _purgeDeprecatedGuidanceNotifications();
 
     await _addAutomatedNotification(
       AppNotification(
@@ -114,102 +145,36 @@ class NotificationAutomationService {
   Future<void> handleLearningModulesPayload(
     Map<String, dynamic> payload,
   ) async {
-    if (!await _isLoggedIn()) {
-      return;
-    }
-
-    final notificationPrefs =
-        await _profileLocalDataSource.getNotificationPreferences();
-    if (!notificationPrefs.learning) {
-      return;
-    }
-
-    final prefs = await SharedPreferences.getInstance();
-    final previousData = prefs.getString(_learningModulesDataKey);
-    final currentData = jsonEncode(payload);
-
-    await prefs.setString(_learningModulesDataKey, currentData);
-
-    if (previousData == null || previousData == currentData) {
-      return;
-    }
-
-    final previousModules = _parseLearningModules(previousData);
-    final currentModules = _parseLearningModules(currentData);
-
-    final changeType = _detectLearningChangeType(
-      previousModules,
-      currentModules,
-    );
-
-    if (changeType == null) {
-      return;
-    }
-
-    final now = DateTime.now();
-    String title;
-    String message;
-
-    switch (changeType) {
-      case _LearningChangeType.newModule:
-        title = 'New Learning Module';
-        message = 'New health learning content is available for you.';
-        break;
-      case _LearningChangeType.updatedModule:
-        title = 'Learning Content Updated';
-        message = 'One of your health lessons has been updated.';
-        break;
-      case _LearningChangeType.newHIVContent:
-        title = 'New HIV Learning Content';
-        message = 'New HIV prevention resources are available.';
-        break;
-    }
-
-    await _addAutomatedNotification(
-      AppNotification(
-        id: 'learning-${now.millisecondsSinceEpoch}',
-        type: 'learning',
-        title: title,
-        message: message,
-        createdAt: now,
-      ),
-    );
+    await _purgeDeprecatedGuidanceNotifications();
   }
 
   Future<void> recordRiskAssessmentCompleted({required String riskLevel}) async {
-    final prefs = await SharedPreferences.getInstance();
-    final previousBaseline = _riskReminderBaselineFromPrefs(prefs);
-    final now = DateTime.now();
-    final nowIso = now.toIso8601String();
+    await _purgeDeprecatedGuidanceNotifications();
+  }
 
-    await _cancelRiskAssessmentSchedulesForBaseline(previousBaseline);
+  Future<void> recordHighRiskSupportActionTaken() async {
+    await _purgeDeprecatedGuidanceNotifications();
+  }
 
-    await prefs.setString(_lastRiskAssessmentAtKey, nowIso);
-    await prefs.setString(_riskReminderStartAtKey, nowIso);
-    await prefs.setString(_riskLevelKey, riskLevel);
-    await _notificationService.deleteNotificationsByTypes({
-      'risk_assessment',
-    });
-    await _syncRiskAssessmentReminderNotifications(
-      prefs: prefs,
-      now: now,
-    );
+  Future<void> recordHomeFeatureOpened({
+    required String featureKey,
+  }) async {
+    await _purgeDeprecatedGuidanceNotifications();
   }
 
   Future<void> handleNotificationPreferenceChanged(
     String key,
     bool enabled,
   ) async {
+    if (_isDeprecatedGuidancePreferenceKey(key)) {
+      await _purgeDeprecatedGuidanceNotifications();
+      return;
+    }
+
     if (!enabled) {
       final types = _notificationTypesForPreferenceKey(key);
       if (types.isNotEmpty) {
         await _notificationService.deleteNotificationsByTypes(types);
-      }
-      if (types.contains('risk_assessment')) {
-        final prefs = await SharedPreferences.getInstance();
-        await _cancelRiskAssessmentSchedulesForBaseline(
-          _riskReminderBaselineFromPrefs(prefs),
-        );
       }
       return;
     }
@@ -266,11 +231,9 @@ class NotificationAutomationService {
   Future<void> refreshAutomatedNotifications({
     required bool markAppActive,
   }) async {
+    await _purgeDeprecatedGuidanceNotifications();
+
     if (!await _isLoggedIn()) {
-      final prefs = await SharedPreferences.getInstance();
-      await _cancelRiskAssessmentSchedulesForBaseline(
-        _riskReminderBaselineFromPrefs(prefs),
-      );
       return;
     }
 
@@ -278,24 +241,13 @@ class NotificationAutomationService {
     await _reconcileNotificationPreferences();
 
     final prefs = await SharedPreferences.getInstance();
-    final now = DateTime.now();
-    final lastActiveAt = _parseDateTime(prefs.getString(_lastActiveAtKey));
-
-    await _maybeCreateInactivityReminder(
-      prefs: prefs,
-      now: now,
-      lastActiveAt: lastActiveAt,
-    );
-    await _syncRiskAssessmentReminderNotifications(
-      prefs: prefs,
-      now: now,
-    );
 
     if (markAppActive) {
-      await prefs.setString(_lastActiveAtKey, now.toIso8601String());
+      await prefs.setString(_lastActiveAtKey, DateTime.now().toIso8601String());
     }
   }
 
+  // ignore: unused_element
   Future<void> _maybeCreateInactivityReminder({
     required SharedPreferences prefs,
     required DateTime now,
@@ -328,6 +280,7 @@ class NotificationAutomationService {
     await prefs.setString(_lastInactivityReminderSourceKey, currentSource);
   }
 
+  // ignore: unused_element
   Future<void> _syncRiskAssessmentReminderNotifications({
     required SharedPreferences prefs,
     required DateTime now,
@@ -358,6 +311,91 @@ class NotificationAutomationService {
     }
   }
 
+  // ignore: unused_element
+  Future<void> _syncHighRiskSupportReminderNotifications({
+    required SharedPreferences prefs,
+    required DateTime now,
+  }) async {
+    final baseline = _highRiskSupportReminderBaselineFromPrefs(prefs);
+    if (baseline == null) {
+      return;
+    }
+
+    if ((prefs.getString(_riskLevelKey) ?? '').toLowerCase() != 'high') {
+      await _clearHighRiskSupportReminderState(
+        prefs: prefs,
+        baseline: baseline,
+        deleteStoredNotification: true,
+      );
+      return;
+    }
+
+    final notificationPrefs =
+        await _profileLocalDataSource.getNotificationPreferences();
+    if (!notificationPrefs.riskAssessment) {
+      await _clearHighRiskSupportReminderState(
+        prefs: prefs,
+        baseline: baseline,
+        deleteStoredNotification: false,
+      );
+      return;
+    }
+
+    final reminder = _buildHighRiskSupportReminder(baseline);
+    if (reminder.scheduledAt.isAfter(now)) {
+      await _pushNotificationService.scheduleLocalAppNotification(
+        reminder.notification,
+        scheduledAt: reminder.scheduledAt,
+      );
+      return;
+    }
+
+    await _notificationService.addNotificationIfNew(reminder.notification);
+  }
+
+  // ignore: unused_element
+  Future<void> _syncHomeFeatureReminderNotifications({
+    required SharedPreferences prefs,
+    required DateTime now,
+  }) async {
+    final baseline = _homeFeatureReminderBaselineFromPrefs(prefs);
+    if (baseline == null) {
+      return;
+    }
+
+    if (_hasCompletedTrackedHomeFeatures(prefs)) {
+      await _clearHomeFeatureReminderState(
+        prefs: prefs,
+        baseline: baseline,
+        deleteStoredNotification: true,
+      );
+      return;
+    }
+
+    final notificationPrefs =
+        await _profileLocalDataSource.getNotificationPreferences();
+    if (!notificationPrefs.inactivity) {
+      await _clearHomeFeatureReminderState(
+        prefs: prefs,
+        baseline: baseline,
+        deleteStoredNotification: false,
+        clearStartAt: false,
+      );
+      return;
+    }
+
+    final reminder = _buildHomeFeatureReminder(prefs, baseline);
+    if (reminder.scheduledAt.isAfter(now)) {
+      await _pushNotificationService.scheduleLocalAppNotification(
+        reminder.notification,
+        scheduledAt: reminder.scheduledAt,
+      );
+      return;
+    }
+
+    await _notificationService.addNotificationIfNew(reminder.notification);
+  }
+
   Future<void> _cancelRiskAssessmentSchedulesForBaseline(
     DateTime? baseline,
   ) async {
@@ -370,6 +408,47 @@ class NotificationAutomationService {
       await _pushNotificationService.cancelLocalAppNotification(
         reminder.notification.id,
       );
+    }
+  }
+
+  Future<void> _clearHighRiskSupportReminderState({
+    required SharedPreferences prefs,
+    required DateTime? baseline,
+    required bool deleteStoredNotification,
+  }) async {
+    if (baseline != null) {
+      await _pushNotificationService.cancelLocalAppNotification(
+        _buildHighRiskSupportReminderId(baseline),
+      );
+      if (deleteStoredNotification) {
+        await _notificationService.deleteNotificationsByIds({
+          _buildHighRiskSupportReminderId(baseline),
+        });
+      }
+    }
+
+    await prefs.remove(_highRiskSupportReminderStartAtKey);
+  }
+
+  Future<void> _clearHomeFeatureReminderState({
+    required SharedPreferences prefs,
+    required DateTime? baseline,
+    required bool deleteStoredNotification,
+    bool clearStartAt = true,
+  }) async {
+    if (baseline != null) {
+      await _pushNotificationService.cancelLocalAppNotification(
+        _buildHomeFeatureReminderId(baseline),
+      );
+      if (deleteStoredNotification) {
+        await _notificationService.deleteNotificationsByIds({
+          _buildHomeFeatureReminderId(baseline),
+        });
+      }
+    }
+
+    if (clearStartAt) {
+      await prefs.remove(_homeFeatureReminderStartAtKey);
     }
   }
 
@@ -387,6 +466,18 @@ class NotificationAutomationService {
   DateTime? _riskReminderBaselineFromPrefs(SharedPreferences prefs) {
     return _parseDateTime(prefs.getString(_lastRiskAssessmentAtKey)) ??
         _parseDateTime(prefs.getString(_riskReminderStartAtKey));
+  }
+
+  DateTime? _highRiskSupportReminderBaselineFromPrefs(
+    SharedPreferences prefs,
+  ) {
+    return _parseDateTime(prefs.getString(_highRiskSupportReminderStartAtKey));
+  }
+
+  DateTime? _homeFeatureReminderBaselineFromPrefs(
+    SharedPreferences prefs,
+  ) {
+    return _parseDateTime(prefs.getString(_homeFeatureReminderStartAtKey));
   }
 
   List<_ScheduledRiskReminder> _buildRiskAssessmentReminders(
@@ -407,6 +498,76 @@ class NotificationAutomationService {
     }).toList();
   }
 
+  _ScheduledHighRiskSupportReminder _buildHighRiskSupportReminder(
+    DateTime baseline,
+  ) {
+    final scheduledAt = baseline.add(highRiskSupportReminderDelay);
+    return _ScheduledHighRiskSupportReminder(
+      scheduledAt: scheduledAt,
+      notification: AppNotification(
+        id: _buildHighRiskSupportReminderId(baseline),
+        type: 'risk_assessment',
+        title: 'Support is available',
+        message:
+            'Your last assessment showed higher HIV risk. Open the app to talk to a mentor or get health services.',
+        createdAt: scheduledAt,
+      ),
+    );
+  }
+
+  String _buildHighRiskSupportReminderId(DateTime baseline) {
+    return 'high-risk-support-${baseline.millisecondsSinceEpoch}';
+  }
+
+  bool _hasCompletedTrackedHomeFeatures(SharedPreferences prefs) {
+    final openedSelfAssessment =
+        prefs.getBool(_hasOpenedSelfAssessmentKey) ?? false;
+    final openedLearningModule =
+        prefs.getBool(_hasOpenedLearningModuleKey) ?? false;
+    return openedSelfAssessment && openedLearningModule;
+  }
+
+  _ScheduledHomeFeatureReminder _buildHomeFeatureReminder(
+    SharedPreferences prefs,
+    DateTime baseline,
+  ) {
+    final openedSelfAssessment =
+        prefs.getBool(_hasOpenedSelfAssessmentKey) ?? false;
+    final openedLearningModule =
+        prefs.getBool(_hasOpenedLearningModuleKey) ?? false;
+    final missingFeatures = <String>[
+      if (!openedSelfAssessment) 'self-assessment',
+      if (!openedLearningModule) 'learning module',
+    ];
+
+    final scheduledAt = baseline.add(homeFeatureReminderDelay);
+    return _ScheduledHomeFeatureReminder(
+      scheduledAt: scheduledAt,
+      notification: AppNotification(
+        id: _buildHomeFeatureReminderId(baseline),
+        type: 'reminder',
+        title: 'Keep exploring your health tools',
+        message:
+            'You have not opened ${_joinFeatureLabels(missingFeatures)} yet. Visit the home page to continue with those tools.',
+        createdAt: scheduledAt,
+      ),
+    );
+  }
+
+  String _buildHomeFeatureReminderId(DateTime baseline) {
+    return 'home-feature-reminder-${baseline.millisecondsSinceEpoch}';
+  }
+
+  String _joinFeatureLabels(List<String> labels) {
+    if (labels.isEmpty) {
+      return 'these features';
+    }
+    if (labels.length == 1) {
+      return labels.first;
+    }
+    return '${labels.first} and ${labels.last}';
+  }
+
   Future<void> _reconcileNotificationPreferences() async {
     final notificationPrefs =
         await _profileLocalDataSource.getNotificationPreferences();
@@ -415,22 +576,51 @@ class NotificationAutomationService {
     if (!notificationPrefs.welcome) {
       disabledTypes.add('welcome');
     }
-    if (!notificationPrefs.riskAssessment) {
-      disabledTypes.add('risk_assessment');
-    }
-    if (!notificationPrefs.learning) {
-      disabledTypes.add('learning');
-    }
     if (!notificationPrefs.security) {
       disabledTypes.add('security');
-    }
-    if (!notificationPrefs.inactivity) {
-      disabledTypes.add('reminder');
     }
 
     if (disabledTypes.isNotEmpty) {
       await _notificationService.deleteNotificationsByTypes(disabledTypes);
     }
+  }
+
+  bool _isDeprecatedGuidancePreferenceKey(String key) {
+    return key == ProfileLocalDataSource.notifyInactivityKey ||
+        key == ProfileLocalDataSource.notifyRiskAssessmentKey ||
+        key == ProfileLocalDataSource.notifyLearningKey;
+  }
+
+  Future<void> _purgeDeprecatedGuidanceNotifications() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    await _cancelRiskAssessmentSchedulesForBaseline(
+      _riskReminderBaselineFromPrefs(prefs),
+    );
+    await _clearHighRiskSupportReminderState(
+      prefs: prefs,
+      baseline: _highRiskSupportReminderBaselineFromPrefs(prefs),
+      deleteStoredNotification: true,
+    );
+    await _clearHomeFeatureReminderState(
+      prefs: prefs,
+      baseline: _homeFeatureReminderBaselineFromPrefs(prefs),
+      deleteStoredNotification: true,
+    );
+    await _notificationService.deleteNotificationsByTypes(
+      _deprecatedGuidanceNotificationTypes,
+    );
+
+    await prefs.remove(_lastRiskAssessmentAtKey);
+    await prefs.remove(_riskReminderStartAtKey);
+    await prefs.remove(_lastInactivityReminderSourceKey);
+    await prefs.remove(_learningSignatureKey);
+    await prefs.remove(_riskLevelKey);
+    await prefs.remove(_learningModulesDataKey);
+    await prefs.remove(_homeFeatureReminderStartAtKey);
+    await prefs.remove(_hasOpenedSelfAssessmentKey);
+    await prefs.remove(_hasOpenedLearningModuleKey);
+    await prefs.remove(_highRiskSupportReminderStartAtKey);
   }
 
   Future<void> _migrateLegacySeededNotifications() async {
@@ -450,6 +640,7 @@ class NotificationAutomationService {
     return prefs.getBool('isLoggedIn') ?? false;
   }
 
+  // ignore: unused_element
   String _buildLearningSignature(Map<String, dynamic> payload) {
     final modules = payload['data'] as List<dynamic>? ?? const <dynamic>[];
     final normalized = modules
@@ -511,6 +702,7 @@ class NotificationAutomationService {
         items.every((item) => item is Map || item is Map<String, dynamic>);
   }
 
+  // ignore: unused_element
   Set<String> _extractLearningModuleIds(String signature) {
     try {
       final decoded = jsonDecode(signature);
@@ -532,17 +724,8 @@ class NotificationAutomationService {
     if (key == ProfileLocalDataSource.notifyWelcomeKey) {
       return {'welcome'};
     }
-    if (key == ProfileLocalDataSource.notifyRiskAssessmentKey) {
-      return {'risk_assessment'};
-    }
-    if (key == ProfileLocalDataSource.notifyLearningKey) {
-      return {'learning'};
-    }
     if (key == ProfileLocalDataSource.notifySecurityKey) {
       return {'security'};
-    }
-    if (key == ProfileLocalDataSource.notifyInactivityKey) {
-      return {'reminder'};
     }
     return const <String>{};
   }
@@ -554,6 +737,7 @@ class NotificationAutomationService {
     return DateTime.tryParse(raw);
   }
 
+  // ignore: unused_element
   List<Map<String, dynamic>> _parseLearningModules(String jsonData) {
     try {
       final decoded = jsonDecode(jsonData);
@@ -574,6 +758,7 @@ class NotificationAutomationService {
     }
   }
 
+  // ignore: unused_element
   _LearningChangeType? _detectLearningChangeType(
     List<Map<String, dynamic>> previousModules,
     List<Map<String, dynamic>> currentModules,
@@ -675,6 +860,26 @@ class _ScheduledRiskReminder {
   final AppNotification notification;
 
   const _ScheduledRiskReminder({
+    required this.scheduledAt,
+    required this.notification,
+  });
+}
+
+class _ScheduledHighRiskSupportReminder {
+  final DateTime scheduledAt;
+  final AppNotification notification;
+
+  const _ScheduledHighRiskSupportReminder({
+    required this.scheduledAt,
+    required this.notification,
+  });
+}
+
+class _ScheduledHomeFeatureReminder {
+  final DateTime scheduledAt;
+  final AppNotification notification;
+
+  const _ScheduledHomeFeatureReminder({
     required this.scheduledAt,
     required this.notification,
   });

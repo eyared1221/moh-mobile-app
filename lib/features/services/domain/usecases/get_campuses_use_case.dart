@@ -23,7 +23,7 @@ class GetCampusesUseCase {
     'Private Universities in Regional Towns': 'Regional Private',
   };
 
-  static final LatLng _fallbackLocation = const LatLng(9.0054, 38.7636);
+  static const LatLng _fallbackLocation = LatLng(9.0054, 38.7636);
 
   Future<GetCampusesResult> call() async {
     // Get raw data from repository (handles caching/API)

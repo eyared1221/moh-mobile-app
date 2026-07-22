@@ -7,12 +7,21 @@ class MentorModel extends MentorEntity {
     required super.phone,
     super.imageUrl,
     super.role,
+    super.assignedArea,
   });
 
   factory MentorModel.fromJson(Map<String, dynamic> json) {
     final fullName = (json['fullName'] ?? json['name'] ?? '').toString().trim();
     final phone = (json['phone'] ?? json['phoneNumber'] ?? '').toString().trim();
     final role = (json['professionalTitle'] ?? json['role'] ?? '').toString().trim();
+    final assignedArea =
+        (json['assignedArea'] ??
+                json['assignedCommunity'] ??
+                json['community'] ??
+                json['assignedAreaCommunity'] ??
+                '')
+            .toString()
+            .trim();
     final imageUrl =
         (json['identificationImageUrl'] ??
                 json['imageUrl'] ??
@@ -27,6 +36,7 @@ class MentorModel extends MentorEntity {
       phone: phone.isEmpty ? 'Phone not available' : phone,
       imageUrl: imageUrl.isEmpty ? null : imageUrl,
       role: role.isEmpty ? null : role,
+      assignedArea: assignedArea.isEmpty ? null : assignedArea,
     );
   }
 }

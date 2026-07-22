@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../../notifications/data/notification_automation_service.dart';
-import '../../domain/entities/notification_preferences_entity.dart';
 import '../controllers/profile_controller.dart';
 
 class NotificationsPage extends StatefulWidget {
@@ -21,9 +20,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
   bool _isUpdatingPush = false;
   bool _pushEnabled = true;
   bool _welcome = true;
-  bool _inactivity = true;
-  bool _riskAssessment = true;
-  bool _learning = true;
   bool _security = true;
 
   bool get _pushSupported => _controller.isPushSupported;
@@ -40,9 +36,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
     setState(() {
       _pushEnabled = _pushSupported && prefs.pushEnabled;
       _welcome = prefs.welcome;
-      _inactivity = prefs.inactivity;
-      _riskAssessment = prefs.riskAssessment;
-      _learning = prefs.learning;
       _security = prefs.security;
       _isLoading = false;
     });
@@ -157,63 +150,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Learning & Guidance',
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    letterSpacing: 0.4,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                _switchSection(
-                  context,
-                  children: [
-                    _switchTile(
-                      context,
-                      title: 'Last Login Reminders',
-                      value: _inactivity,
-                      onChanged: (value) async {
-                        setState(() => _inactivity = value);
-                        await _save(_controller.notifyInactivityKey, value);
-                        await _automationService.handleNotificationPreferenceChanged(
-                          _controller.notifyInactivityKey,
-                          value,
-                        );
-                      },
-                    ),
-                    _sectionDivider(colorScheme),
-                    _switchTile(
-                      context,
-                      title: 'Risk Assessment Reminders', 
-                      value: _riskAssessment,
-                      onChanged: (value) async {
-                        setState(() => _riskAssessment = value);
-                        await _save(_controller.notifyRiskAssessmentKey, value);
-                        await _automationService.handleNotificationPreferenceChanged(
-                          _controller.notifyRiskAssessmentKey,
-                          value,
-                        );
-                      },
-                    ),
-                    _sectionDivider(colorScheme),
-                    _switchTile(
-                      context,
-                      title: 'Learning Module Updates',
-                      value: _learning,
-                      onChanged: (value) async {
-                        setState(() => _learning = value);
-                        await _save(_controller.notifyLearningKey, value);
-                        await _automationService.handleNotificationPreferenceChanged(
-                          _controller.notifyLearningKey,
-                          value,
-                        );
-                      },
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Text(
                   'Account & Safety',
                   style: theme.textTheme.labelLarge?.copyWith(
                     letterSpacing: 0.4,
@@ -282,7 +218,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
     required ValueChanged<bool> onChanged,
   }) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),

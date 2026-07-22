@@ -43,6 +43,7 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
   bool _isLoadingQuestions = true;
   bool _isSavingAssessment = false;
   String? _saveAssessmentMessage;
+  bool _saveAssessmentIsError = false;
   bool _saveAssessmentNeedsReauth = false;
 
   _RiskStage _stage = _RiskStage.intro;
@@ -125,7 +126,7 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
         .toList();
     _currentIndex = items.isEmpty
         ? 0
-        : _currentIndex.clamp(0, items.length - 1) as int;
+        : _currentIndex.clamp(0, items.length - 1);
     if (items.isEmpty && _stage == _RiskStage.questions) {
       _stage = _RiskStage.intro;
     }
@@ -229,7 +230,7 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
           saveStatusMessage: _isSavingAssessment
               ? 'Saving this assessment to your history...'
               : _saveAssessmentMessage,
-          saveStatusIsError: !_isSavingAssessment && _saveAssessmentMessage != null,
+          saveStatusIsError: _saveAssessmentIsError,
           saveStatusActionLabel:
               _saveAssessmentNeedsReauth ? 'Sign in again' : null,
           onSaveStatusAction:
@@ -309,6 +310,7 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
       _stage = _RiskStage.questions;
       _currentIndex = 0;
       _saveAssessmentMessage = null;
+      _saveAssessmentIsError = false;
       _saveAssessmentNeedsReauth = false;
     });
   }
@@ -334,6 +336,7 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
         _stage = _RiskStage.result;
         _isSavingAssessment = true;
         _saveAssessmentMessage = null;
+        _saveAssessmentIsError = false;
         _saveAssessmentNeedsReauth = false;
       } else {
         _currentIndex += 1;
@@ -351,6 +354,9 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
   }
 
   void _openHealthService() {
+    unawaited(
+      NotificationAutomationService.instance.recordHighRiskSupportActionTaken(),
+    );
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -363,6 +369,9 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
   }
 
   void _openPeerMentor() {
+    unawaited(
+      NotificationAutomationService.instance.recordHighRiskSupportActionTaken(),
+    );
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -448,7 +457,7 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
 
   Future<void> _persistLatestAssessment() async {
     try {
-      await _controller.submitLatestResult(
+      final saveResult = await _controller.submitLatestResult(
         riskLevel: _riskLevel.name,
         resultLabel: _resultStatusLabel,
         riskScore: _totalYesCount,
@@ -460,8 +469,19 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
 
       setState(() {
         _isSavingAssessment = false;
-        _saveAssessmentMessage = null;
-        _saveAssessmentNeedsReauth = false;
+        _saveAssessmentIsError = false;
+        _saveAssessmentNeedsReauth = saveResult.needsReauth;
+        _saveAssessmentMessage = switch (saveResult.mode) {
+          RiskAssessmentSaveMode.syncedToAccount => null,
+          RiskAssessmentSaveMode.savedAnonymousToDatabase =>
+            saveResult.needsReauth
+                ? 'Session expired, but your assessment was saved anonymously in the database.'
+                : 'Assessment saved anonymously in the database.',
+          RiskAssessmentSaveMode.savedLocallyPendingSync =>
+            saveResult.needsReauth
+                ? 'Assessment was saved on this device for now. Sign in again later if you want future results linked to your account.'
+                : 'Assessment saved on this device for now. It could not be synced to the database yet.',
+        };
       });
     } catch (e) {
       final needsReauth = _isAuthenticationFailure(e);
@@ -475,6 +495,7 @@ class _RiskAssessmentPageState extends State<RiskAssessmentPage> {
 
       setState(() {
         _isSavingAssessment = false;
+        _saveAssessmentIsError = true;
         _saveAssessmentMessage = message;
         _saveAssessmentNeedsReauth = needsReauth;
       });

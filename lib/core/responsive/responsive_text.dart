@@ -28,7 +28,7 @@ class ResponsiveText {
     double maxScale = 1.15,
   }) {
     final screenWidth = ResponsiveHelper.width(context);
-    final baseWidth = 375.0; // Base iPhone width
+    const baseWidth = 375.0; // Base iPhone width
     final scale = screenWidth / baseWidth;
     return baseFontSize * scale.clamp(minScale, maxScale);
   }

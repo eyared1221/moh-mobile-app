@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:url_launcher/url_launcher.dart';
+import 'package:webview_flutter/webview_flutter.dart'
+    if (dart.library.html) 'learning_webview_stub.dart';
 import '../../domain/entities/learning_content_block_entity.dart';
 import '../../domain/entities/learning_section_entity.dart';
 import 'learning_image.dart';
@@ -61,6 +65,13 @@ class _SectionBlockView extends StatelessWidget {
 
     switch (block.type) {
       case LearningContentType.paragraph:
+        if (_looksLikeUrl(block.text)) {
+          return _ActionLinkBlock(
+            url: block.text,
+            label: 'Open link',
+            icon: Icons.open_in_new_rounded,
+          );
+        }
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: Align(
@@ -75,6 +86,9 @@ class _SectionBlockView extends StatelessWidget {
             ),
           ),
         );
+
+      case LearningContentType.video:
+        return _InlineVideoBlock(url: block.text);
 
       case LearningContentType.subtitle:
         return Padding(
@@ -166,47 +180,432 @@ class _SectionBlockView extends StatelessWidget {
           ),
         );
 
-      default:
-        // Debug fallback - show any unhandled content types
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: colorScheme.errorContainer,
-              borderRadius: BorderRadius.circular(8),
+    }
+  }
+
+  bool _looksLikeUrl(String value) {
+    final uri = Uri.tryParse(value.trim());
+    return uri != null &&
+        (uri.scheme == 'http' || uri.scheme == 'https') &&
+        uri.host.isNotEmpty;
+  }
+}
+
+class _ActionLinkBlock extends StatelessWidget {
+  const _ActionLinkBlock({
+    required this.url,
+    required this.label,
+    required this.icon,
+  });
+
+  final String url;
+  final String label;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final parsedUri = Uri.tryParse(url.trim());
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: parsedUri == null ? null : () => _openUrl(context, parsedUri),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: colorScheme.primary.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: colorScheme.primary.withOpacity(0.18),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Unhandled content type: ${block.type.name}',
-                  style: textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onErrorContainer,
-                    fontWeight: FontWeight.bold,
-                  ),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: colorScheme.primary.withOpacity(0.12),
+                  shape: BoxShape.circle,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'Content: ${block.text}',
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onErrorContainer,
-                  ),
+                child: Icon(
+                  icon,
+                  color: colorScheme.primary,
+                  size: 22,
                 ),
-                if (block.items.isNotEmpty) ...[
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: textTheme.bodyMedium?.copyWith(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      url,
+                      style: textTheme.bodySmall?.copyWith(
+                        fontSize: 12.5,
+                        color: colorScheme.onSurfaceVariant,
+                        height: 1.45,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openUrl(BuildContext context, Uri uri) async {
+    final launched = await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    );
+
+    if (!launched && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open this link')),
+      );
+    }
+  }
+}
+
+class _InlineVideoBlock extends StatefulWidget {
+  const _InlineVideoBlock({required this.url});
+
+  final String url;
+
+  @override
+  State<_InlineVideoBlock> createState() => _InlineVideoBlockState();
+}
+
+class _InlineVideoBlockState extends State<_InlineVideoBlock> {
+  WebViewController? _controller;
+  bool _isLoading = true;
+  bool _hasError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!kIsWeb) {
+      _initializePlayer();
+    }
+  }
+
+  void _initializePlayer() {
+    final controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(const Color(0x00000000))
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageStarted: (_) {
+            if (!mounted) return;
+            setState(() {
+              _isLoading = true;
+              _hasError = false;
+            });
+          },
+          onPageFinished: (_) {
+            if (!mounted) return;
+            setState(() => _isLoading = false);
+          },
+          onWebResourceError: (error) {
+            if (error.isForMainFrame != true || !mounted) return;
+            setState(() {
+              _isLoading = false;
+              _hasError = true;
+            });
+          },
+        ),
+      );
+
+    _controller = controller;
+    _loadVideo();
+  }
+
+  Future<void> _loadVideo() async {
+    final url = widget.url.trim();
+    if (url.isEmpty || _controller == null) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _hasError = true;
+      });
+      return;
+    }
+
+    final embedUrl = _youtubeEmbedUrl(url);
+    if (embedUrl != null) {
+      await _controller!.loadHtmlString(
+        _buildYouTubeEmbedHtml(embedUrl),
+        baseUrl: 'https://www.youtube.com',
+      );
+      return;
+    }
+
+    if (_isDirectVideoUrl(url)) {
+      await _controller!.loadHtmlString(
+        _buildDirectVideoHtml(url),
+        baseUrl: 'https://localhost',
+      );
+      return;
+    }
+
+    final uri = Uri.tryParse(url);
+    if (uri == null) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _hasError = true;
+      });
+      return;
+    }
+
+    await _controller!.loadRequest(uri);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: colorScheme.outlineVariant),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AspectRatio(
+              aspectRatio: 16 / 9,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (kIsWeb || _controller == null)
+                    WebViewWidget(controller: WebViewController())
+                  else if (_hasError)
+                    _buildErrorState(context)
+                  else
+                    WebViewWidget(controller: _controller!),
+                  if (_isLoading && !_hasError && !kIsWeb)
+                    Container(
+                      color: Colors.black.withOpacity(0.08),
+                      alignment: Alignment.center,
+                      child: const CircularProgressIndicator(),
+                    ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Video',
+                    style: textTheme.bodyMedium?.copyWith(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: colorScheme.primary,
+                    ),
+                  ),
                   const SizedBox(height: 4),
                   Text(
-                    'Items: ${block.items.join(", ")}',
+                    widget.url,
                     style: textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onErrorContainer,
+                      fontSize: 12.5,
+                      color: colorScheme.onSurfaceVariant,
+                      height: 1.45,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: OutlinedButton.icon(
+                      onPressed: () => _openExternally(context),
+                      icon: const Icon(Icons.open_in_new_rounded, size: 16),
+                      label: const Text('Open externally'),
                     ),
                   ),
                 ],
-              ],
+              ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      color: colorScheme.surfaceVariant.withOpacity(0.4),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.ondemand_video_outlined,
+            size: 42,
+            color: colorScheme.onSurfaceVariant,
           ),
-        );
+          const SizedBox(height: 10),
+          Text(
+            'Video preview could not load inside the app.',
+            style: TextStyle(
+              color: colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openExternally(BuildContext context) async {
+    final uri = Uri.tryParse(widget.url.trim());
+    if (uri == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Invalid video link')),
+      );
+      return;
     }
+
+    final launched = await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    );
+
+    if (!launched && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open this video')),
+      );
+    }
+  }
+
+  bool _isDirectVideoUrl(String value) {
+    final normalized = value.toLowerCase();
+    return normalized.endsWith('.mp4') ||
+        normalized.endsWith('.webm') ||
+        normalized.endsWith('.mov') ||
+        normalized.endsWith('.m3u8');
+  }
+
+  String? _youtubeEmbedUrl(String value) {
+    final uri = Uri.tryParse(value);
+    if (uri == null) return null;
+
+    final host = uri.host.toLowerCase();
+    String? videoId;
+
+    if (host.contains('youtu.be')) {
+      final segments = uri.pathSegments.where((segment) => segment.isNotEmpty);
+      if (segments.isNotEmpty) {
+        videoId = segments.first;
+      }
+    } else if (host.contains('youtube.com')) {
+      if (uri.path == '/watch') {
+        videoId = uri.queryParameters['v'];
+      } else if (uri.pathSegments.isNotEmpty) {
+        final first = uri.pathSegments.first;
+        if (first == 'embed' || first == 'shorts' || first == 'live') {
+          if (uri.pathSegments.length > 1) {
+            videoId = uri.pathSegments[1];
+          }
+        }
+      }
+    }
+
+    if (videoId == null || videoId.trim().isEmpty) {
+      return null;
+    }
+
+    return 'https://www.youtube.com/embed/${videoId.trim()}?playsinline=1&rel=0';
+  }
+
+  String _buildYouTubeEmbedHtml(String embedUrl) {
+    return '''
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: #000;
+        height: 100%;
+        overflow: hidden;
+      }
+      iframe {
+        border: 0;
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <iframe
+      src="$embedUrl"
+      title="Learning video"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+      allowfullscreen>
+    </iframe>
+  </body>
+</html>
+''';
+  }
+
+  String _buildDirectVideoHtml(String url) {
+    return '''
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: #000;
+        height: 100%;
+        overflow: hidden;
+      }
+      video {
+        width: 100%;
+        height: 100%;
+        background: #000;
+      }
+    </style>
+  </head>
+  <body>
+    <video controls playsinline>
+      <source src="$url">
+      Your browser does not support video playback.
+    </video>
+  </body>
+</html>
+''';
   }
 }

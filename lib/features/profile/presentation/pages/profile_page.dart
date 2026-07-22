@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+
 import '../../../../core/theme/theme_notifier.dart';
 import '../../../../shared/widgets/app_bottom_nav.dart';
 import '../../../auth/presentation/signin_screen.dart';
-import '../../../auth/presentation/auth_messages.dart';
 import '../../domain/entities/profile_user_entity.dart';
 import '../controllers/profile_controller.dart';
 import 'edit_profile_page.dart';
@@ -95,150 +94,6 @@ class _ProfilePageState extends State<ProfilePage> {
     });
   }
 
-  Future<void> _saveProfile(ProfileUserEntity profile) async {
-    try {
-      final savedProfile = await _controller.saveProfile(profile);
-      if (!mounted) return;
-      setState(() => _profile = savedProfile);
-      _showProfileUpdatedNotice();
-    } catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
-      );
-    }
-  }
-
-  void _showProfileUpdatedNotice() {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final messenger = ScaffoldMessenger.of(context);
-
-    messenger
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-          duration: const Duration(seconds: 3),
-          content: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: colorScheme.primary.withOpacity(0.18)),
-              boxShadow: [
-                BoxShadow(
-                  color: colorScheme.primary.withOpacity(0.12),
-                  blurRadius: 18,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: colorScheme.primary.withOpacity(0.12),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.check_rounded,
-                    color: colorScheme.primary,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Profile updated',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: colorScheme.onSurface,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Your changes were saved successfully.',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-  }
-
-  Future<void> _openEditProfilePage() async {
-    final updated = await Navigator.push<ProfileUserEntity>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => EditProfilePage(profile: _profile),
-      ),
-    );
-
-    if (updated != null) {
-      await _saveProfile(updated);
-    }
-  }
-
-  // Keeps hot-reload from calling a deleted method while the app state updates.
-  Future<void> _openEditProfileDialog() {
-    return _openEditProfilePage();
-  }
-
-  // Compatibility shim for stale hot-reload closures from the old edit dialog.
-  Widget _field({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    TextInputType? keyboardType,
-    String? Function(String?)? validator,
-    List<TextInputFormatter>? inputFormatters,
-  }) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      validator: validator,
-      inputFormatters: inputFormatters,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon),
-        filled: true,
-        fillColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.45),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(
-            color: Theme.of(context).colorScheme.primary,
-            width: 1.6,
-          ),
-        ),
-      ),
-    );
-  }
-
   Future<void> _openLanguagePage() async {
     final updated = await Navigator.push<ProfileUserEntity>(
       context,
@@ -246,11 +101,21 @@ class _ProfilePageState extends State<ProfilePage> {
         builder: (_) => LanguagePage(profile: _profile),
       ),
     );
+
     if (updated != null) {
       setState(() => _profile = updated);
     } else {
       await _bootstrapProfile();
     }
+  }
+
+  Future<void> _openEditProfilePage() async {
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EditProfilePage(profile: _profile),
+      ),
+    );
   }
 
   Future<void> _openThemeSettingsPage() async {
@@ -325,7 +190,11 @@ class _ProfilePageState extends State<ProfilePage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.person_outline_rounded, size: 54, color: colorScheme.primary),
+                Icon(
+                  Icons.person_outline_rounded,
+                  size: 54,
+                  color: colorScheme.primary,
+                ),
                 const SizedBox(height: 10),
                 Text(
                   'Sign in to view your profile',
@@ -353,74 +222,59 @@ class _ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-  centerTitle: true,
-  elevation: 0,
-  surfaceTintColor: Colors.transparent,
-  backgroundColor: theme.scaffoldBackgroundColor,
-  actions: [
-    PopupMenuButton<String>(
-      offset: const Offset(0, 50),
-
-      elevation: 4,
-
-      color: theme.cardColor,
-
-      surfaceTintColor: Colors.transparent,
-
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-      ),
-
-      onSelected: (value) async {
-        if (value == 'logout') {
-          final ok = await _confirmLogout();
-
-          if (!ok) return;
-
-          await _logout();
-        }
-      },
-
-      itemBuilder: (context) => [
-        PopupMenuItem<String>(
-          value: 'logout',
-
-          child: Row(
-            children: [
-              Icon(
-                Icons.logout_rounded,
-                color: colorScheme.primary,
-                size: 22,
-              ),
-
-              const SizedBox(width: 12),
-
-              Text(
-                'Log Out',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: colorScheme.primary,
+        centerTitle: true,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        backgroundColor: theme.scaffoldBackgroundColor,
+        actions: [
+          PopupMenuButton<String>(
+            offset: const Offset(0, 50),
+            elevation: 4,
+            color: theme.cardColor,
+            surfaceTintColor: Colors.transparent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+            ),
+            onSelected: (value) async {
+              if (value == 'logout') {
+                final ok = await _confirmLogout();
+                if (!ok) return;
+                await _logout();
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem<String>(
+                value: 'logout',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.logout_rounded,
+                      color: colorScheme.primary,
+                      size: 22,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Log Out',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.primary,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
+            child: Padding(
+              padding: const EdgeInsets.only(right: 14, left: 4),
+              child: Icon(
+                Icons.more_vert_rounded,
+                color: colorScheme.onSurface,
+                size: 27,
+              ),
+            ),
           ),
-        ),
-      ],
-
-      child: Padding(
-        padding: const EdgeInsets.only(
-          right: 14,
-          left: 4,
-        ),
-        child: Icon(
-          Icons.more_vert_rounded,
-          color: colorScheme.onSurface,
-          size: 27,
-        ),
+        ],
       ),
-    ),
-  ],
-),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(18, 8, 18, 18),
         child: Column(
@@ -496,84 +350,6 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
   }
-
-          
-Widget _actionTile(
-  BuildContext context, {
-  required IconData icon,
-  required String title,
-  required String subtitle,
-  required Color accent,
-  required VoidCallback onTap,
-}) {
-  final theme = Theme.of(context);
-  final colorScheme = theme.colorScheme;
-
-  return InkWell(
-    onTap: onTap,
-    borderRadius: BorderRadius.circular(22),
-    child: Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: colorScheme.outlineVariant),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center, // ✅ FIX
-        children: [
-          Container(
-            width: 58,
-            height: 58,
-            decoration: BoxDecoration(
-              color: accent.withOpacity(0.18),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Icon(icon, color: accent, size: 28),
-          ),
-          const SizedBox(width: 14),
-
-          /// 🔥 FIX: wrap with Expanded + give proper height
-          Expanded(
-            child: SizedBox(
-              height: 60, // ✅ FORCE HEIGHT (critical fix)
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center, // ✅ center text
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontSize: 13.5,
-                      color: colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          Icon(Icons.chevron_right_rounded, color: colorScheme.outline),
-        ],
-      ),
-    ),
-  );
-}
 
   Widget _primaryActionsSection(BuildContext context) {
     final theme = Theme.of(context);
@@ -831,5 +607,4 @@ Widget _actionTile(
       ),
     );
   }
-
 }

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -54,7 +53,7 @@ class _ClinicDetailPageState extends State<ClinicDetailPage> {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: const Text('Healthcare Facility Detail'),
+        title: const Text('Health Facility Detail'),
         backgroundColor: colorScheme.surface,
         foregroundColor: colorScheme.onSurface,
         elevation: 0,
@@ -234,8 +233,6 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
   bool _hasMapError = false;
   String? _routeNotice;
   bool _routeNoticeIsError = false;
-  String? _routeDistanceLabel;
-  String? _routeDurationLabel;
   late String _webMapUrl;
 
   @override
@@ -530,10 +527,11 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
         _routeNoticeIsError = true;
       });
     } finally {
-      if (!mounted) return;
-      setState(() {
-        _isLoadingRoute = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoadingRoute = false;
+        });
+      }
     }
   }
 
@@ -542,13 +540,6 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
   }
 
   Future<void> _showNavigationRoute(Position userPosition) async {
-    final distanceMeters = Geolocator.distanceBetween(
-      userPosition.latitude,
-      userPosition.longitude,
-      widget.latitude,
-      widget.longitude,
-    );
-
     final directionsUrl = _buildGoogleMapsDirectionsEmbedUrl(
       originLat: userPosition.latitude,
       originLon: userPosition.longitude,
@@ -556,11 +547,9 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
       destinationLon: widget.longitude,
     );
 
-    if (!mounted) return;
+    if (!context.mounted) return;
     setState(() {
       _isNavigating = true;
-      _routeDistanceLabel = _formatDistance(distanceMeters);
-      _routeDurationLabel = null;
       _routeNotice = null;
       _routeNoticeIsError = false;
     });
@@ -635,6 +624,7 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
       return;
     }
 
+    if (!context.mounted) return;
     await _openUrl(
       context,
       _buildExternalDirectionsUrl(
@@ -654,8 +644,6 @@ class _ClinicMapPreviewState extends State<_ClinicMapPreview> {
       _isNavigating = false;
       _routeNotice = null;
       _routeNoticeIsError = false;
-      _routeDistanceLabel = null;
-      _routeDurationLabel = null;
     });
 
     unawaited(_loadMapUrl(clinicUrl));
@@ -688,7 +676,7 @@ String _buildGoogleMapsEmbedUrl({
   required double latitude,
   required double longitude,
 }) {
-  return 'https://maps.google.com/maps?q=${latitude},${longitude}&z=15&output=embed';
+  return 'https://maps.google.com/maps?q=$latitude,$longitude&z=15&output=embed';
 }
 
 String _buildGoogleMapsDirectionsEmbedUrl({
@@ -761,13 +749,6 @@ String _buildExternalDirectionsUrl({
       'travelmode': 'driving',
     },
   ).toString();
-}
-
-String _formatDistance(double meters) {
-  if (meters >= 1000) {
-    return '${(meters / 1000).toStringAsFixed(1)} km';
-  }
-  return '${meters.round()} m';
 }
 
 Widget _buildClinicImage(String imagePath) {
@@ -891,6 +872,7 @@ String _ensureUrl(String raw) {
 Future<void> _openUrl(BuildContext context, String url) async {
   final uri = Uri.parse(url);
   if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+    if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Could not open link')),
     );
@@ -899,6 +881,7 @@ Future<void> _openUrl(BuildContext context, String url) async {
 
 Future<void> _copyValue(BuildContext context, String value) async {
   await Clipboard.setData(ClipboardData(text: value));
+  if (!context.mounted) return;
   ScaffoldMessenger.of(context).showSnackBar(
     const SnackBar(content: Text('Copied')),
   );

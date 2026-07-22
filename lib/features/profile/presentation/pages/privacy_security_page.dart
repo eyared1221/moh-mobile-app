@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'change_password_page.dart';
-import 'delete_account_page.dart';
 import 'privacy_policy_page.dart';
-import 'two_factor_auth_page.dart';
 
 class PrivacySecurityPage extends StatefulWidget {
   const PrivacySecurityPage({super.key, this.language, this.email});
@@ -16,20 +14,6 @@ class PrivacySecurityPage extends StatefulWidget {
 }
 
 class _PrivacySecurityPageState extends State<PrivacySecurityPage> {
-  bool _twoFactor = false;
-
-  Future<void> _openTwoFactorSetup() async {
-    final enabled = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => TwoFactorAuthPage(email: widget.email),
-      ),
-    );
-
-    if (!mounted || enabled == null) return;
-    setState(() => _twoFactor = enabled);
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -49,7 +33,6 @@ class _PrivacySecurityPageState extends State<PrivacySecurityPage> {
         children: [
           _sectionTitle(context, 'Access Control'),
           const SizedBox(height: 10),
-
           _settingsSection(
             context,
             children: [
@@ -71,67 +54,14 @@ class _PrivacySecurityPageState extends State<PrivacySecurityPage> {
                   );
                 },
               ),
-
-              _sectionDivider(colorScheme),
-
-              _settingsTile(
-                context,
-                icon: Icons.verified_user_outlined,
-                title: 'Two-Factor Auth',
-                subtitle: 'Verification • Login • Protection',
-                control: SizedBox(
-                  width: 50,
-                  height: 30,
-                  child: FittedBox(
-                    fit: BoxFit.fill,
-                    child: Switch(
-                      value: _twoFactor,
-                      onChanged: (_) => _openTwoFactorSetup(),
-                      activeColor: Colors.white,
-                      activeTrackColor: const Color(0xFF005F99),
-                      inactiveThumbColor: Colors.white,
-                      inactiveTrackColor: Colors.grey.shade400,
-                      materialTapTargetSize:
-                          MaterialTapTargetSize.shrinkWrap,
-                    ),
-                  ),
-                ),
-                onTap: _openTwoFactorSetup,
-              ),
             ],
           ),
-
           const SizedBox(height: 18),
-
           _sectionTitle(context, 'Personal Data'),
           const SizedBox(height: 10),
-
           _settingsSection(
             context,
             children: [
-              _settingsTile(
-                context,
-                icon: Icons.delete_forever_rounded,
-                title: 'Delete Account',
-                subtitle: 'Account • Data • Removal',
-                iconColor: Colors.red.shade700,
-                iconBg: Colors.red.shade700.withOpacity(0.10),
-                control: Icon(
-                  Icons.chevron_right_rounded,
-                  color: Colors.red.shade700,
-                ),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const DeleteAccountPage(),
-                    ),
-                  );
-                },
-              ),
-
-              _sectionDivider(colorScheme),
-
               _settingsTile(
                 context,
                 icon: Icons.security_rounded,
@@ -189,17 +119,6 @@ class _PrivacySecurityPageState extends State<PrivacySecurityPage> {
     );
   }
 
-  Widget _sectionDivider(ColorScheme colorScheme) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 76, right: 18),
-      child: Divider(
-        height: 1,
-        thickness: 1,
-        color: colorScheme.outlineVariant.withOpacity(0.75),
-      ),
-    );
-  }
-
   Widget _settingsTile(
     BuildContext context, {
     required IconData icon,
@@ -232,9 +151,7 @@ class _PrivacySecurityPageState extends State<PrivacySecurityPage> {
                 size: 22,
               ),
             ),
-
             const SizedBox(width: 14),
-
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -247,9 +164,7 @@ class _PrivacySecurityPageState extends State<PrivacySecurityPage> {
                       color: colorScheme.onSurface,
                     ),
                   ),
-
                   const SizedBox(height: 3),
-
                   Text(
                     subtitle,
                     style: theme.textTheme.bodySmall?.copyWith(
@@ -261,9 +176,7 @@ class _PrivacySecurityPageState extends State<PrivacySecurityPage> {
                 ],
               ),
             ),
-
             const SizedBox(width: 10),
-
             control,
           ],
         ),

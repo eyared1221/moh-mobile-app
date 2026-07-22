@@ -3,8 +3,6 @@ import 'package:flutter/services.dart';
 import 'reset_password_screen.dart';
 import 'auth_success_dialog.dart';
 import 'auth_error_handler.dart';
-import 'auth_messages.dart';
-import '../data/auth_models.dart';
 import 'controllers/auth_controller.dart';
 
 class VerifyResetCodeScreen extends StatefulWidget {
@@ -63,7 +61,7 @@ class _VerifyResetCodeScreenState extends State<VerifyResetCodeScreen> {
 
   Widget _buildCodeBox(BuildContext context, int index) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = const Color(0xFF005C8F);
+    const primaryColor = Color(0xFF005C8F);
 
     return SizedBox(
       width: 48,
@@ -96,7 +94,7 @@ class _VerifyResetCodeScreenState extends State<VerifyResetCodeScreen> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: primaryColor, width: 2),
+            borderSide: const BorderSide(color: primaryColor, width: 2),
           ),
           errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
@@ -153,7 +151,7 @@ class _VerifyResetCodeScreenState extends State<VerifyResetCodeScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = const Color(0xFF005C8F);
+    const primaryColor = Color(0xFF005C8F);
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
@@ -187,7 +185,7 @@ class _VerifyResetCodeScreenState extends State<VerifyResetCodeScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  Text(
+                  const Text(
                     'Step 1 of 2',
                     textAlign: TextAlign.center,
                     style: TextStyle(

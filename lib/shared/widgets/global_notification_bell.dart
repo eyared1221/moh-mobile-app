@@ -171,7 +171,7 @@ void _showSyncFeedback(
   required String message,
 }) {
   final isDark = Theme.of(context).brightness == Brightness.dark;
-  final accentColor = const Color(0xFF005C8F);
+  const accentColor = Color(0xFF005C8F);
   final messenger = ScaffoldMessenger.of(context);
 
   messenger
@@ -208,7 +208,7 @@ void _showSyncFeedback(
                   color: accentColor.withOpacity(isDark ? 0.22 : 0.12),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.check_rounded,
                   color: accentColor,
                   size: 24,

@@ -127,6 +127,37 @@ class RiskAssessmentApiClient {
     throw const RiskAssessmentApiException('Unexpected response format');
   }
 
+  Future<Map<String, dynamic>> post(
+    String path,
+    Map<String, dynamic> body,
+    {
+      Map<String, String>? headers,
+    }
+  ) async {
+    final response = await _httpClient.post(
+      _uri(path),
+      headers: {'Content-Type': 'application/json', ...?headers},
+      body: jsonEncode(body),
+    );
+
+    final decoded = response.body.isEmpty ? <String, dynamic>{} : jsonDecode(response.body);
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      final payload = decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
+      final error = payload['error'];
+      final message = error is Map<String, dynamic>
+          ? error['message'] as String? ?? 'Request failed'
+          : payload['message'] as String? ?? 'Request failed';
+      throw RiskAssessmentApiException(message);
+    }
+
+    if (decoded is Map<String, dynamic>) {
+      return decoded;
+    }
+
+    throw const RiskAssessmentApiException('Unexpected response format');
+  }
+
   Future<Map<String, dynamic>> postAuthorized(
     String path,
     Map<String, dynamic> body,

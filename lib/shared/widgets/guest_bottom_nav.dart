@@ -216,7 +216,7 @@ class _GuestBottomNavState extends State<GuestBottomNav> {
             ),
             _GuestNavItem(
               icon: Icons.location_on_rounded,
-              label: 'HF',
+              label: 'Facilities',
               active: widget.currentIndex == 3,
               onTap: () => _handleTap(3),
               activeColor: colorScheme.primary,

@@ -4,6 +4,7 @@ class MentorEntity {
   final String phone;
   final String? imageUrl;
   final String? role;
+  final String? assignedArea;
 
   const MentorEntity({
     required this.id,
@@ -11,5 +12,6 @@ class MentorEntity {
     required this.phone,
     this.imageUrl,
     this.role,
+    this.assignedArea,
   });
 }

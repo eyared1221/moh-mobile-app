@@ -6,7 +6,7 @@ void main() {
   group('NotificationBadge Tests', () {
     testWidgets('displays badge with count when count > 0', (WidgetTester tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        const MaterialApp(
           home: Scaffold(
             body: NotificationBadge(
               count: 5,
@@ -23,7 +23,7 @@ void main() {
 
     testWidgets('does not display badge when count is 0', (WidgetTester tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        const MaterialApp(
           home: Scaffold(
             body: NotificationBadge(
               count: 0,
@@ -40,7 +40,7 @@ void main() {
 
     testWidgets('displays 99+ when count > 99', (WidgetTester tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        const MaterialApp(
           home: Scaffold(
             body: NotificationBadge(
               count: 150,

@@ -41,6 +41,8 @@ class LearningContentBlock extends LearningContentBlockEntity {
 
   static LearningContentType _parseType(String? value) {
     switch (value) {
+      case 'video':
+        return LearningContentType.video;
       case 'bullets':
         return LearningContentType.bullets;
       case 'image':

@@ -4,7 +4,6 @@ import 'auth_success_dialog.dart';
 import 'auth_error_handler.dart';
 import 'auth_messages.dart';
 import 'contact_validation.dart';
-import '../data/auth_models.dart';
 import 'controllers/auth_controller.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -40,7 +39,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   InputDecoration _buildInputDecoration(String label, IconData icon, BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = const Color(0xFF005C8F);
+    const primaryColor = Color(0xFF005C8F);
     final errorColor = Theme.of(context).colorScheme.error;
 
     return InputDecoration(
@@ -57,7 +56,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: primaryColor, width: 2),
+        borderSide: const BorderSide(color: primaryColor, width: 2),
       ),
       errorStyle: TextStyle(color: errorColor),
       errorBorder: OutlineInputBorder(
@@ -113,7 +112,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = const Color(0xFF005C8F);
+    const primaryColor = Color(0xFF005C8F);
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
@@ -150,7 +149,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             color: primaryColor.withOpacity(isDark ? 0.18 : 0.12),
                             shape: BoxShape.circle,
                           ),
-                          child: Icon(
+                          child: const Icon(
                             Icons.lock_reset_outlined,
                             size: 40,
                             color: primaryColor,
@@ -203,7 +202,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       ),
                       onPressed: _isLoading ? null : _handleReset,
                       child: _isLoading
-                          ? SizedBox(
+                          ? const SizedBox(
                               width: 24,
                               height: 24,
                               child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),

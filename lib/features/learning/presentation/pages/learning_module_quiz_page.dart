@@ -708,9 +708,6 @@ class _QuizResultView extends StatelessWidget {
             final selectedIndex = selectedOptionIndexes[questionIndex];
             final correctIndex = correctOptionIndexes[questionIndex];
             final isCorrect = selectedIndex == correctIndex;
-            final selectedLabel = selectedIndex == null
-                ? 'Not answered'
-                : question.options[selectedIndex].label;
             final correctLabel = question.options[correctIndex].label;
             final accentColor = isCorrect ? Colors.green : colorScheme.error;
 
@@ -757,18 +754,6 @@ class _QuizResultView extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 10),
-                    Text(
-                      'Your answer: $selectedLabel',
-                      style: textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                            fontWeight: FontWeight.w600,
-                          ) ??
-                          TextStyle(
-                            color: colorScheme.onSurfaceVariant,
-                            fontWeight: FontWeight.w600,
-                          ),
-                    ),
-                    const SizedBox(height: 6),
                     Text(
                       'Correct answer: $correctLabel',
                       style: textTheme.bodySmall?.copyWith(

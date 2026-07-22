@@ -31,7 +31,3 @@ Future<void> setSavedTheme(ThemeMode mode) async {
   themeNotifier.value = resolvedMode;
 }
 
-Future<void> toggleTheme() async {
-  final next = themeNotifier.value == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
-  await setSavedTheme(next);
-}

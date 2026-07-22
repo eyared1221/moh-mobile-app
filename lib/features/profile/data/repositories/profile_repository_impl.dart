@@ -103,33 +103,8 @@ class ProfileRepositoryImpl implements ProfileRepository {
             avatarPath: user.avatarPath,
           );
 
-    await _localDataSource.saveLocalPresentationPrefs(profile);
-
-    final authToken = await _localDataSource.getAuthToken();
-    final loggedIn = await _localDataSource.isLoggedIn();
-    final needsRemoteUpdate = await _localDataSource.coreProfileChanged(profile);
-
-    if (!loggedIn || authToken == null || authToken.isEmpty || !needsRemoteUpdate) {
-      await _localDataSource.cacheProfile(profile);
-      return profile;
-    }
-
-    final payload = await _remoteDataSource.saveProfilePayload(profile);
-    final data = payload['data'] as Map<String, dynamic>? ?? const <String, dynamic>{};
-    final savedProfile = _remoteDataSource.profileFromBackendJson(
-      data,
-      fallbackAge: profile.age,
-      fallbackName: profile.fullName,
-    );
-    final mergedProfile = savedProfile.copyWith(
-      email: savedProfile.email.isEmpty ? profile.email : null,
-      phone: savedProfile.phone.isEmpty ? profile.phone : null,
-      language: profile.language,
-      avatarPath: profile.avatarPath,
-    );
-
-    await _localDataSource.cacheProfile(mergedProfile);
-    return mergedProfile;
+    await _localDataSource.cacheProfile(profile);
+    return profile;
   }
 
   @override

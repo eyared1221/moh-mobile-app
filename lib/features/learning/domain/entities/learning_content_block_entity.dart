@@ -1,5 +1,6 @@
 enum LearningContentType {
   paragraph,
+  video,
   bullets,
   image,
   subtitle,

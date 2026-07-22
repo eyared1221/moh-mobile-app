@@ -12,12 +12,12 @@ class Clinic extends ClinicEntity {
     required super.hours,
     required super.description,
     required super.services,
-    required LatLng super.location,
+    required super.location,
     super.imageUrl,
     super.altitude,
   });
 }
 
 class LatLng extends LatLngEntity {
-  const LatLng(double latitude, double longitude) : super(latitude, longitude);
+  const LatLng(super.latitude, super.longitude);
 }

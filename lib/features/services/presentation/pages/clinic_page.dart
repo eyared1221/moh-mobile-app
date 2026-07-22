@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:yegna_health/shared/widgets/app_bottom_nav.dart';
 import 'package:yegna_health/shared/widgets/global_notification_bell.dart';
 
@@ -51,8 +50,6 @@ class _ClinicPageState extends State<ClinicPage> {
   _ClinicListMode? _listMode = _ClinicListMode.recommended;
   String _searchQuery = '';
   String _selectedCampusLabel = 'Select your campus';
-
-  static const double _maxAcceptedAccuracyMeters = 80;
 
   LatLngEntity? _userLocation;
   bool _isResolvingLocation = false;
@@ -235,8 +232,6 @@ class _ClinicPageState extends State<ClinicPage> {
       }
 
       final position = await _getBestAvailablePosition();
-      final accuracyMeters = position.accuracy;
-
       if (!mounted) return;
       setState(() {
         _userLocation = LatLng(position.latitude, position.longitude);
@@ -249,10 +244,11 @@ class _ClinicPageState extends State<ClinicPage> {
         _userLocation = null;
       });
     } finally {
-      if (!mounted) return;
-      setState(() {
-        _isResolvingLocation = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isResolvingLocation = false;
+        });
+      }
     }
   }
 
@@ -467,62 +463,6 @@ class _ClinicPageState extends State<ClinicPage> {
         .trim();
   }
 
-  Future<void> _callClinic(ClinicEntity clinic) async {
-    final uri = Uri(scheme: 'tel', path: clinic.phone);
-    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
-    if (!launched && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to start a phone call right now.')),
-      );
-    }
-  }
-
-  Future<void> _openDirections(ClinicEntity clinic) async {
-    final destination =
-        '${clinic.location.latitude},${clinic.location.longitude}';
-    final origin = _userLocation == null
-        ? null
-        : '${_userLocation!.latitude},${_userLocation!.longitude}';
-    final uri = Uri.parse(
-      origin == null
-          ? 'https://www.google.com/maps/dir/?api=1&destination=$destination&travelmode=driving'
-          : 'https://www.google.com/maps/dir/?api=1&origin=$origin&destination=$destination&travelmode=driving',
-    );
-
-    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
-    if (!launched && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to open directions right now.')),
-      );
-    }
-  }
-
-  String _locationHeaderText() {
-    final recommendedCount = _recommendedClinics().length;
-    final nearbyCount = _nearbyClinics().length;
-
-    switch (_activeListMode) {
-      case _ClinicListMode.recommended:
-        if (_isResolvingLocation) {
-          return 'Selecting recommended clinics for you...';
-        }
-        if (_userLocation != null) {
-          return 'Showing $recommendedCount recommended clinics based on your location';
-        }
-        return 'Showing $recommendedCount recommended clinics';
-      case _ClinicListMode.nearby:
-        if (_isResolvingLocation) {
-          return 'Detecting your location for precise nearby clinics...';
-        }
-        if (_userLocation != null) {
-          return 'Showing $nearbyCount nearby clinics based on your current location';
-        }
-        return 'Showing $nearbyCount clinics';
-      case _ClinicListMode.all:
-        return 'Showing all clinics';
-    }
-  }
-
   String _findModeLabel(_ClinicListMode mode) {
     switch (mode) {
       case _ClinicListMode.nearby:
@@ -537,7 +477,6 @@ class _ClinicPageState extends State<ClinicPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     final recommendedClinics = _recommendedClinics();
     final nearbyClinics = _nearbyClinics();
     final clinicsToShow = switch (_activeListMode) {
@@ -550,7 +489,7 @@ class _ClinicPageState extends State<ClinicPage> {
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         centerTitle: true,
-        title: const Text('Healthcare Facility'),
+        title: const Text('Health Facility'),
         actions: [
           GlobalTopBarActions(onSyncPressed: _syncClinics),
         ],
@@ -622,7 +561,7 @@ class _ClinicPageState extends State<ClinicPage> {
                   fontWeight: FontWeight.w600,
                 ),
             decoration: InputDecoration(
-              hintText: 'Search clinics',
+              hintText: 'Search health facility',
               hintStyle:
                   theme.textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSurfaceVariant,

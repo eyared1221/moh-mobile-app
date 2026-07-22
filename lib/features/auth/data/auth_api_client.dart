@@ -68,8 +68,8 @@ class AuthApiClient {
 
   Future<Map<String, dynamic>> post(String path, Map<String, dynamic> body) async {
     final uri = _uri(path);
-    print('DEBUG API: POST $uri');
-    print('DEBUG API: Body: $body');
+    debugPrint('DEBUG API: POST $uri');
+    debugPrint('DEBUG API: Body: $body');
 
     try {
       final response = await _httpClient.post(
@@ -78,8 +78,8 @@ class AuthApiClient {
         body: jsonEncode(body),
       );
 
-      print('DEBUG API: Status code: ${response.statusCode}');
-      print('DEBUG API: Response body: ${response.body}');
+      debugPrint('DEBUG API: Status code: ${response.statusCode}');
+      debugPrint('DEBUG API: Response body: ${response.body}');
 
       final payload = response.body.isEmpty
           ? <String, dynamic>{}
@@ -87,14 +87,14 @@ class AuthApiClient {
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
         final message = _extractErrorMessage(payload, response.statusCode);
-        print('DEBUG API: Error - $message');
+        debugPrint('DEBUG API: Error - $message');
         throw AuthApiException(message);
       }
 
       return payload;
     } catch (error) {
-      print('DEBUG API: Request failed with error: $error');
-      print('DEBUG API: Error type: ${error.runtimeType}');
+      debugPrint('DEBUG API: Request failed with error: $error');
+      debugPrint('DEBUG API: Error type: ${error.runtimeType}');
       rethrow;
     }
   }

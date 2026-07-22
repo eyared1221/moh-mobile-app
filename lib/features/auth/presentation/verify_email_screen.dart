@@ -6,7 +6,7 @@ import 'auth_error_handler.dart';
 import 'auth_messages.dart';
 import 'signin_screen.dart';
 import '../data/auth_api_client.dart';
-import '../data/auth_models.dart';
+import '../data/auth_models.dart' show AuthApiException;
 import 'controllers/auth_controller.dart';
 
 class VerifyEmailScreen extends StatefulWidget {
@@ -63,33 +63,6 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     super.dispose();
   }
 
-  InputDecoration _buildInputDecoration(String label, IconData icon, BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = const Color(0xFF005C8F);
-
-    return InputDecoration(
-      labelText: label,
-      labelStyle: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 14),
-      prefixIcon: Icon(icon, color: primaryColor, size: 22),
-      filled: true,
-      fillColor: isDark ? const Color(0xFF161D2C) : const Color(0xFFF8FAFC),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: isDark ? Colors.white12 : Colors.grey.shade200),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: primaryColor, width: 2),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Colors.redAccent, width: 1),
-      ),
-    );
-  }
-
   String get _verificationCode {
     return _digitControllers.map((controller) => controller.text).join();
   }
@@ -111,7 +84,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
 
   Widget _buildCodeBox(BuildContext context, int index) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = const Color(0xFF005C8F);
+    const primaryColor = Color(0xFF005C8F);
 
     return SizedBox(
       width: 48,
@@ -144,7 +117,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: primaryColor, width: 2),
+            borderSide: const BorderSide(color: primaryColor, width: 2),
           ),
           errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
@@ -239,15 +212,15 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     setState(() => _isCheckingTelegram = true);
 
     try {
-      print('DEBUG: Checking Telegram link status for contact: ${widget.contact}');
+      debugPrint('DEBUG: Checking Telegram link status for contact: ${widget.contact}');
       final payload = await _apiClient.post('/telegram?action=status', {
         'contact': widget.contact,
       });
-      print('DEBUG: Telegram status response: $payload');
+      debugPrint('DEBUG: Telegram status response: $payload');
 
       final data = payload['data'] as Map<String, dynamic>? ?? const {};
       final linked = data['linked'] == true;
-      print('DEBUG: Telegram linked status: $linked');
+      debugPrint('DEBUG: Telegram linked status: $linked');
 
       if (!mounted) return;
       setState(() {
@@ -255,8 +228,8 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
         _isCheckingTelegram = false;
       });
     } catch (error) {
-      print('DEBUG: Telegram status check error: $error');
-      print('DEBUG: Error type: ${error.runtimeType}');
+      debugPrint('DEBUG: Telegram status check error: $error');
+      debugPrint('DEBUG: Error type: ${error.runtimeType}');
       if (!mounted) return;
       setState(() => _isCheckingTelegram = false);
     }
@@ -267,20 +240,20 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
 
     setState(() => _isLaunchingTelegram = true);
     try {
-      print('DEBUG: Connecting Telegram for contact: ${widget.contact}');
+      debugPrint('DEBUG: Connecting Telegram for contact: ${widget.contact}');
       final payload = await _apiClient.post('/telegram?action=start-link', {
         'contact': widget.contact,
       });
-      print('DEBUG: Telegram link response: $payload');
+      debugPrint('DEBUG: Telegram link response: $payload');
       final data = payload['data'] as Map<String, dynamic>? ?? const {};
       final url = data['telegramBotUrl'] as String?;
 
       if (url == null || url.trim().isEmpty) {
-        print('DEBUG: No telegramBotUrl in response');
+        debugPrint('DEBUG: No telegramBotUrl in response');
         throw const AuthApiException('Unable to create Telegram link.');
       }
 
-      print('DEBUG: Telegram bot URL: $url');
+      debugPrint('DEBUG: Telegram bot URL: $url');
       _showOpeningTelegramMessage();
       final launched = await _launchTelegramBotUrl(url);
       if (!launched) {
@@ -302,8 +275,8 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
         }
       }
     } catch (error) {
-      print('DEBUG: Telegram connection error: $error');
-      print('DEBUG: Error type: ${error.runtimeType}');
+      debugPrint('DEBUG: Telegram connection error: $error');
+      debugPrint('DEBUG: Error type: ${error.runtimeType}');
       if (!mounted) return;
       setState(() => _isLaunchingTelegram = false);
       showAuthErrorDialog(
@@ -379,7 +352,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
 
   Widget _buildTelegramHint(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = const Color(0xFF005C8F);
+    const primaryColor = Color(0xFF005C8F);
     final cardColor = isDark ? const Color(0xFF161D2C) : const Color(0xFFF8FAFC);
     final borderColor = isDark ? Colors.white12 : Colors.grey.shade200;
     final iconBg = isDark ? const Color(0xFF0E2233) : const Color(0xFFE6F4FF);
@@ -458,7 +431,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = const Color(0xFF005C8F);
+    const primaryColor = Color(0xFF005C8F);
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
@@ -531,7 +504,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                              ? null
                              : (_isTelegramLinked ? null : _connectTelegram),
                          icon: _isLaunchingTelegram || _isCheckingTelegram
-                             ? SizedBox(
+                              ? const SizedBox(
                                  width: 18,
                                  height: 18,
                                  child: CircularProgressIndicator(
@@ -618,7 +591,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                       ),
                       onPressed: _isLoading ? null : _handleVerify,
                       child: _isLoading
-                          ? SizedBox(
+                          ? const SizedBox(
                               width: 24,
                               height: 24,
                               child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
@@ -642,7 +615,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                           alignment: PlaceholderAlignment.middle,
                           child: GestureDetector(
                             onTap: _handleResend,
-                            child: Text(
+                            child: const Text(
                               'Resend',
                               style: TextStyle(
                                 color: primaryColor,

@@ -1,6 +1,7 @@
 import '../../models/risk_option.dart';
 import '../../models/risk_question.dart';
 import '../risk_assessment_api_client.dart';
+import 'risk_assessment_local_data_source.dart';
 
 class RiskAssessmentRemoteDataSource {
   RiskAssessmentRemoteDataSource({RiskAssessmentApiClient? apiClient})
@@ -24,6 +25,39 @@ class RiskAssessmentRemoteDataSource {
       'riskScore': riskScore,
       'takenAt': takenAt.toUtc().toIso8601String(),
     });
+  }
+
+  Future<void> submitAnonymousResult({
+    required AnonymousProfileCredentials credentials,
+    required String riskLevel,
+    required String resultLabel,
+    required int riskScore,
+    required DateTime takenAt,
+  }) async {
+    await _apiClient.post('/responses/anonymous', {
+      'riskLevel': riskLevel,
+      'resultLabel': resultLabel,
+      'riskScore': riskScore,
+      'takenAt': takenAt.toUtc().toIso8601String(),
+    }, headers: {
+      'x-anonymous-profile-id': credentials.profileId,
+      'x-anonymous-access-token': credentials.accessToken,
+    });
+  }
+
+  Future<AnonymousProfileCredentials> createAnonymousProfile() async {
+    final payload = await _apiClient.post('/anonymous-profiles', const {});
+    final data = payload['data'];
+    if (data is! Map<String, dynamic>) {
+      throw const RiskAssessmentApiException('Invalid anonymous profile response.');
+    }
+
+    final profileId = data['anonymousProfileId']?.toString() ?? '';
+    final accessToken = data['anonymousAccessToken']?.toString() ?? '';
+    if (profileId.isEmpty || accessToken.isEmpty) {
+      throw const RiskAssessmentApiException('Invalid anonymous profile credentials.');
+    }
+    return AnonymousProfileCredentials(profileId, accessToken);
   }
 
   List<RiskQuestion> mapPayloadToQuestions(Map<String, dynamic> payload) {

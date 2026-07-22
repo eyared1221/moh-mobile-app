@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../../shared/widgets/app_bottom_nav.dart';
@@ -6,10 +8,11 @@ import '../../../learning/data/learning_service.dart';
 import '../../../learning/presentation/pages/learning_module_page.dart';
 import '../../../mentor/data/mentor_repository.dart';
 import '../../../mentor/presentation/pages/mentor_page.dart';
+import '../../../notifications/data/notification_automation_service.dart';
 import '../../../risk_assessment/data/risk_assessment_repository.dart';
 import '../../../risk_assessment/presentation/pages/risk_assessment_page.dart';
+import 'health_service_page.dart';
 import '../../../services/data/clinic_repository.dart';
-import '../../../services/presentation/pages/clinic_page.dart';
 
 class HomePage extends StatefulWidget {
   final String age;
@@ -84,7 +87,7 @@ class _HomePageState extends State<HomePage> {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: pageGradient,
-              stops: [0.0, 0.45, 1.0],
+              stops: const [0.0, 0.45, 1.0],
             ),
           ),
           child: LayoutBuilder(
@@ -247,6 +250,12 @@ class _HomePageState extends State<HomePage> {
         image: 'assets/images/assesment.png',
         icon: Icons.fact_check_outlined,
         onTap: (context) {
+          unawaited(
+            NotificationAutomationService.instance.recordHomeFeatureOpened(
+              featureKey:
+                  NotificationAutomationService.homeFeatureSelfAssessmentKey,
+            ),
+          );
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -263,6 +272,12 @@ class _HomePageState extends State<HomePage> {
         image: 'assets/images/modules.png',
         icon: Icons.menu_book_outlined,
         onTap: (context) {
+          unawaited(
+            NotificationAutomationService.instance.recordHomeFeatureOpened(
+              featureKey:
+                  NotificationAutomationService.homeFeatureLearningModuleKey,
+            ),
+          );
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -282,8 +297,10 @@ class _HomePageState extends State<HomePage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) =>
-                  ClinicPage(age: widget.age, userName: widget.userName),
+              builder: (_) => HealthServicePage(
+                age: widget.age,
+                userName: widget.userName,
+              ),
             ),
           );
         },

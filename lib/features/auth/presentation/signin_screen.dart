@@ -5,7 +5,6 @@ import 'auth_success_dialog.dart';
 import 'auth_error_handler.dart';
 import 'auth_messages.dart';
 import 'contact_validation.dart';
-import '../data/auth_models.dart';
 import 'controllers/auth_controller.dart';
 import 'package:yegna_health/features/home/presentation/pages/home_page.dart';
 
@@ -84,7 +83,7 @@ class _SignInScreenState extends State<SignInScreen> {
 
   InputDecoration _modernInput(String label, IconData icon, BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = const Color(0xFF005C8F);
+    const primaryColor = Color(0xFF005C8F);
     final errorColor = Theme.of(context).colorScheme.error;
 
     return InputDecoration(
@@ -101,7 +100,7 @@ class _SignInScreenState extends State<SignInScreen> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: primaryColor, width: 2),
+        borderSide: const BorderSide(color: primaryColor, width: 2),
       ),
       errorStyle: TextStyle(color: errorColor),
       errorBorder: OutlineInputBorder(

@@ -4,7 +4,6 @@ import 'auth_success_dialog.dart';
 import 'auth_error_handler.dart';
 import 'auth_messages.dart';
 import 'password_validator.dart';
-import '../data/auth_models.dart';
 import 'controllers/auth_controller.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
@@ -41,7 +40,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
   InputDecoration _buildInputDecoration(String label, IconData icon, BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = const Color(0xFF005C8F);
+    const primaryColor = Color(0xFF005C8F);
 
     return InputDecoration(
       labelText: label,
@@ -57,7 +56,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: primaryColor, width: 2),
+        borderSide: const BorderSide(color: primaryColor, width: 2),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
@@ -104,7 +103,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = const Color(0xFF005C8F);
+    const primaryColor = Color(0xFF005C8F);
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
@@ -138,7 +137,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  Text(
+                  const Text(
                     'Step 2 of 2',
                     textAlign: TextAlign.center,
                     style: TextStyle(

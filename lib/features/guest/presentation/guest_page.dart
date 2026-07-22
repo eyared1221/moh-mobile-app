@@ -22,7 +22,6 @@ class _GuestPageState extends State<GuestPage>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   final ScrollController _scrollController = ScrollController();
-  final GlobalKey _healthInfoKey = GlobalKey();
   final PageController _healthPageController =
       PageController(viewportFraction: 1);
   Timer? _autoSlideTimer;
@@ -114,8 +113,7 @@ class _GuestPageState extends State<GuestPage>
                   controller: _controller,
                   start: 0.34,
                   child: _SectionHeader(
-                    key: _healthInfoKey,
-                    title: 'Explore about SRH',
+                    title: 'Explore about SRH / HIV',
                     isDark: isDark,
                   ),
                 ),
@@ -209,20 +207,6 @@ class _GuestPageState extends State<GuestPage>
     );
   }
 
-  Future<void> _scrollToHealthInfo() async {
-    final targetContext = _healthInfoKey.currentContext;
-    if (targetContext == null) {
-      return;
-    }
-
-    await Scrollable.ensureVisible(
-      targetContext,
-      duration: const Duration(milliseconds: 420),
-      curve: Curves.easeOutCubic,
-      alignment: 0.08,
-    );
-  }
-
   void _startAutoSlide() {
     _stopAutoSlide();
     _autoSlideTimer = Timer.periodic(const Duration(seconds: 4), (_) {
@@ -310,7 +294,7 @@ class _GuestHeader extends StatelessWidget {
             ),
             elevation: 0,
           ),
-          child: Row(
+          child: const Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
@@ -321,7 +305,7 @@ class _GuestHeader extends StatelessWidget {
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              const SizedBox(width: 4),
+              SizedBox(width: 4),
               Icon(
                 Icons.arrow_forward_rounded,
                 size: 16,
@@ -532,15 +516,10 @@ class _FeatureCard extends StatelessWidget {
 
 class _SectionHeader extends StatelessWidget {
   final String title;
-  final String? actionLabel;
-  final VoidCallback? onTap;
   final bool isDark;
 
   const _SectionHeader({
-    super.key,
     required this.title,
-    this.actionLabel,
-    this.onTap,
     required this.isDark,
   });
 
@@ -558,27 +537,6 @@ class _SectionHeader extends StatelessWidget {
             ),
           ),
         ),
-        if (actionLabel != null)
-          TextButton(
-            onPressed: onTap,
-            style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF1764B1),
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-            ),
-            child: Row(
-              children: [
-                Text(
-                  actionLabel!,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(width: 2),
-                const Icon(Icons.chevron_right_rounded, size: 18),
-              ],
-            ),
-          ),
       ],
     );
   }

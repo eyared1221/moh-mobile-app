@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -29,6 +28,7 @@ class _MentorCardState extends State<MentorCard> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final displayName = _displayName(widget.mentor);
+    final assignedArea = widget.mentor.assignedArea?.trim();
     final initials = widget.mentor.fullName.trim().isEmpty
         ? 'M'
         : widget.mentor.fullName
@@ -77,15 +77,27 @@ class _MentorCardState extends State<MentorCard> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        displayName,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 14,
-                          color: colorScheme.onSurface,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 6,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Text(
+                            displayName,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 14,
+                              color: colorScheme.onSurface,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (assignedArea != null && assignedArea.isNotEmpty)
+                            _buildAssignedAreaBadge(
+                              colorScheme,
+                              assignedArea,
+                            ),
+                        ],
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -136,6 +148,39 @@ class _MentorCardState extends State<MentorCard> {
       return 'Dr. $name';
     }
     return name;
+  }
+
+  Widget _buildAssignedAreaBadge(ColorScheme colorScheme, String assignedArea) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: colorScheme.primary.withOpacity(0.10),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.location_city_rounded,
+            size: 12,
+            color: colorScheme.primary,
+          ),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              assignedArea,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: colorScheme.primary,
+                fontWeight: FontWeight.w700,
+                fontSize: 10.5,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildAvatar(
@@ -268,6 +313,7 @@ class _MentorCardState extends State<MentorCard> {
   Future<void> _openUrl(BuildContext context, String url) async {
     final uri = Uri.parse(url);
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Could not open dialer')),
       );
@@ -342,6 +388,15 @@ class _MentorSkeletonCardState extends State<MentorSkeletonCard>
                       decoration: BoxDecoration(
                         color: fill,
                         borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      height: 20,
+                      width: 150,
+                      decoration: BoxDecoration(
+                        color: fill,
+                        borderRadius: BorderRadius.circular(999),
                       ),
                     ),
                   ],

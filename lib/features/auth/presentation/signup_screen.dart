@@ -10,7 +10,6 @@ import 'password_validator.dart';
 import 'contact_validation.dart';
 import '../../profile/presentation/pages/privacy_policy_page.dart';
 import '../../profile/presentation/pages/terms_conditions_page.dart';
-import '../data/auth_models.dart';
 import 'controllers/auth_controller.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -169,7 +168,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   InputDecoration _buildInputDecoration(String label, IconData icon, BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = const Color(0xFF005C8F);
+    const primaryColor = Color(0xFF005C8F);
     final errorColor = Theme.of(context).colorScheme.error;
 
     return InputDecoration(
@@ -186,7 +185,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: primaryColor, width: 2),
+        borderSide: const BorderSide(color: primaryColor, width: 2),
       ),
       errorStyle: TextStyle(color: errorColor),
       errorBorder: OutlineInputBorder(
@@ -203,7 +202,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = const Color(0xFF005C8F);
+    const primaryColor = Color(0xFF005C8F);
     final canCreateAccount = _hasAcceptedTerms && !_isLoading;
 
     return GestureDetector(
@@ -381,7 +380,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 });
                               },
                               activeColor: primaryColor,
-                              side: BorderSide(color: primaryColor, width: 1.4),
+                              side: const BorderSide(color: primaryColor, width: 1.4),
                               materialTapTargetSize:
                                   MaterialTapTargetSize.shrinkWrap,
                               visualDensity: const VisualDensity(
@@ -409,7 +408,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 ),
                                 TextSpan(
                                   text: 'Terms and Conditions',
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     color: primaryColor,
                                     decoration: TextDecoration.underline,
                                     fontWeight: FontWeight.w600,
@@ -419,7 +418,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 const TextSpan(text: ' and '),
                                 TextSpan(
                                   text: 'Privacy Policy.',
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     color: primaryColor,
                                     decoration: TextDecoration.underline,
                                     fontWeight: FontWeight.w600,
@@ -466,7 +465,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           context, 
                           MaterialPageRoute(builder: (_) => SignInScreen(language: widget.language))
                         ),
-                        child: Text(
+                        child: const Text(
                           'Sign In',
                           style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor),
                         ),
