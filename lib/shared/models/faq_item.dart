@@ -16,4 +16,10 @@ class FaqItem {
       answer: json['answer'] as String? ?? '',
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'question': question,
+    'answer': answer,
+  };
 }

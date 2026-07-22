@@ -3,13 +3,15 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
+import 'offline_json_cache.dart';
 import '../models/faq_item.dart';
 
 class FaqApiClient {
   FaqApiClient({http.Client? httpClient})
-      : _httpClient = httpClient ?? http.Client();
+    : _httpClient = httpClient ?? http.Client();
 
   final http.Client _httpClient;
+  static const String _faqsCacheKey = 'offline_cache_faqs';
 
   static const String _configuredBaseUrl = String.fromEnvironment(
     'MOBILE_API_BASE_URL',
@@ -45,27 +47,50 @@ class FaqApiClient {
   Uri _uri(String path) => Uri.parse('$_baseUrl$path');
 
   Future<List<FaqItem>> fetchFaqs() async {
-    final response = await _httpClient.get(
-      _uri(''),
-      headers: const {'Content-Type': 'application/json'},
-    );
+    try {
+      final response = await _httpClient.get(
+        _uri(''),
+        headers: const {'Content-Type': 'application/json'},
+      );
 
-    final decoded = response.body.isEmpty ? <String, dynamic>{} : jsonDecode(response.body);
+      final decoded = response.body.isEmpty
+          ? <String, dynamic>{}
+          : jsonDecode(response.body);
 
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      final payload = decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
-      final error = payload['error'];
-      final message = error is Map<String, dynamic>
-          ? error['message'] as String? ?? 'Request failed'
-          : payload['message'] as String? ?? 'Request failed';
-      throw FaqApiException(message);
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        final payload = decoded is Map<String, dynamic>
+            ? decoded
+            : <String, dynamic>{};
+        final error = payload['error'];
+        final message = error is Map<String, dynamic>
+            ? error['message'] as String? ?? 'Request failed'
+            : payload['message'] as String? ?? 'Request failed';
+        throw FaqApiException(message);
+      }
+
+      if (decoded is! Map<String, dynamic>) {
+        throw const FaqApiException('Unexpected response format');
+      }
+
+      final items = _mapFaqItems(decoded['data']);
+      try {
+        await OfflineJsonCache.saveMap(_faqsCacheKey, {
+          'data': items.map((item) => item.toJson()).toList(),
+        });
+      } catch (_) {
+        // A cache write failure should not prevent FAQs from being shown.
+      }
+      return items;
+    } catch (_) {
+      final cachedPayload = await OfflineJsonCache.readMap(_faqsCacheKey);
+      if (cachedPayload != null) {
+        return _mapFaqItems(cachedPayload['data']);
+      }
+      rethrow;
     }
+  }
 
-    if (decoded is! Map<String, dynamic>) {
-      throw const FaqApiException('Unexpected response format');
-    }
-
-    final data = decoded['data'];
+  List<FaqItem> _mapFaqItems(dynamic data) {
     if (data is! List) {
       throw const FaqApiException('Unexpected FAQ payload');
     }
